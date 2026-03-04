@@ -1,7 +1,7 @@
 package Class;
 import Interface.*;
 
-public class PlayerImpl implements Player{
+public class ManImpl implements Man {
     @Override
     public String pickLetter(){return new String();}
     @Override

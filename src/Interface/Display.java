@@ -1,15 +1,26 @@
 package Interface;
 
 public interface Display {
-    static void clearConsole() {
-        for (int i = 0; i < 33; i++) {
-            System.out.println();
+    static void clear() {
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            ProcessBuilder pb;
+            if (os.contains("win")) {
+                // Windows
+                pb = new ProcessBuilder("cmd", "/c", "cls");
+            } else {
+                // Unix/Linux/Mac
+                pb = new ProcessBuilder("clear");
+            }
+            Process process = pb.inheritIO().start();
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+    static void promt() {
+        System.out.print(">");
+    }
 
-    static void display() {
-
-    };
-    void display(String item);
-    void display(String[] item);
+    void draw(String inStr);
 }

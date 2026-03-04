@@ -1,6 +1,6 @@
 package Interface;
 
 public interface Hangman {
-    String[] hangUp(Player player);
-    String[] applySanction(Player player);
+    String[] hangUp(Man man);
+    String[] applySanction(Man man);
 }

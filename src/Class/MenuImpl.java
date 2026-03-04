@@ -4,37 +4,42 @@ import java.util.Scanner;
 
 public class MenuImpl implements Menu {
     Game game;
-
+    Display console;
+    public MenuImpl() throws InterruptedException {
+        console = new DisplayImpl();
+        chooseAction();
+    }
     @Override
     public void chooseAction() throws InterruptedException {
-        System.out.flush();
-        System.out.print("""
-        Input one number:
-        "1" to start Game.
-        "2" to end Game.
-        """ +
-        "> ");
+        console.draw("0 0");
+        Display.promt();
         Scanner console = new Scanner(System.in);
         String choosing = console.nextLine();
         switch (choosing) {
             case "1" -> startGame();
             case "2" -> endGame();
-            default -> Display.clearConsole();
+            default -> incorrectInput();
         }
     }
 
     @Override
     public void startGame() {
-        Display.clearConsole();
         Game game = new GameImpl();
-        game.init();
+    }
+
+    @Override
+    public void incorrectInput() throws InterruptedException {
+        console.draw("0 1");
+        Thread.sleep(2000);
+        chooseAction();
     }
 
     @Override
     public void endGame() throws InterruptedException {
-        Display.clearConsole();
-        System.out.println("Goodbye.");
+        console.draw("0 2");
         Thread.sleep(2000);
         System.exit(0);
     }
+
+
 }

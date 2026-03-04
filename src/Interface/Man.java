@@ -1,6 +1,6 @@
 package Interface;
 
-public interface Player {
+public interface Man {
     String pickLetter();
     void addMiss();
     boolean isHangedUp();
