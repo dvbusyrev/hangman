@@ -10,8 +10,6 @@ public class GameImpl implements Game {
         man = new ManImpl();
         judiciary = new JudiciaryImpl();
         hangman = new HangmanImpl();
-
-
     }
 
 

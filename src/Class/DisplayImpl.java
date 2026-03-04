@@ -45,7 +45,7 @@ public class DisplayImpl implements Display {
     public void draw(String inStr) {
         String[][] pictures;
         String[] dataSet = inStr.split(" ");
-        String[] picture = new String[2];
+        String[] picture = null;
         switch (dataSet[0]) {
             case "0" -> {
                 pictures = menuPictures;
