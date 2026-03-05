@@ -1,9 +1,14 @@
 package Interface;
 
+import java.util.HashMap;
+
 public interface Judiciary {
-    boolean pickWord();
-    boolean isCorrectLetter(char letter);
+    boolean pickWord(String topic);
+    boolean isCorrectLetter(String letter);
+    int getWordLength();
     String getWordWithLetters(Man man);
-    boolean isCorrectWord(Man man);
-    String giveVerdict(Man man);
+    void isCorrectWord(Man man);
+    String getVerdict(String gameMode, Man man);
+    HashMap<String, String> getTopics();
+    HashMap<String, String> getGameModes();
 }

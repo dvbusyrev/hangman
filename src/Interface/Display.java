@@ -1,5 +1,7 @@
 package Interface;
 
+import java.util.HashSet;
+
 public interface Display {
     static void clear() {
         try {
@@ -23,4 +25,5 @@ public interface Display {
     }
 
     void draw(String inStr);
+    void drawKeyboard(String inStr, HashSet<String> pickedLetters);
 }

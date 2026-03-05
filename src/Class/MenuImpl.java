@@ -11,11 +11,11 @@ public class MenuImpl implements Menu {
     }
     @Override
     public void chooseAction() throws InterruptedException {
-        console.draw("0 0");
+        console.draw("0,0");
         Display.promt();
         Scanner console = new Scanner(System.in);
-        String choosing = console.nextLine();
-        switch (choosing) {
+        String scanner = console.nextLine();
+        switch (scanner) {
             case "1" -> startGame();
             case "2" -> endGame();
             default -> incorrectInput();
@@ -29,17 +29,16 @@ public class MenuImpl implements Menu {
 
     @Override
     public void incorrectInput() throws InterruptedException {
-        console.draw("0 1");
+        console.draw("0,1");
         Thread.sleep(2000);
         chooseAction();
     }
 
     @Override
     public void endGame() throws InterruptedException {
-        console.draw("0 2");
+        console.draw("0,2");
         Thread.sleep(2000);
         System.exit(0);
     }
-
 
 }

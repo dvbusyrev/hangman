@@ -4,13 +4,18 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.HashSet;
 
 public class DisplayImpl implements Display {
-    private String[][] menuPictures = new String[5][17];
+    private String[][] menuPictures = new String[7][17];
     private String[] keyboardPicture = new String[6];
     private String[][] manPictures = new String[13][10];
 
     public DisplayImpl() {
+        picturesInit();
+    }
+
+    private void picturesInit() {
         try (BufferedReader reader = new BufferedReader(new FileReader("GUI.txt"))) {
             String line;
             int i = -1;
@@ -44,7 +49,7 @@ public class DisplayImpl implements Display {
     @Override
     public void draw(String inStr) {
         String[][] pictures;
-        String[] dataSet = inStr.split(" ");
+        String[] dataSet = inStr.split(",");
         String[] picture = null;
         switch (dataSet[0]) {
             case "0" -> {
@@ -65,6 +70,25 @@ public class DisplayImpl implements Display {
 
         for (String line : picture) {
             if (line != null) {
+                System.out.println(line);
+            }
+        }
+    }
+
+    @Override
+    public void drawKeyboard(String inStr, HashSet<String> pickedLetters) {
+        String[][] pictures;
+        String[] dataSet = inStr.split(",");
+        String[] picture = null;
+        switch (dataSet[0]) {
+            case "2" -> picture = keyboardPicture;
+        }
+
+        for (String line : picture) {
+            if (line != null) {
+                for (String letter : pickedLetters) {
+                    line.replace(letter, "_");
+                }
                 System.out.println(line);
             }
         }
