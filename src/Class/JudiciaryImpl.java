@@ -1,12 +1,14 @@
 package Class;
 import Interface.*;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Iterator;
 
 public class JudiciaryImpl implements Judiciary {
     private HashMap<String, HashSet<String>> glossary;
@@ -52,7 +54,7 @@ public class JudiciaryImpl implements Judiciary {
                     topic = line.replace("#", "");
                     wordSet = new HashSet<>();
                     glossary.put(topic.toUpperCase(), wordSet);
-                } else if (!line.equals("")) {
+                } else if (line.isEmpty()) {
                     wordSet.add(line.toUpperCase());
                 }
             }
@@ -95,44 +97,42 @@ public class JudiciaryImpl implements Judiciary {
     }
 
     @Override
-    public boolean pickWord(String topic) {
-        return true;
-    };
+    public void pickWord(String topic) {
+        Iterator<String> iterator = glossary.get(topic).iterator();
+        word = "APPLE";//iterator.next();
+    }
 
     @Override
-    public void isCorrectLetter(String letter, Man man) {
+    public void checkLetter(String letter, Man man, Hangman hangman) {
         if (word.contains(letter)) {
             man.addLetter(letter);
+            if (getGuessedWord(man.getPickedLetters()).equals(word)) {
+                man.win();
+            }
         } else {
-            man.addMiss();
+            hangman.applySanction(man);
         }
     }
-
-    @Override
-    public int getWordLength() {
-        if (word != null) {
-            return word.length();
-        }
-        return 0;
-    }
-
-    @Override
-    public String getWordWithLetters(Man man) {
-        HashSet<String> pickedLetters = man.getPickedLetters();
-        for (String letter : pickedLetters) {
-
-        }
-        return new String();
-    }
-
-    @Override
-    public boolean isCorrectWord(Man man){return true;};
 
     @Override
     public String getVerdict(String gameMode, Man man) {
         HashMap<Integer, Integer> rule = rules.get(gameMode);
         int verdictNumber = rule.get(man.getMistakes());
         return String.format("1,%d", verdictNumber);
-    };
+    }
 
+    @Override
+    public String getGuessedWord(HashSet<String> letters) {
+        char[] guessedWord = new char[word.length()];
+        Arrays.fill(guessedWord, '_');
+
+        for (String letter : letters) {
+            for (int i = 0; i < word.length(); i++) {
+                if (word.charAt(i) == letter.charAt(0)) {
+                    guessedWord[i] = letter.charAt(0);
+                }
+            }
+        }
+        return String.valueOf(guessedWord);
+    }
 }

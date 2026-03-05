@@ -1,6 +1,6 @@
 package Interface;
 
 public interface Hangman {
-    String[] hangUp(Man man);
-    String[] applySanction(boolean isCorrect, Man man);
+    void hangUp(Man man);
+    void applySanction(Man man);
 }

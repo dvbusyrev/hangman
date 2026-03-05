@@ -93,5 +93,25 @@ public class DisplayImpl implements Display {
             }
         }
     }
+
+    @Override
+    public void drawWord(String guessedWord) {
+        int guiLength = 37;
+        StringBuilder guiLine = new StringBuilder("║");
+        int guiPartA = guiLength / 2;
+        int guiPartB = guiLength - guiPartA;
+        int wordPartA = guessedWord.length() / 2;
+        int wordPartB = guessedWord.length() - wordPartA;
+
+        for (int i = 0; i < guiPartA - wordPartA; i++) {
+            guiLine.append(" ");
+        }
+        guiLine.append(guessedWord);
+        for (int i = 0; i < guiPartB - wordPartB; i++) {
+            guiLine.append(" ");
+        }
+        guiLine.append("║");
+        System.out.println(guiLine);
+    }
 }
 

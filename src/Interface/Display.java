@@ -26,4 +26,5 @@ public interface Display {
 
     void draw(String inStr);
     void drawKeyboard(String inStr, HashSet<String> pickedLetters);
+    void drawWord(String guessedWord);
 }

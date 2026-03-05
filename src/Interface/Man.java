@@ -4,10 +4,12 @@ import java.util.HashSet;
 
 public interface Man {
     String pickLetter();
-    void addMiss();
+    void addMistake();
     boolean isHangedUp();
+    boolean isWon();
     int getMistakes();
-    void hangeUp();
+    void hangUp();
+    void win();
     HashSet<String> getPickedLetters();
     void addLetter(String letter);
 }

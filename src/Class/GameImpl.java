@@ -13,7 +13,7 @@ public class GameImpl implements Game {
     String gameMode;
     String topic;
 
-    public GameImpl() {
+    public void play() {
         man = new ManImpl();
         judiciary = new JudiciaryImpl();
         hangman = new HangmanImpl();
@@ -25,11 +25,11 @@ public class GameImpl implements Game {
 
         do {
             console.draw(judiciary.getVerdict(gameMode, man));
-            console.draw(
+            console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
             console.drawKeyboard("2,0", man.getPickedLetters());
-            hangman.applySanction(judiciary.isCorrectLetter(man.pickLetter()), man);
+            judiciary.checkLetter(man.pickLetter(), man, hangman);
+        } while (!man.isHangedUp() || !man.isWon());
 
-        } while (!man.isHangedUp());
     }
 
     public String chooseGameMode() {

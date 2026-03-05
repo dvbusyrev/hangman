@@ -1,9 +1,14 @@
 package Class;
 import Interface.*;
 
-public class HangmanImpl implements Hangman{
+public class HangmanImpl implements Hangman {
     @Override
-    public String[] hangUp(Man man) {return new String[1];};
+    public void hangUp(Man man) {
+        man.hangUp();
+    }
+
     @Override
-    public String[] applySanction(Man man) {return new String[1];};
+    public void applySanction(Man man) {
+        man.addMistake();
+    }
 }

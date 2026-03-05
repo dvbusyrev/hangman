@@ -7,10 +7,12 @@ public class ManImpl implements Man {
     private int mistakes;
     private boolean isHangedUp;
     private HashSet<String> pickedLetters;
+    private boolean isWon;
 
     public ManImpl() {
         mistakes = 0;
         isHangedUp = false;
+        isWon = false;
         pickedLetters = new HashSet<>();
     }
 
@@ -24,12 +26,14 @@ public class ManImpl implements Man {
                 && letter.matches("[a-zA-Z]+")
                 && !pickedLetters.contains(letter)) {
             return letter.toUpperCase();
+        } else {
+            pickLetter();
         }
          return null;
     }
 
     @Override
-    public void addMiss() {
+    public void addMistake() {
         mistakes++;
     }
 
@@ -39,8 +43,18 @@ public class ManImpl implements Man {
     }
 
     @Override
-    public void hangeUp() {
+    public boolean isWon() {
+        return isWon;
+    }
+
+    @Override
+    public void hangUp() {
         isHangedUp = true;
+    }
+
+    @Override
+    public void win() {
+        isWon = true;
     }
 
     @Override

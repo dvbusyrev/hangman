@@ -4,6 +4,7 @@ import java.util.Scanner;
 
 public class MenuImpl implements Menu {
     Game game;
+
     Display console;
     public MenuImpl() throws InterruptedException {
         console = new DisplayImpl();
@@ -25,6 +26,7 @@ public class MenuImpl implements Menu {
     @Override
     public void startGame() {
         Game game = new GameImpl();
+        game.play();
     }
 
     @Override
