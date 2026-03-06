@@ -148,22 +148,10 @@ public class JudiciaryImpl implements Judiciary {
                 }
             }
         }
-        return addSpacesBetween(String.valueOf(guessedWord));
+        return String.valueOf(guessedWord);
     }
 
-    private String addSpacesBetween(String guessedWord) {
-        if (guessedWord == null || guessedWord.isEmpty()) {
-            return guessedWord;
-        }
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < guessedWord.length(); i++) {
-            result.append(guessedWord.charAt(i));
-            if (i < guessedWord.length() - 1) {
-                result.append(' ');
-            }
-        }
-        return result.toString();
-    }
+
 
     public String getWord() {
         return word;

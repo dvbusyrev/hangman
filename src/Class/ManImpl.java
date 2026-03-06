@@ -20,24 +20,27 @@ public class ManImpl implements Man {
     }
 
     @Override
-    public String pickLetter() {
+    public String pickLetter(Display console, Scanner scanner, String language) {
         Display.promt();
         String letter = "";
         try {
-            Scanner scanner = new Scanner(System.in, "CP866");
             letter = scanner.nextLine();
         } catch (NoSuchElementException e) {
-            System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
+            console.drawInterruption();
             System.exit(0);  // корректное завершение
+        }
+        String languageLetterSet = "[a-zA-Z]";
+        if (language.equals("RUSSIAN")) {
+            languageLetterSet = "[а-яА-Я]";
         }
         if (letter != null
                 && letter.length() == 1
-                && letter.matches("[a-zA-Zа-яА-ЯёЁ]")
+                && letter.matches(languageLetterSet)
                 && !pickedLetters.contains(letter)) {
             pickedLetters.add(letter.toUpperCase());
             return letter.toUpperCase();
         }
-        return pickLetter();
+        return pickLetter(console, scanner, language);
     }
 
     @Override

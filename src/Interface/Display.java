@@ -24,7 +24,7 @@ public interface Display {
     static void promt() {
         System.out.print(">");
     }
-
+    void picturesInit(String language);
     void draw(String inStr);
     void drawKeyboard(HashSet<String> pickedLetters);
     void drawWord(String guessedWord);
@@ -32,4 +32,6 @@ public interface Display {
     void drawGameWin();
     void drawGameOverTitle();
     void drawGameOverPicture();
+    void drawLanguagePick();
+    void drawInterruption();
 }

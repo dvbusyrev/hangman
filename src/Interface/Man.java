@@ -1,9 +1,9 @@
 package Interface;
 
 import java.util.HashSet;
-
+import java.util.Scanner;
 public interface Man {
-    String pickLetter();
+    String pickLetter(Display console, Scanner scanner, String language);
     void addMistake();
     boolean isHangedUp();
     boolean isWon();

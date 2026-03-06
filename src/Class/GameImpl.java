@@ -14,10 +14,12 @@ public class GameImpl implements Game {
 
     String gameMode;
     String topic;
+    Scanner scanner;
 
-    public GameImpl(Display console, String language) {
+    public GameImpl(Display console, String language, Scanner scanner) {
         this.console = console;
         this.language = language;
+        this.scanner = scanner;
     }
 
     public void play() throws InterruptedException {
@@ -34,7 +36,7 @@ public class GameImpl implements Game {
             console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
             console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
             console.drawKeyboard(man.getPickedLetters());
-            judiciary.applyVerdict(gameMode,man.pickLetter(), man, hangman);
+            judiciary.applyVerdict(gameMode, man.pickLetter(console, scanner, language), man, hangman);
         } while (!man.isHangedUp() && !man.isWon());
 
         if (man.isWon()) {
@@ -63,10 +65,9 @@ public class GameImpl implements Game {
         Display.promt();
         String choosing = "";
         try {
-            Scanner scanner = new Scanner(System.in);
             choosing = scanner.nextLine();
         } catch (NoSuchElementException e) {
-            System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
+            console.drawInterruption();
             System.exit(0);
         }
         if (choosing != null && gameModes.containsKey(choosing)) {
@@ -87,11 +88,10 @@ public class GameImpl implements Game {
         Display.promt();
         String choosing = "";
         try {
-            Scanner scanner = new Scanner(System.in);
             choosing = scanner.nextLine();
         } catch (NoSuchElementException e) {
-            System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
-            System.exit(0);  // корректное завершение
+            console.drawInterruption();
+            System.exit(0);
         }
         if (choosing != null && topics.containsKey(choosing)) {
             return topics.get(choosing);

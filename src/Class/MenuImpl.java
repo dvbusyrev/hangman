@@ -1,6 +1,8 @@
 package Class;
 import Interface.*;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -8,52 +10,59 @@ public class MenuImpl implements Menu {
     Game game;
     String language;
     Display console;
+    Scanner scanner;
 
-    private void languageChoosing() {
-        Display.clear();
-        System.out.println("CHOOSE LANGUAGE // ВЫБЕРЕТЕ ЯЗЫК");
-        System.out.println();
-        System.out.println("1. ENGLISH // АНГЛИЙСКИЙ");
-        System.out.println("2. RUSSIAN // РУССКИЙ");
-        System.out.println();
-        System.out.println("INPUT 1 OR 2 // ВВЕДИТЕ 1 ИЛИ 2");
-        System.out.println();
+    private void languagePick() {
+        console.drawLanguagePick();
         Display.promt();
         String language_number = "";
         try {
-            Scanner scanner = new Scanner(System.in, "CP866");
             language_number = scanner.nextLine();
         }
         catch (NoSuchElementException e) {
-            System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
-            System.exit(0);  // корректное завершение
+            console.drawInterruption();
+            System.exit(0);
         }
         switch(language_number) {
             case "1" -> language = "ENGLISH";
             case "2" -> language =  "RUSSIAN";
-            default -> languageChoosing();
+            default -> languagePick();
         }
     }
 
+    private void scannerInit() {
+        String os = System.getProperty("os.name").toLowerCase();
+        Charset charset;
+
+        if (os.contains("win")) {
+            charset = Charset.forName("CP866");
+        } else {
+            charset = StandardCharsets.UTF_8;
+        }
+        scanner = new Scanner(System.in, charset);
+    }
+
     public MenuImpl() throws InterruptedException {
-        languageChoosing();
-        console = new DisplayImpl(language);
+        scannerInit();
+        console = new DisplayImpl();
+        languagePick();
+        console.picturesInit(language);
         chooseAction();
     }
+
     @Override
     public void chooseAction() throws InterruptedException {
         console.draw("0,0");
         Display.promt();
-        Scanner console = new Scanner(System.in, "CP866");
-        String scanner = "";
+        String choosing = "";
         try {
-            scanner = console.nextLine();
+            choosing = scanner.nextLine();
         }
         catch (NoSuchElementException e) {
-                System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
-                System.exit(0);  // корректное завершение
+                console.drawInterruption();
+                System.exit(0);
         }
-        switch (scanner) {
+        switch (choosing) {
             case "1" -> startGame();
             case "2" -> endGame();
             default -> incorrectInput();
@@ -62,7 +71,7 @@ public class MenuImpl implements Menu {
 
     @Override
     public void startGame() throws InterruptedException{
-        game = new GameImpl(console, language);
+        game = new GameImpl(console, language, scanner);
         game.play();
         chooseAction();
     }

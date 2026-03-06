@@ -11,11 +11,8 @@ public class DisplayImpl implements Display {
     private String[][] systemPicture = new String[4][10];
     private String[][] manPicture = new String[12][10];
 
-    public DisplayImpl(String language) {
-        picturesInit(language);
-    }
-
-    private void picturesInit(String language) {
+    @Override
+    public void picturesInit(String language) {
         try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + language + "/GUI.txt"))) {
             String line;
             int i = -1;
@@ -127,6 +124,7 @@ public class DisplayImpl implements Display {
 
     @Override
     public void drawWord(String word) {
+        word = addSpacesBetween(word);
         int guiLength = 37;
         StringBuilder guiLine = new StringBuilder("║");
         int guiPartA = guiLength / 2;
@@ -143,6 +141,38 @@ public class DisplayImpl implements Display {
         }
         guiLine.append("║");
         System.out.println(guiLine);
+    }
+
+    @Override
+    public void drawLanguagePick() {
+        Display.clear();
+        System.out.println("CHOOSE LANGUAGE // ВЫБЕРЕТЕ ЯЗЫК");
+        System.out.println();
+        System.out.println("1. ENGLISH // АНГЛИЙСКИЙ");
+        System.out.println("2. RUSSIAN // РУССКИЙ");
+        System.out.println();
+        System.out.println("INPUT 1 OR 2 // ВВЕДИТЕ 1 ИЛИ 2");
+        System.out.println();
+    }
+
+    @Override
+    public void drawInterruption() {
+        System.out.println();
+        System.out.println("Ввод прерван (Ctrl+C). Завершение игры...");
+    }
+
+    private String addSpacesBetween(String guessedWord) {
+        if (guessedWord == null || guessedWord.isEmpty()) {
+            return guessedWord;
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < guessedWord.length(); i++) {
+            result.append(guessedWord.charAt(i));
+            if (i < guessedWord.length() - 1) {
+                result.append(' ');
+            }
+        }
+        return result.toString();
     }
 }
 
