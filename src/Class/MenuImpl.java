@@ -24,9 +24,10 @@ public class MenuImpl implements Menu {
     }
 
     @Override
-    public void startGame() {
-        Game game = new GameImpl();
+    public void startGame() throws InterruptedException{
+        game = new GameImpl();
         game.play();
+        chooseAction();
     }
 
     @Override

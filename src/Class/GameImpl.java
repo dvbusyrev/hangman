@@ -13,7 +13,7 @@ public class GameImpl implements Game {
     String gameMode;
     String topic;
 
-    public void play() {
+    public void play() throws InterruptedException {
         man = new ManImpl();
         judiciary = new JudiciaryImpl();
         hangman = new HangmanImpl();
@@ -24,15 +24,30 @@ public class GameImpl implements Game {
         judiciary.pickWord(topic);
 
         do {
-            console.draw(judiciary.getVerdict(gameMode, man));
+            console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
             console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
-            console.drawKeyboard("2,0", man.getPickedLetters());
-            judiciary.checkLetter(man.pickLetter(), man, hangman);
-        } while (!man.isHangedUp() || !man.isWon());
+            console.drawKeyboard(man.getPickedLetters());
+            judiciary.applyVerdict(gameMode,man.pickLetter(), man, hangman);
+        } while (!man.isHangedUp() && !man.isWon());
 
+        if (man.isWon()) {
+            console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
+            console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
+            console.drawKeyboard(man.getPickedLetters());
+            Thread.sleep(500);
+            console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
+            console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
+            console.drawGameWin();
+            Thread.sleep(2500);
+        } else {
+            console.drawGameOverPicture();
+            console.drawWord(judiciary.getWord());
+            console.drawGameOverTitle();
+            Thread.sleep(2500);
+        }
     }
 
-    public String chooseGameMode() {
+    private String chooseGameMode() {
         console.draw("0,3");
         HashMap<String, String> gameModes = judiciary.getGameModes();
         for (HashMap.Entry gameMode : gameModes.entrySet()) {
@@ -50,7 +65,7 @@ public class GameImpl implements Game {
         return null;
     }
 
-    public String chooseTopic() {
+    private String chooseTopic() {
         console.draw("0,4");
         HashMap<String, String> topics = judiciary.getTopics();
         for (HashMap.Entry topic : topics.entrySet()) {

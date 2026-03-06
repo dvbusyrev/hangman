@@ -8,8 +8,8 @@ import java.util.HashSet;
 
 public class DisplayImpl implements Display {
     private String[][] menuPictures = new String[7][17];
-    private String[] keyboardPicture = new String[6];
-    private String[][] manPictures = new String[13][10];
+    private String[][] systemPicture = new String[4][10];
+    private String[][] manPicture = new String[12][10];
 
     public DisplayImpl() {
         picturesInit();
@@ -35,8 +35,8 @@ public class DisplayImpl implements Display {
                 }
                 switch (type) {
                     case 0 -> menuPictures[i][j++] = line;
-                    case 1 -> manPictures[i][j++] = line;
-                    case 2 -> keyboardPicture[j++] = line;
+                    case 1 -> manPicture[i][j++] = line;
+                    case 2 -> systemPicture[i][j++] = line;
                 }
             }
         } catch (FileNotFoundException e) {
@@ -47,27 +47,36 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void draw(String inStr) {
+    public String[] choosePicture(String inStr) {
         String[][] pictures;
         String[] dataSet = inStr.split(",");
-        String[] picture = null;
         switch (dataSet[0]) {
             case "0" -> {
                 pictures = menuPictures;
                 if (Character.isDigit(dataSet[1].charAt(0))) {
-                    picture = pictures[Character.getNumericValue(dataSet[1].charAt(0))];
+                    return pictures[Integer.valueOf(dataSet[1])];
                 }
             }
             case "1" -> {
-                pictures = manPictures;
+                pictures = manPicture;
                 if (Character.isDigit(dataSet[1].charAt(0))) {
-                    picture = pictures[Character.getNumericValue(dataSet[1].charAt(0))];
+                    return pictures[Integer.valueOf(dataSet[1])];
                 }
             }
-            case "2" -> picture = keyboardPicture;
+            case "2" -> {
+                pictures = systemPicture;
+                if (Character.isDigit(dataSet[1].charAt(0))) {
+                    return pictures[Integer.valueOf(dataSet[1])];
+                }
+            }
         }
-        Display.clear();
+        return null;
+    }
 
+    @Override
+    public void draw(String inStr) {
+        String[] picture = choosePicture(inStr);
+        Display.clear();
         for (String line : picture) {
             if (line != null) {
                 System.out.println(line);
@@ -76,18 +85,12 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void drawKeyboard(String inStr, HashSet<String> pickedLetters) {
-        String[][] pictures;
-        String[] dataSet = inStr.split(",");
-        String[] picture = null;
-        switch (dataSet[0]) {
-            case "2" -> picture = keyboardPicture;
-        }
-
+    public void drawKeyboard(HashSet<String> pickedLetters) {
+        String[] picture = choosePicture("2,0");
         for (String line : picture) {
             if (line != null) {
                 for (String letter : pickedLetters) {
-                    line.replace(letter, "_");
+                    line = line.replace(letter, "_");
                 }
                 System.out.println(line);
             }
@@ -95,18 +98,43 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void drawWord(String guessedWord) {
+    public void drawGameWin() {
+        String[] picture = choosePicture("2,1");
+        for (String line : picture) {
+            if (line != null) {
+                System.out.println(line);
+            }
+        }
+    }
+
+    @Override
+    public void drawGameOverTitle() {
+        String[] picture = choosePicture("2,2");
+        for (String line : picture) {
+            if (line != null) {
+                System.out.println(line);
+            }
+        }
+    }
+
+    @Override
+    public void drawGameOverPicture() {
+        draw("1," + (manPicture.length - 1));
+    }
+
+    @Override
+    public void drawWord(String word) {
         int guiLength = 37;
         StringBuilder guiLine = new StringBuilder("║");
         int guiPartA = guiLength / 2;
         int guiPartB = guiLength - guiPartA;
-        int wordPartA = guessedWord.length() / 2;
-        int wordPartB = guessedWord.length() - wordPartA;
+        int wordPartA = word.length() / 2;
+        int wordPartB = word.length() - wordPartA;
 
         for (int i = 0; i < guiPartA - wordPartA; i++) {
             guiLine.append(" ");
         }
-        guiLine.append(guessedWord);
+        guiLine.append(word);
         for (int i = 0; i < guiPartB - wordPartB; i++) {
             guiLine.append(" ");
         }

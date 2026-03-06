@@ -1,5 +1,5 @@
 package Interface;
 
 public interface Game {
-    void play();
+    void play() throws InterruptedException;
 }

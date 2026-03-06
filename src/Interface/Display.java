@@ -20,11 +20,16 @@ public interface Display {
             e.printStackTrace();
         }
     }
+
     static void promt() {
         System.out.print(">");
     }
 
     void draw(String inStr);
-    void drawKeyboard(String inStr, HashSet<String> pickedLetters);
+    void drawKeyboard(HashSet<String> pickedLetters);
     void drawWord(String guessedWord);
+    String[] choosePicture(String inStr);
+    void drawGameWin();
+    void drawGameOverTitle();
+    void drawGameOverPicture();
 }

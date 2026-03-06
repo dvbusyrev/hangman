@@ -6,6 +6,7 @@ import java.util.Scanner;
 public class ManImpl implements Man {
     private int mistakes;
     private boolean isHangedUp;
+    private HashSet<String> correctPickedLetters;
     private HashSet<String> pickedLetters;
     private boolean isWon;
 
@@ -13,6 +14,7 @@ public class ManImpl implements Man {
         mistakes = 0;
         isHangedUp = false;
         isWon = false;
+        correctPickedLetters = new HashSet<>();
         pickedLetters = new HashSet<>();
     }
 
@@ -25,11 +27,11 @@ public class ManImpl implements Man {
                 && letter.length() == 1
                 && letter.matches("[a-zA-Z]+")
                 && !pickedLetters.contains(letter)) {
+            pickedLetters.add(letter.toUpperCase());
             return letter.toUpperCase();
-        } else {
-            pickLetter();
         }
-         return null;
+        pickLetter();
+        return null;
     }
 
     @Override
@@ -68,7 +70,8 @@ public class ManImpl implements Man {
     }
 
     @Override
-    public void addLetter(String letter) {
-        pickedLetters.add(letter);
+    public void addCorrectLetter(String letter) {
+        correctPickedLetters.add(letter);
     }
+
 }

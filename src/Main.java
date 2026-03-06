@@ -7,8 +7,5 @@ class Main {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-//    JudiciaryImpl judiciary = new JudiciaryImpl();
-//    judiciary.printGlossary();
-//    judiciary.printRules();
     }
 }

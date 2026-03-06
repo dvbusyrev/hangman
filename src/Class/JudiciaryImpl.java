@@ -2,16 +2,16 @@ package Class;
 import Interface.*;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
 
 public class JudiciaryImpl implements Judiciary {
-    private HashMap<String, HashSet<String>> glossary;
+    private HashMap<String, ArrayList<String>> glossary;
     private HashMap<String, HashMap<Integer, Integer>> rules;
     private String word;
 
@@ -48,13 +48,13 @@ public class JudiciaryImpl implements Judiciary {
         try (BufferedReader reader = new BufferedReader(new FileReader("GLOSSARY.txt"))) {
             String line;
             String topic;
-            HashSet<String> wordSet = null;
+            ArrayList<String> wordSet = null;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("#")) {
                     topic = line.replace("#", "");
-                    wordSet = new HashSet<>();
+                    wordSet = new ArrayList<>();
                     glossary.put(topic.toUpperCase(), wordSet);
-                } else if (line.isEmpty()) {
+                } else if (!line.isEmpty()) {
                     wordSet.add(line.toUpperCase());
                 }
             }
@@ -98,27 +98,42 @@ public class JudiciaryImpl implements Judiciary {
 
     @Override
     public void pickWord(String topic) {
-        Iterator<String> iterator = glossary.get(topic).iterator();
-        word = "APPLE";//iterator.next();
+        ArrayList<String> wordArray = glossary.get(topic);
+        int wordIndex = (int) (Math.random() * wordArray.size());
+        word = wordArray.get(wordIndex);
     }
 
     @Override
-    public void checkLetter(String letter, Man man, Hangman hangman) {
-        if (word.contains(letter)) {
-            man.addLetter(letter);
-            if (getGuessedWord(man.getPickedLetters()).equals(word)) {
+    public boolean checkLetter(String letter) {
+        return word.contains(letter);
+    }
+
+    @Override
+    public boolean checkGuessedWord(HashSet<String> pickedLetters) {
+        return getGuessedWord(pickedLetters).equals(word);
+    }
+
+    @Override
+    public void applyVerdict(String gameMode, String letter, Man man, Hangman hangman) {
+        if (checkLetter(letter)) {
+            man.addCorrectLetter(letter);
+            if (checkGuessedWord(man.getPickedLetters())) {
                 man.win();
             }
         } else {
             hangman.applySanction(man);
+            boolean mustHangUp = !rules.get(gameMode).containsKey(man.getMistakes());
+            if (mustHangUp) {
+                hangman.hangUp(man);
+            }
         }
     }
 
     @Override
-    public String getVerdict(String gameMode, Man man) {
+    public String getManDrawInstruction(String gameMode, int mistakes) {
         HashMap<Integer, Integer> rule = rules.get(gameMode);
-        int verdictNumber = rule.get(man.getMistakes());
-        return String.format("1,%d", verdictNumber);
+        int instructionNumber = rule.get(mistakes);
+        return String.format("1,%d", instructionNumber);
     }
 
     @Override
@@ -134,5 +149,9 @@ public class JudiciaryImpl implements Judiciary {
             }
         }
         return String.valueOf(guessedWord);
+    }
+
+    public String getWord() {
+        return word;
     }
 }
