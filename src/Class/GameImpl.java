@@ -2,6 +2,7 @@ package Class;
 import Interface.*;
 
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class GameImpl implements Game {
@@ -9,15 +10,21 @@ public class GameImpl implements Game {
     Judiciary judiciary;
     Hangman hangman;
     Display console;
+    String language;
 
     String gameMode;
     String topic;
 
+    public GameImpl(Display console, String language) {
+        this.console = console;
+        this.language = language;
+    }
+
     public void play() throws InterruptedException {
         man = new ManImpl();
-        judiciary = new JudiciaryImpl();
+        judiciary = new JudiciaryImpl(language);
         hangman = new HangmanImpl();
-        console = new DisplayImpl();
+
 
         gameMode = chooseGameMode();
         topic = chooseTopic();
@@ -34,7 +41,7 @@ public class GameImpl implements Game {
             console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
             console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
             console.drawKeyboard(man.getPickedLetters());
-            Thread.sleep(500);
+//            Thread.sleep(500);
             console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
             console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
             console.drawGameWin();
@@ -54,15 +61,21 @@ public class GameImpl implements Game {
             System.out.println(String.format("%s. %s", gameMode.getKey(), gameMode.getValue()));
         }
         Display.promt();
-        Scanner scanner = new Scanner(System.in);
-        String choosing = scanner.nextLine();
+        String choosing = "";
+        try {
+            Scanner scanner = new Scanner(System.in);
+            choosing = scanner.nextLine();
+        } catch (NoSuchElementException e) {
+            System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
+            System.exit(0);
+        }
         if (choosing != null && gameModes.containsKey(choosing)) {
             return gameModes.get(choosing);
         } else {
             console.draw("0,1");
             chooseGameMode();
         }
-        return null;
+        return chooseGameMode();
     }
 
     private String chooseTopic() {
@@ -72,15 +85,21 @@ public class GameImpl implements Game {
             System.out.println(String.format("%s. %s", topic.getKey(), topic.getValue()));
         }
         Display.promt();
-        Scanner scanner = new Scanner(System.in);
-        String choosing = scanner.nextLine();
+        String choosing = "";
+        try {
+            Scanner scanner = new Scanner(System.in);
+            choosing = scanner.nextLine();
+        } catch (NoSuchElementException e) {
+            System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
+            System.exit(0);  // корректное завершение
+        }
         if (choosing != null && topics.containsKey(choosing)) {
             return topics.get(choosing);
         } else {
             console.draw("0,1");
             chooseTopic();
         }
-        return null;
+        return chooseTopic();
     }
 
 }

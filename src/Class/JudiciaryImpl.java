@@ -15,14 +15,14 @@ public class JudiciaryImpl implements Judiciary {
     private HashMap<String, HashMap<Integer, Integer>> rules;
     private String word;
 
-    public JudiciaryImpl() {
-        glossaryInit();
-        rulesInit();
+    public JudiciaryImpl(String language) {
+        glossaryInit(language);
+        rulesInit(language);
     }
 
-    private void rulesInit() {
+    private void rulesInit(String language) {
         rules = new HashMap<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader("RULES.txt"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + language + "/RULES.txt"))) {
             String line;
             String mode;
             HashMap<Integer, Integer> transitions = null;
@@ -43,9 +43,9 @@ public class JudiciaryImpl implements Judiciary {
         }
     }
 
-    private void glossaryInit() {
+    private void glossaryInit(String language) {
         glossary = new HashMap<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader("GLOSSARY.txt"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + language + "/GLOSSARY.txt"))) {
             String line;
             String topic;
             ArrayList<String> wordSet = null;
@@ -133,14 +133,14 @@ public class JudiciaryImpl implements Judiciary {
     public String getManDrawInstruction(String gameMode, int mistakes) {
         HashMap<Integer, Integer> rule = rules.get(gameMode);
         int instructionNumber = rule.get(mistakes);
-        return String.format("1,%d", instructionNumber);
+        return String.format("2,%d", instructionNumber);
     }
 
     @Override
     public String getGuessedWord(HashSet<String> letters) {
         char[] guessedWord = new char[word.length()];
         Arrays.fill(guessedWord, '_');
-
+        int j = 0;
         for (String letter : letters) {
             for (int i = 0; i < word.length(); i++) {
                 if (word.charAt(i) == letter.charAt(0)) {
@@ -148,7 +148,21 @@ public class JudiciaryImpl implements Judiciary {
                 }
             }
         }
-        return String.valueOf(guessedWord);
+        return addSpacesBetween(String.valueOf(guessedWord));
+    }
+
+    private String addSpacesBetween(String guessedWord) {
+        if (guessedWord == null || guessedWord.isEmpty()) {
+            return guessedWord;
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < guessedWord.length(); i++) {
+            result.append(guessedWord.charAt(i));
+            if (i < guessedWord.length() - 1) {
+                result.append(' ');
+            }
+        }
+        return result.toString();
     }
 
     public String getWord() {

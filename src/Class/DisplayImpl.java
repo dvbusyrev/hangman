@@ -11,12 +11,12 @@ public class DisplayImpl implements Display {
     private String[][] systemPicture = new String[4][10];
     private String[][] manPicture = new String[12][10];
 
-    public DisplayImpl() {
-        picturesInit();
+    public DisplayImpl(String language) {
+        picturesInit(language);
     }
 
-    private void picturesInit() {
-        try (BufferedReader reader = new BufferedReader(new FileReader("GUI.txt"))) {
+    private void picturesInit(String language) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + language + "/GUI.txt"))) {
             String line;
             int i = -1;
             int j = 0;
@@ -25,6 +25,9 @@ public class DisplayImpl implements Display {
                 if (line.contains("//")) {
                     int index = line.indexOf("//");
                     line = line.substring(0, index);
+                }
+                if (line.isEmpty()) {
+                    continue;
                 }
                 if (line.length() > 2 && Character.isDigit(line.charAt(2))) {
                     line = line.replace(" ","");
@@ -35,8 +38,8 @@ public class DisplayImpl implements Display {
                 }
                 switch (type) {
                     case 0 -> menuPictures[i][j++] = line;
-                    case 1 -> manPicture[i][j++] = line;
-                    case 2 -> systemPicture[i][j++] = line;
+                    case 1 -> systemPicture[i][j++] = line;
+                    case 2 -> manPicture[i][j++] = line;
                 }
             }
         } catch (FileNotFoundException e) {
@@ -58,13 +61,13 @@ public class DisplayImpl implements Display {
                 }
             }
             case "1" -> {
-                pictures = manPicture;
+                pictures = systemPicture;
                 if (Character.isDigit(dataSet[1].charAt(0))) {
                     return pictures[Integer.valueOf(dataSet[1])];
                 }
             }
             case "2" -> {
-                pictures = systemPicture;
+                pictures = manPicture;
                 if (Character.isDigit(dataSet[1].charAt(0))) {
                     return pictures[Integer.valueOf(dataSet[1])];
                 }
@@ -86,7 +89,7 @@ public class DisplayImpl implements Display {
 
     @Override
     public void drawKeyboard(HashSet<String> pickedLetters) {
-        String[] picture = choosePicture("2,0");
+        String[] picture = choosePicture("1,0");
         for (String line : picture) {
             if (line != null) {
                 for (String letter : pickedLetters) {
@@ -99,7 +102,7 @@ public class DisplayImpl implements Display {
 
     @Override
     public void drawGameWin() {
-        String[] picture = choosePicture("2,1");
+        String[] picture = choosePicture("1,1");
         for (String line : picture) {
             if (line != null) {
                 System.out.println(line);
@@ -109,7 +112,7 @@ public class DisplayImpl implements Display {
 
     @Override
     public void drawGameOverTitle() {
-        String[] picture = choosePicture("2,2");
+        String[] picture = choosePicture("1,2");
         for (String line : picture) {
             if (line != null) {
                 System.out.println(line);
@@ -119,7 +122,7 @@ public class DisplayImpl implements Display {
 
     @Override
     public void drawGameOverPicture() {
-        draw("1," + (manPicture.length - 1));
+        draw("1,3");
     }
 
     @Override

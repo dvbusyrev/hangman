@@ -1,6 +1,7 @@
 package Class;
 import Interface.*;
 import java.util.HashSet;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class ManImpl implements Man {
@@ -21,17 +22,22 @@ public class ManImpl implements Man {
     @Override
     public String pickLetter() {
         Display.promt();
-        Scanner scanner = new Scanner(System.in);
-        String letter = scanner.nextLine();
+        String letter = "";
+        try {
+            Scanner scanner = new Scanner(System.in, "CP866");
+            letter = scanner.nextLine();
+        } catch (NoSuchElementException e) {
+            System.out.println("\nВвод прерван (Ctrl+C). Завершение игры...");
+            System.exit(0);  // корректное завершение
+        }
         if (letter != null
                 && letter.length() == 1
-                && letter.matches("[a-zA-Z]+")
+                && letter.matches("[a-zA-Zа-яА-ЯёЁ]")
                 && !pickedLetters.contains(letter)) {
             pickedLetters.add(letter.toUpperCase());
             return letter.toUpperCase();
         }
-        pickLetter();
-        return null;
+        return pickLetter();
     }
 
     @Override
