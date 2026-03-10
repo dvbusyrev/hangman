@@ -55,13 +55,13 @@ public class GameImpl implements Game {
         }
     }
 
-    private String chooseGameMode() {
-        display.chooseGameMode();
-        LinkedHashMap<String, String> gameModes = judiciary.getGameModes();
-        for (HashMap.Entry gameMode : gameModes.entrySet()) {
-            System.out.println(String.format("%s. %s", gameMode.getKey(), gameMode.getValue()));
-        }
+    private String chooseGameMode() throws InterruptedException {
         while (true) {
+            display.chooseGameMode();
+            LinkedHashMap<String, String> gameModes = judiciary.getGameModes();
+            for (HashMap.Entry gameMode : gameModes.entrySet()) {
+                System.out.println(String.format("%s. %s", gameMode.getKey(), gameMode.getValue()));
+            }
             display.input();
             String choosing;
             try {
@@ -75,18 +75,18 @@ public class GameImpl implements Game {
                 return gameModes.get(choosing);
             } else {
                 display.incorrectInput();
-                chooseGameMode();
+                Thread.sleep(2000);
             }
         }
     }
 
-    private String chooseTopic() {
-        display.chooseTopic();
-        HashMap<String, String> topics = judiciary.getTopics();
-        for (HashMap.Entry topic : topics.entrySet()) {
-            System.out.println(String.format("%s. %s", topic.getKey(), topic.getValue()));
-        }
+    private String chooseTopic() throws InterruptedException {
         while (true) {
+            display.chooseTopic();
+            HashMap<String, String> topics = judiciary.getTopics();
+            for (HashMap.Entry topic : topics.entrySet()) {
+                System.out.println(String.format("%s. %s", topic.getKey(), topic.getValue()));
+            }
             display.input();
             String choosing;
             try {
@@ -101,7 +101,7 @@ public class GameImpl implements Game {
                 return topics.get(choosing);
             } else {
                 display.incorrectInput();
-                chooseTopic();
+                Thread.sleep(2000);
             }
         }
     }

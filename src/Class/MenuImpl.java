@@ -12,21 +12,21 @@ public class MenuImpl implements Menu {
     private Display display;
     private Scanner scanner;
 
-    private void languagePick() {
-        display.chooseLanguage();
-        display.input();
-        String language_number = "";
-        try {
-            language_number = scanner.nextLine();
-        }
-        catch (NoSuchElementException e) {
-            display.interruption();
-            System.exit(0);
-        }
-        switch(language_number) {
-            case "1" -> language = "ENGLISH";
-            case "2" -> language =  "RUSSIAN";
-            default -> languagePick();
+    private String chooseLanguage() {
+        while (true) {
+            display.chooseLanguage();
+            display.input();
+            String language_number = "";
+            try {
+                language_number = scanner.nextLine();
+            } catch (NoSuchElementException e) {
+                display.interruption();
+                System.exit(0);
+            }
+            switch (language_number) {
+                case "1" -> { return "ENGLISH"; }
+                case "2" -> { return "RUSSIAN"; }
+            }
         }
     }
 
@@ -45,27 +45,35 @@ public class MenuImpl implements Menu {
     public MenuImpl() throws InterruptedException {
         scannerInit();
         display = new DisplayImpl();
-        languagePick();
+        language = chooseLanguage();
         display.init(language);
         chooseAction();
     }
 
     @Override
     public void chooseAction() throws InterruptedException {
-        display.chooseAction();
-        display.input();
-        String choosing = "";
-        try {
-            choosing = scanner.nextLine();
-        }
-        catch (NoSuchElementException e) {
+        while (true) {
+            display.chooseAction();
+            display.input();
+            String choosing = "";
+            try {
+                choosing = scanner.nextLine();
+            } catch (NoSuchElementException e) {
                 display.interruption();
                 System.exit(0);
-        }
-        switch (choosing) {
-            case "1" -> startGame();
-            case "2" -> exitGame();
-            default -> incorrectInput();
+            }
+            switch (choosing) {
+                case "1" -> {
+                    startGame();
+                    return;
+                }
+                case "2" -> {
+                    exitGame();
+                    return;
+                }
+            }
+            display.incorrectInput();
+            Thread.sleep(2000);
         }
     }
 
@@ -73,13 +81,6 @@ public class MenuImpl implements Menu {
     public void startGame() throws InterruptedException{
         game = new GameImpl(display, language, scanner);
         game.play();
-        chooseAction();
-    }
-
-    @Override
-    public void incorrectInput() throws InterruptedException {
-        display.incorrectInput();
-        Thread.sleep(2000);
         chooseAction();
     }
 
