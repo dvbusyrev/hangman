@@ -36,7 +36,7 @@ public class ManImpl implements Man {
         if (letter != null
                 && letter.length() == 1
                 && letter.matches(languageLetterSet)
-                && !pickedLetters.contains(letter)) {
+                && !pickedLetters.contains(letter.toUpperCase())) {
             pickedLetters.add(letter.toUpperCase());
             return letter.toUpperCase();
         }
