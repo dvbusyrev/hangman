@@ -3,7 +3,7 @@
 out/
 
 META-INF/
-
+*.jar
 *.iml
 *.iws
 *.ipr
