@@ -11,5 +11,4 @@ public interface Man {
     void hangUp();
     void win();
     HashSet<String> getPickedLetters();
-    void addCorrectLetter(String letter);
 }

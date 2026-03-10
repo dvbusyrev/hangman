@@ -5,19 +5,50 @@ import java.io.FileNotFoundException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DisplayImpl implements Display {
-    private String[][] menuPictures = new String[7][17];
-    private String[][] systemPicture = new String[4][10];
-    private String[][] manPicture = new String[12][10];
+    private LinkedHashMap<Integer, ArrayList<String>> menuGui = new LinkedHashMap<>();
+    private LinkedHashMap<Integer, ArrayList<String>> systemGui = new LinkedHashMap<>();
+    private LinkedHashMap<Integer, ArrayList<String>> manGui = new LinkedHashMap<>();
+    private final static HashSet<String> GUI_TYPES = new HashSet<>(List.of("MENU", "SYSTEM", "MAN"));
+    private final static int GUI_LENGTH = 37;
+    private String language;
 
     @Override
-    public void picturesInit(String language) {
-        try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + language + "/GUI.txt"))) {
+    public void input() {
+        System.out.print(">");
+    }
+
+    private void clear() {
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            ProcessBuilder pb;
+            if (os.contains("win")) {
+                // Windows
+                pb = new ProcessBuilder("cmd", "/c", "cls");
+            } else {
+                // Unix/Linux/Mac
+                pb = new ProcessBuilder("clear");
+            }
+            Process process = pb.inheritIO().start();
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println();
+    }
+
+    @Override
+    public void init(String language) {
+        this.language = language;
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + this.language + "/GUI.txt"))) {
             String line;
-            int i = -1;
-            int j = 0;
-            int type = 0;
+            int number = 0;
+            String guiType = "";
+
             while ((line = reader.readLine()) != null) {
                 if (line.contains("//")) {
                     int index = line.indexOf("//");
@@ -26,17 +57,45 @@ public class DisplayImpl implements Display {
                 if (line.isEmpty()) {
                     continue;
                 }
-                if (line.length() > 2 && Character.isDigit(line.charAt(2))) {
-                    line = line.replace(" ","");
-                    type = Integer.valueOf(line.split(",")[0]);
-                    i = Integer.valueOf(line.split(",")[1]);
-                    j = 0;
-                    line = reader.readLine();
+                if (line.startsWith("#") && GUI_TYPES.contains(line.replace("#", ""))) {
+                    guiType = line.replace("#", "");
+                    continue;
                 }
-                switch (type) {
-                    case 0 -> menuPictures[i][j++] = line;
-                    case 1 -> systemPicture[i][j++] = line;
-                    case 2 -> manPicture[i][j++] = line;
+                if (line.strip().matches("\\d+")) {
+                    number = Integer.valueOf(line.strip());
+                    continue;
+                }
+                switch (guiType) {
+                    case "MENU" -> {
+                        ArrayList<String> picture;
+                        if (menuGui.containsKey(number)) {
+                            picture = menuGui.get(number);
+                        } else {
+                            picture = new ArrayList<>();
+                            menuGui.put(number, picture);
+                        }
+                        picture.add(line);
+                    }
+                    case "SYSTEM" -> {
+                        ArrayList<String> picture;
+                        if (systemGui.containsKey(number)) {
+                            picture = systemGui.get(number);
+                        } else {
+                            picture = new ArrayList<>();
+                            systemGui.put(number, picture);
+                        }
+                        picture.add(line);
+                    }
+                    case "MAN" -> {
+                        ArrayList<String> picture;
+                        if (manGui.containsKey(number)) {
+                            picture = manGui.get(number);
+                        } else {
+                            picture = new ArrayList<>();
+                            manGui.put(number, picture);
+                        }
+                        picture.add(line);
+                    }
                 }
             }
         } catch (FileNotFoundException e) {
@@ -47,37 +106,53 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public String[] choosePicture(String inStr) {
-        String[][] pictures;
-        String[] dataSet = inStr.split(",");
-        switch (dataSet[0]) {
-            case "0" -> {
-                pictures = menuPictures;
-                if (Character.isDigit(dataSet[1].charAt(0))) {
-                    return pictures[Integer.valueOf(dataSet[1])];
-                }
+    public void chooseAction() {
+        clear();
+        display(new DrawInstruction("MENU", 0));
+    }
+
+    @Override
+    public void incorrectInput() {
+        clear();
+        display(new DrawInstruction("MENU", 1));
+    }
+
+    @Override
+    public void exitGame() {
+        clear();
+        display(new DrawInstruction("MENU", 2));
+    }
+
+    @Override
+    public void chooseGameMode() {
+        clear();
+        display(new DrawInstruction("SYSTEM", 5));
+    }
+
+    @Override
+    public void chooseTopic() {
+        clear();
+        display(new DrawInstruction("SYSTEM", 6));
+    }
+
+    private ArrayList<String> chooseGui(DrawInstruction instr) {
+        switch (instr.type()) {
+            case "MENU" -> {
+                return menuGui.get(instr.number());
             }
-            case "1" -> {
-                pictures = systemPicture;
-                if (Character.isDigit(dataSet[1].charAt(0))) {
-                    return pictures[Integer.valueOf(dataSet[1])];
-                }
+            case "SYSTEM" -> {
+                return systemGui.get(instr.number());
             }
-            case "2" -> {
-                pictures = manPicture;
-                if (Character.isDigit(dataSet[1].charAt(0))) {
-                    return pictures[Integer.valueOf(dataSet[1])];
-                }
+            case "MAN" -> {
+                return manGui.get(instr.number());
             }
         }
         return null;
     }
 
-    @Override
-    public void draw(String inStr) {
-        String[] picture = choosePicture(inStr);
-        Display.clear();
-        for (String line : picture) {
+    private void display(DrawInstruction instr) {
+        ArrayList<String> gui = chooseGui(instr);
+        for (String line : gui) {
             if (line != null) {
                 System.out.println(line);
             }
@@ -85,8 +160,21 @@ public class DisplayImpl implements Display {
     }
 
     @Override
+    public void man(DrawInstruction instr, int mistakes, String guessedWord, HashSet<String> manPickedLetters) {
+        clear();
+        drawUpperGuiPart(mistakes);
+        display(instr);
+        drawWord(guessedWord);
+        drawKeyboard(manPickedLetters);
+    }
+
+    private void drawUpperGuiPart(int mistakes) {
+        display(new DrawInstruction("SYSTEM", 0));
+        mistakesLine(mistakes);
+    }
+
     public void drawKeyboard(HashSet<String> pickedLetters) {
-        String[] picture = choosePicture("1,0");
+        ArrayList<String> picture = chooseGui(new DrawInstruction("SYSTEM", 1));
         for (String line : picture) {
             if (line != null) {
                 for (String letter : pickedLetters) {
@@ -98,37 +186,36 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void drawGameWin() {
-        String[] picture = choosePicture("1,1");
-        for (String line : picture) {
-            if (line != null) {
-                System.out.println(line);
-            }
-        }
+    public void gameWin(DrawInstruction instr, int mistakes, String guessedWord) {
+        clear();
+        drawUpperGuiPart(mistakes);
+        display(instr);
+        drawWord(guessedWord);
+        display(new DrawInstruction("SYSTEM", 2));
     }
 
     @Override
-    public void drawGameOverTitle() {
-        String[] picture = choosePicture("1,2");
-        for (String line : picture) {
-            if (line != null) {
-                System.out.println(line);
-            }
-        }
+    public void gameOver(int mistakes, String correctWord) {
+        clear();
+        drawUpperGuiPart(mistakes);
+        gameOverMan();
+        drawWord(correctWord);
+        gameOverTitle();
     }
 
-    @Override
-    public void drawGameOverPicture() {
-        draw("1,3");
+    private void gameOverTitle() {
+        display(new DrawInstruction("SYSTEM", 3));
     }
 
-    @Override
-    public void drawWord(String word) {
+    private void gameOverMan() {
+        display(new DrawInstruction("SYSTEM", 4));
+    }
+
+    private void drawWord(String word) {
         word = addSpacesBetween(word);
-        int guiLength = 37;
         StringBuilder guiLine = new StringBuilder("║");
-        int guiPartA = guiLength / 2;
-        int guiPartB = guiLength - guiPartA;
+        int guiPartA = GUI_LENGTH / 2;
+        int guiPartB = GUI_LENGTH - guiPartA;
         int wordPartA = word.length() / 2;
         int wordPartB = word.length() - wordPartA;
 
@@ -143,9 +230,27 @@ public class DisplayImpl implements Display {
         System.out.println(guiLine);
     }
 
+    private void mistakesLine(int mistakes) {
+        StringBuilder guiLine = new StringBuilder("║");
+        String mistakeWord = "ERRORS";
+        if (language.equals("RUSSIAN")) {
+            mistakeWord = "ОШИБКИ";
+        }
+
+        String mistakePart = String.format(" %s: %d", mistakeWord, mistakes);
+        guiLine.append(mistakePart);
+
+        for (int i = 0; i < GUI_LENGTH - mistakePart.length(); i++) {
+            guiLine.append(" ");
+        }
+
+        guiLine.append("║");
+        System.out.println(guiLine);
+    }
+
     @Override
-    public void drawLanguagePick() {
-        Display.clear();
+    public void chooseLanguage() {
+        clear();
         System.out.println("CHOOSE LANGUAGE // ВЫБЕРЕТЕ ЯЗЫК");
         System.out.println();
         System.out.println("1. ENGLISH // АНГЛИЙСКИЙ");
@@ -156,7 +261,7 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void drawInterruption() {
+    public void interruption() {
         System.out.println();
         System.out.println("Ввод прерван (Ctrl+C). Завершение игры...");
     }

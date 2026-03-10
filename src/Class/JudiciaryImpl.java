@@ -49,14 +49,14 @@ public class JudiciaryImpl implements Judiciary {
         try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + language + "/GLOSSARY.txt"))) {
             String line;
             String topic;
-            ArrayList<String> wordSet = null;
+            ArrayList<String> wordList = null;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("#")) {
                     topic = line.replace("#", "");
-                    wordSet = new ArrayList<>();
-                    glossary.put(topic.toUpperCase(), wordSet);
+                    wordList = new ArrayList<>();
+                    glossary.put(topic.toUpperCase(), wordList);
                 } else if (!line.isEmpty()) {
-                    wordSet.add(line.toUpperCase());
+                    wordList.add(line.toUpperCase());
                 }
             }
         } catch (FileNotFoundException e) {
@@ -66,17 +66,6 @@ public class JudiciaryImpl implements Judiciary {
         }
     }
 
-    public void printGlossary() {
-        for (HashMap.Entry set: glossary.entrySet()) {
-            System.out.println(set);
-        }
-     }
-
-     public void printRules() {
-         for (HashMap.Entry set: rules.entrySet()) {
-             System.out.println(set);
-         }
-     }
     @Override
     public LinkedHashMap<String, String> getGameModes() {
         LinkedHashMap<String, String> gameModes = new LinkedHashMap<>();
@@ -117,7 +106,6 @@ public class JudiciaryImpl implements Judiciary {
     @Override
     public void applyVerdict(String gameMode, String letter, Man man, Hangman hangman) {
         if (checkLetter(letter)) {
-            man.addCorrectLetter(letter);
             if (checkGuessedWord(man.getPickedLetters())) {
                 man.win();
             }
@@ -131,10 +119,10 @@ public class JudiciaryImpl implements Judiciary {
     }
 
     @Override
-    public String getManDrawInstruction(String gameMode, int mistakes) {
+    public DrawInstruction getManDrawInstruction(String gameMode, int mistakes) {
         HashMap<Integer, Integer> rule = rules.get(gameMode);
         int instructionNumber = rule.get(mistakes);
-        return String.format("2,%d", instructionNumber);
+        return new DrawInstruction("MAN", instructionNumber);
     }
 
     @Override
@@ -150,8 +138,6 @@ public class JudiciaryImpl implements Judiciary {
         }
         return String.valueOf(guessedWord);
     }
-
-
 
     public String getWord() {
         return word;

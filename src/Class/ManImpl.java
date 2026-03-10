@@ -7,7 +7,6 @@ import java.util.Scanner;
 public class ManImpl implements Man {
     private int mistakes;
     private boolean isHangedUp;
-    private HashSet<String> correctPickedLetters;
     private HashSet<String> pickedLetters;
     private boolean isWon;
 
@@ -15,32 +14,31 @@ public class ManImpl implements Man {
         mistakes = 0;
         isHangedUp = false;
         isWon = false;
-        correctPickedLetters = new HashSet<>();
         pickedLetters = new HashSet<>();
     }
 
     @Override
-    public String pickLetter(Display console, Scanner scanner, String language) {
-        Display.promt();
-        String letter = "";
-        try {
-            letter = scanner.nextLine();
-        } catch (NoSuchElementException e) {
-            console.drawInterruption();
-            System.exit(0);  // корректное завершение
+    public String pickLetter(Display display, Scanner scanner, String language) {
+        while (true) {
+            display.input();
+            String letter = "";
+            try {
+                letter = scanner.nextLine();
+            } catch (NoSuchElementException e) {
+                display.interruption();
+                System.exit(0);
+            }
+            String languageLetterSet = "[a-zA-Z]";
+            if (language.equals("RUSSIAN")) {
+                languageLetterSet = "[а-яА-Я]";
+            }
+            if (letter.length() == 1
+                    && letter.matches(languageLetterSet)
+                    && !pickedLetters.contains(letter.toUpperCase())) {
+                pickedLetters.add(letter.toUpperCase());
+                return letter.toUpperCase();
+            }
         }
-        String languageLetterSet = "[a-zA-Z]";
-        if (language.equals("RUSSIAN")) {
-            languageLetterSet = "[а-яА-Я]";
-        }
-        if (letter != null
-                && letter.length() == 1
-                && letter.matches(languageLetterSet)
-                && !pickedLetters.contains(letter.toUpperCase())) {
-            pickedLetters.add(letter.toUpperCase());
-            return letter.toUpperCase();
-        }
-        return pickLetter(console, scanner, language);
     }
 
     @Override
@@ -76,11 +74,6 @@ public class ManImpl implements Man {
     @Override
     public int getMistakes() {
         return mistakes;
-    }
-
-    @Override
-    public void addCorrectLetter(String letter) {
-        correctPickedLetters.add(letter);
     }
 
 }

@@ -1,6 +1,6 @@
 import Class.*;
 import Interface.*;
-class Main {
+public class Main {
     public static void main(String[] args) {
         try {
             new MenuImpl();

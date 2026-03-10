@@ -1,23 +1,20 @@
 package Class;
 import Interface.*;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
+import java.util.*;
 
 public class GameImpl implements Game {
     private Man man;
     private Judiciary judiciary;
     private Hangman hangman;
-    private Display console;
+    private Display display;
     private String language;
     private String gameMode;
     private String topic;
     private Scanner scanner;
 
-    public GameImpl(Display console, String language, Scanner scanner) {
-        this.console = console;
+    public GameImpl(Display display, String language, Scanner scanner) {
+        this.display = display;
         this.language = language;
         this.scanner = scanner;
     }
@@ -27,79 +24,85 @@ public class GameImpl implements Game {
         judiciary = new JudiciaryImpl(language);
         hangman = new HangmanImpl();
 
-
         gameMode = chooseGameMode();
         topic = chooseTopic();
         judiciary.pickWord(topic);
 
+        int manMistakes;
+        DrawInstruction instr;
+        HashSet<String> manPickedLetters;
+        String guessedWord;
+
         do {
-            console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
-            console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
-            console.drawKeyboard(man.getPickedLetters());
-            judiciary.applyVerdict(gameMode, man.pickLetter(console, scanner, language), man, hangman);
+            manMistakes = man.getMistakes();
+            instr = judiciary.getManDrawInstruction(gameMode, manMistakes);
+            manPickedLetters = man.getPickedLetters();
+            guessedWord = judiciary.getGuessedWord(manPickedLetters);
+
+            display.man(instr, manMistakes, guessedWord, manPickedLetters);
+
+            String pickedLetter = man.pickLetter(display, scanner, language);
+            judiciary.applyVerdict(gameMode, pickedLetter, man, hangman);
+
         } while (!man.isHangedUp() && !man.isWon());
 
         if (man.isWon()) {
-            console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
-            console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
-            console.drawKeyboard(man.getPickedLetters());
-//            Thread.sleep(500);
-            console.draw(judiciary.getManDrawInstruction(gameMode, man.getMistakes()));
-            console.drawWord(judiciary.getGuessedWord(man.getPickedLetters()));
-            console.drawGameWin();
+            display.gameWin(instr, manMistakes, judiciary.getWord());
             Thread.sleep(2500);
         } else {
-            console.drawGameOverPicture();
-            console.drawWord(judiciary.getWord());
-            console.drawGameOverTitle();
+            display.gameOver(manMistakes, judiciary.getWord());
             Thread.sleep(2500);
         }
     }
 
     private String chooseGameMode() {
-        console.draw("0,3");
+        display.chooseGameMode();
         LinkedHashMap<String, String> gameModes = judiciary.getGameModes();
         for (HashMap.Entry gameMode : gameModes.entrySet()) {
             System.out.println(String.format("%s. %s", gameMode.getKey(), gameMode.getValue()));
         }
-        Display.promt();
-        String choosing = "";
-        try {
-            choosing = scanner.nextLine();
-        } catch (NoSuchElementException e) {
-            console.drawInterruption();
-            System.exit(0);
+        while (true) {
+            display.input();
+            String choosing;
+            try {
+                choosing = scanner.nextLine();
+            } catch (NoSuchElementException e) {
+                display.interruption();
+                System.exit(0);
+                return null;
+            }
+            if (gameModes.containsKey(choosing)) {
+                return gameModes.get(choosing);
+            } else {
+                display.incorrectInput();
+                chooseGameMode();
+            }
         }
-        if (choosing != null && gameModes.containsKey(choosing)) {
-            return gameModes.get(choosing);
-        } else {
-            console.draw("0,1");
-            chooseGameMode();
-        }
-        return chooseGameMode();
     }
 
     private String chooseTopic() {
-        console.draw("0,4");
+        display.chooseTopic();
         HashMap<String, String> topics = judiciary.getTopics();
         for (HashMap.Entry topic : topics.entrySet()) {
             System.out.println(String.format("%s. %s", topic.getKey(), topic.getValue()));
         }
-        Display.promt();
-        String choosing = "";
-        try {
-            choosing = scanner.nextLine();
-        } catch (NoSuchElementException e) {
-            console.drawInterruption();
-            System.exit(0);
-        }
-        if (choosing != null && topics.containsKey(choosing)) {
-            return topics.get(choosing);
-        } else {
-            console.draw("0,1");
-            chooseTopic();
-        }
-        return chooseTopic();
-    }
+        while (true) {
+            display.input();
+            String choosing;
+            try {
+                choosing = scanner.nextLine();
+            } catch (NoSuchElementException e) {
+                display.interruption();
+                System.exit(0);
+                return null;
+            }
 
+            if (topics.containsKey(choosing)) {
+                return topics.get(choosing);
+            } else {
+                display.incorrectInput();
+                chooseTopic();
+            }
+        }
+    }
 }

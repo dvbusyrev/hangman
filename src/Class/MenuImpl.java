@@ -9,18 +9,18 @@ import java.util.Scanner;
 public class MenuImpl implements Menu {
     private Game game;
     private String language;
-    private Display console;
+    private Display display;
     private Scanner scanner;
 
     private void languagePick() {
-        console.drawLanguagePick();
-        Display.promt();
+        display.chooseLanguage();
+        display.input();
         String language_number = "";
         try {
             language_number = scanner.nextLine();
         }
         catch (NoSuchElementException e) {
-            console.drawInterruption();
+            display.interruption();
             System.exit(0);
         }
         switch(language_number) {
@@ -44,50 +44,49 @@ public class MenuImpl implements Menu {
 
     public MenuImpl() throws InterruptedException {
         scannerInit();
-        console = new DisplayImpl();
+        display = new DisplayImpl();
         languagePick();
-        console.picturesInit(language);
+        display.init(language);
         chooseAction();
     }
 
     @Override
     public void chooseAction() throws InterruptedException {
-        console.draw("0,0");
-        Display.promt();
+        display.chooseAction();
+        display.input();
         String choosing = "";
         try {
             choosing = scanner.nextLine();
         }
         catch (NoSuchElementException e) {
-                console.drawInterruption();
+                display.interruption();
                 System.exit(0);
         }
         switch (choosing) {
             case "1" -> startGame();
-            case "2" -> endGame();
+            case "2" -> exitGame();
             default -> incorrectInput();
         }
     }
 
     @Override
     public void startGame() throws InterruptedException{
-        game = new GameImpl(console, language, scanner);
+        game = new GameImpl(display, language, scanner);
         game.play();
         chooseAction();
     }
 
     @Override
     public void incorrectInput() throws InterruptedException {
-        console.draw("0,1");
+        display.incorrectInput();
         Thread.sleep(2000);
         chooseAction();
     }
 
     @Override
-    public void endGame() throws InterruptedException {
-        console.draw("0,2");
+    public void exitGame() throws InterruptedException {
+        display.exitGame();
         Thread.sleep(2000);
         System.exit(0);
     }
-
 }
