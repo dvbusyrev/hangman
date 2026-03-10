@@ -7,10 +7,10 @@ import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class MenuImpl implements Menu {
-    Game game;
-    String language;
-    Display console;
-    Scanner scanner;
+    private Game game;
+    private String language;
+    private Display console;
+    private Scanner scanner;
 
     private void languagePick() {
         console.drawLanguagePick();

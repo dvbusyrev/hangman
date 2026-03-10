@@ -4,6 +4,7 @@ import Interface.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -12,7 +13,7 @@ import java.io.IOException;
 
 public class JudiciaryImpl implements Judiciary {
     private HashMap<String, ArrayList<String>> glossary;
-    private HashMap<String, HashMap<Integer, Integer>> rules;
+    private LinkedHashMap<String, HashMap<Integer, Integer>> rules;
     private String word;
 
     public JudiciaryImpl(String language) {
@@ -21,7 +22,7 @@ public class JudiciaryImpl implements Judiciary {
     }
 
     private void rulesInit(String language) {
-        rules = new HashMap<>();
+        rules = new LinkedHashMap<>();
         try (BufferedReader reader = new BufferedReader(new FileReader("src/resources/" + language + "/RULES.txt"))) {
             String line;
             String mode;
@@ -77,8 +78,8 @@ public class JudiciaryImpl implements Judiciary {
          }
      }
     @Override
-    public HashMap<String, String> getGameModes() {
-        HashMap<String, String> gameModes = new HashMap<>();
+    public LinkedHashMap<String, String> getGameModes() {
+        LinkedHashMap<String, String> gameModes = new LinkedHashMap<>();
         int i = 1;
         for (String gameMode : rules.keySet()) {
             gameModes.put(String.valueOf(i++), gameMode);
@@ -140,7 +141,6 @@ public class JudiciaryImpl implements Judiciary {
     public String getGuessedWord(HashSet<String> letters) {
         char[] guessedWord = new char[word.length()];
         Arrays.fill(guessedWord, '_');
-        int j = 0;
         for (String letter : letters) {
             for (int i = 0; i < word.length(); i++) {
                 if (word.charAt(i) == letter.charAt(0)) {

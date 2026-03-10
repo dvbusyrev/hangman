@@ -1,6 +1,7 @@
 package Interface;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 public interface Judiciary {
     void pickWord(String topic);
@@ -9,7 +10,7 @@ public interface Judiciary {
     boolean checkGuessedWord(HashSet<String> pickedLetters);
     String getManDrawInstruction(String gameMode, int mistakes);
     HashMap<String, String> getTopics();
-    HashMap<String, String> getGameModes();
+    LinkedHashMap<String, String> getGameModes();
     String getGuessedWord(HashSet<String> letters);
     String getWord();
 }

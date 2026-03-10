@@ -2,19 +2,19 @@ package Class;
 import Interface.*;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class GameImpl implements Game {
-    Man man;
-    Judiciary judiciary;
-    Hangman hangman;
-    Display console;
-    String language;
-
-    String gameMode;
-    String topic;
-    Scanner scanner;
+    private Man man;
+    private Judiciary judiciary;
+    private Hangman hangman;
+    private Display console;
+    private String language;
+    private String gameMode;
+    private String topic;
+    private Scanner scanner;
 
     public GameImpl(Display console, String language, Scanner scanner) {
         this.console = console;
@@ -58,7 +58,7 @@ public class GameImpl implements Game {
 
     private String chooseGameMode() {
         console.draw("0,3");
-        HashMap<String, String> gameModes = judiciary.getGameModes();
+        LinkedHashMap<String, String> gameModes = judiciary.getGameModes();
         for (HashMap.Entry gameMode : gameModes.entrySet()) {
             System.out.println(String.format("%s. %s", gameMode.getKey(), gameMode.getValue()));
         }
