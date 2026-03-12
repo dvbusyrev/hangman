@@ -1,4 +1,4 @@
-package Interface;
+package com.busyrev.hangman.menu;
 
 public interface Menu {
     void chooseAction() throws InterruptedException;

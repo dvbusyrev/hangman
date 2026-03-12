@@ -1,4 +1,6 @@
-package Interface;
+package com.busyrev.hangman.man;
+
+import com.busyrev.hangman.display.Display;
 
 import java.util.HashSet;
 import java.util.Scanner;

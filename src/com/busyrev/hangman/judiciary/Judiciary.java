@@ -1,9 +1,12 @@
-package Interface;
+package com.busyrev.hangman.judiciary;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
-import Class.DrawInstruction;
+import com.busyrev.hangman.display.DrawInstruction;
+import com.busyrev.hangman.executioner.Hangman;
+import com.busyrev.hangman.man.Man;
+
 public interface Judiciary {
     void pickWord(String topic);
     boolean checkLetter(String letter);

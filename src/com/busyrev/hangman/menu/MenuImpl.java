@@ -1,5 +1,8 @@
-package Class;
-import Interface.*;
+package com.busyrev.hangman.menu;
+import com.busyrev.hangman.display.Display;
+import com.busyrev.hangman.display.DisplayImpl;
+import com.busyrev.hangman.game.Game;
+import com.busyrev.hangman.game.GameImpl;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -14,13 +17,13 @@ public class MenuImpl implements Menu {
 
     private String chooseLanguage() {
         while (true) {
-            display.chooseLanguage();
-            display.input();
+            display.displayChooseLanguage();
+            display.displayInput();
             String language_number = "";
             try {
                 language_number = scanner.nextLine();
             } catch (NoSuchElementException e) {
-                display.interruption();
+                display.displayInterruption();
                 System.exit(0);
             }
             switch (language_number) {
@@ -53,13 +56,13 @@ public class MenuImpl implements Menu {
     @Override
     public void chooseAction() throws InterruptedException {
         while (true) {
-            display.chooseAction();
-            display.input();
+            display.displayChooseAction();
+            display.displayInput();
             String choosing = "";
             try {
                 choosing = scanner.nextLine();
             } catch (NoSuchElementException e) {
-                display.interruption();
+                display.displayInterruption();
                 System.exit(0);
             }
             switch (choosing) {
@@ -72,7 +75,7 @@ public class MenuImpl implements Menu {
                     return;
                 }
             }
-            display.incorrectInput();
+            display.displayIncorrectInput();
             Thread.sleep(2000);
         }
     }
@@ -86,7 +89,7 @@ public class MenuImpl implements Menu {
 
     @Override
     public void exitGame() throws InterruptedException {
-        display.exitGame();
+        display.displayExitGame();
         Thread.sleep(2000);
         System.exit(0);
     }

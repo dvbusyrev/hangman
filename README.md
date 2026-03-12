@@ -19,23 +19,20 @@
 Убедитесь, что у вас установлена Java.
 
 ```bash
-  java src/Main.java
+  java src/com/busyrev/hangman/Main.java
 ```
 ## Как устроен проект
 
 **Точка входа:**
-- `src/Main.java` — запуск приложения через `MenuImpl`
+- `src/com/busyrev/hangman/Main.java` — запуск приложения через `MenuImpl`
 
 **Основная логика:**
-- `src/Class/MenuImpl.java` — главное меню, выбор языка, запуск игры, завершение программы
-- `src/Class/GameImpl.java` — игровой цикл: выбор режима, выбор темы, отрисовка состояния, обработка хода игрока
-- `src/Class/ManImpl.java` — состояние игрока: выбранные буквы, ошибки, победа, поражение
-- `src/Class/JudiciaryImpl.java` — загрузка словаря и правил, выбор слова, проверка букв, определение победы/поражения
-- `src/Class/HangmanImpl.java` — применение наказания за ошибку и завершение игры
-- `src/Class/DisplayImpl.java` — отрисовка интерфейса в консоли
-
-**Интерфейсы:**
-- `src/Interface/*` — разделение ролей между отображением, игрой, меню, игроком, логикой и виселицей
+- `src/menu/MenuImpl.java` — главное меню, выбор языка, запуск игры, завершение программы
+- `src/game/GameImpl.java` — игровой цикл: выбор режима, выбор темы, отрисовка состояния, обработка хода игрока
+- `src/man/ManImpl.java` — состояние игрока: выбранные буквы, ошибки, победа, поражение
+- `src/judiciary/JudiciaryImpl.java` — загрузка словаря и правил, выбор слова, проверка букв, определение победы/поражения
+- `src/executioner/HangmanImpl.java` — применение наказания за ошибку и завершение игры
+- `src/display/DisplayImpl.java` — отрисовка интерфейса в консоли
 
 ## Как реализована логика игры
 
@@ -57,7 +54,7 @@
 - `src/resources/RUSSIAN/GUI.txt`
 
 Отрисовка выполняется в:
-- `src/Class/DisplayImpl.java`
+- `src/display/DisplayImpl.java`
 
 ## Где менять правила игры
 
@@ -66,7 +63,7 @@
 - `src/resources/RUSSIAN/RULES.txt`
 
 Логика обработки правил реализована в:
-- `src/Class/JudiciaryImpl.java`
+- `src/judiciary/JudiciaryImpl.java`
 
 ## Где менять слова и темы
 
@@ -75,4 +72,4 @@
 - `src/resources/RUSSIAN/GLOSSARY.txt`
 
 Выбор слов реализован в:
-- `src/Class/JudiciaryImpl.java`
+- `src/judiciary/JudiciaryImpl.java`

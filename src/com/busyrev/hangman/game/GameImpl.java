@@ -1,5 +1,8 @@
-package Class;
-import Interface.*;
+package com.busyrev.hangman.game;
+import com.busyrev.hangman.display.*;
+import com.busyrev.hangman.executioner.*;
+import com.busyrev.hangman.judiciary.*;
+import com.busyrev.hangman.man.*;
 
 import java.util.*;
 
@@ -39,7 +42,7 @@ public class GameImpl implements Game {
             manPickedLetters = man.getPickedLetters();
             guessedWord = judiciary.getGuessedWord(manPickedLetters);
 
-            display.man(instr, manMistakes, guessedWord, manPickedLetters);
+            display.displayMan(instr, manMistakes, guessedWord, manPickedLetters);
 
             String pickedLetter = man.pickLetter(display, scanner, language);
             judiciary.applyVerdict(gameMode, pickedLetter, man, hangman);
@@ -47,34 +50,34 @@ public class GameImpl implements Game {
         } while (!man.isHangedUp() && !man.isWon());
 
         if (man.isWon()) {
-            display.gameWin(instr, manMistakes, judiciary.getWord());
+            display.displayGameWin(instr, manMistakes, judiciary.getWord());
             Thread.sleep(2500);
         } else {
-            display.gameOver(manMistakes, judiciary.getWord());
+            display.displayGameOver(manMistakes, judiciary.getWord());
             Thread.sleep(2500);
         }
     }
 
     private String chooseGameMode() throws InterruptedException {
         while (true) {
-            display.chooseGameMode();
+            display.displayChooseGameMode();
             LinkedHashMap<String, String> gameModes = judiciary.getGameModes();
             for (HashMap.Entry gameMode : gameModes.entrySet()) {
                 System.out.println(String.format("%s. %s", gameMode.getKey(), gameMode.getValue()));
             }
-            display.input();
+            display.displayInput();
             String choosing;
             try {
                 choosing = scanner.nextLine();
             } catch (NoSuchElementException e) {
-                display.interruption();
+                display.displayInterruption();
                 System.exit(0);
                 return null;
             }
             if (gameModes.containsKey(choosing)) {
                 return gameModes.get(choosing);
             } else {
-                display.incorrectInput();
+                display.displayIncorrectInput();
                 Thread.sleep(2000);
             }
         }
@@ -82,17 +85,17 @@ public class GameImpl implements Game {
 
     private String chooseTopic() throws InterruptedException {
         while (true) {
-            display.chooseTopic();
+            display.displayChooseTopic();
             HashMap<String, String> topics = judiciary.getTopics();
             for (HashMap.Entry topic : topics.entrySet()) {
                 System.out.println(String.format("%s. %s", topic.getKey(), topic.getValue()));
             }
-            display.input();
+            display.displayInput();
             String choosing;
             try {
                 choosing = scanner.nextLine();
             } catch (NoSuchElementException e) {
-                display.interruption();
+                display.displayInterruption();
                 System.exit(0);
                 return null;
             }
@@ -100,7 +103,7 @@ public class GameImpl implements Game {
             if (topics.containsKey(choosing)) {
                 return topics.get(choosing);
             } else {
-                display.incorrectInput();
+                display.displayIncorrectInput();
                 Thread.sleep(2000);
             }
         }

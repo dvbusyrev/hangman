@@ -1,5 +1,7 @@
-package Class;
-import Interface.*;
+package com.busyrev.hangman.judiciary;
+import com.busyrev.hangman.display.DrawInstruction;
+import com.busyrev.hangman.executioner.Hangman;
+import com.busyrev.hangman.man.Man;
 
 import java.util.Arrays;
 import java.util.ArrayList;

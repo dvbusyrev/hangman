@@ -1,5 +1,4 @@
-package Class;
-import Interface.*;
+package com.busyrev.hangman.display;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.BufferedReader;
@@ -18,7 +17,7 @@ public class DisplayImpl implements Display {
     private String language;
 
     @Override
-    public void input() {
+    public void displayInput() {
         System.out.print(">");
     }
 
@@ -106,31 +105,31 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void chooseAction() {
+    public void displayChooseAction() {
         clear();
         display(new DrawInstruction("MENU", 0));
     }
 
     @Override
-    public void incorrectInput() {
+    public void displayIncorrectInput() {
         clear();
         display(new DrawInstruction("MENU", 1));
     }
 
     @Override
-    public void exitGame() {
+    public void displayExitGame() {
         clear();
         display(new DrawInstruction("MENU", 2));
     }
 
     @Override
-    public void chooseGameMode() {
+    public void displayChooseGameMode() {
         clear();
         display(new DrawInstruction("SYSTEM", 5));
     }
 
     @Override
-    public void chooseTopic() {
+    public void displayChooseTopic() {
         clear();
         display(new DrawInstruction("SYSTEM", 6));
     }
@@ -160,7 +159,7 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void man(DrawInstruction instr, int mistakes, String guessedWord, HashSet<String> manPickedLetters) {
+    public void displayMan(DrawInstruction instr, int mistakes, String guessedWord, HashSet<String> manPickedLetters) {
         clear();
         drawUpperGuiPart(mistakes);
         display(instr);
@@ -186,7 +185,7 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void gameWin(DrawInstruction instr, int mistakes, String guessedWord) {
+    public void displayGameWin(DrawInstruction instr, int mistakes, String guessedWord) {
         clear();
         drawUpperGuiPart(mistakes);
         display(instr);
@@ -195,7 +194,7 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void gameOver(int mistakes, String correctWord) {
+    public void displayGameOver(int mistakes, String correctWord) {
         clear();
         drawUpperGuiPart(mistakes);
         gameOverMan();
@@ -249,7 +248,7 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void chooseLanguage() {
+    public void displayChooseLanguage() {
         clear();
         System.out.println("CHOOSE LANGUAGE // ВЫБЕРЕТЕ ЯЗЫК");
         System.out.println();
@@ -261,7 +260,7 @@ public class DisplayImpl implements Display {
     }
 
     @Override
-    public void interruption() {
+    public void displayInterruption() {
         System.out.println();
         System.out.println("Ввод прерван (Ctrl+C). Завершение игры...");
     }

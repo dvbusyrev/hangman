@@ -1,5 +1,6 @@
-package Class;
-import Interface.*;
+package com.busyrev.hangman.man;
+import com.busyrev.hangman.display.Display;
+
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -20,12 +21,12 @@ public class ManImpl implements Man {
     @Override
     public String pickLetter(Display display, Scanner scanner, String language) {
         while (true) {
-            display.input();
+            display.displayInput();
             String letter = "";
             try {
                 letter = scanner.nextLine();
             } catch (NoSuchElementException e) {
-                display.interruption();
+                display.displayInterruption();
                 System.exit(0);
             }
             String languageLetterSet = "[a-zA-Z]";

@@ -1,5 +1,5 @@
-package Class;
-import Interface.*;
+package com.busyrev.hangman.executioner;
+import com.busyrev.hangman.man.Man;
 
 public class HangmanImpl implements Hangman {
     @Override
