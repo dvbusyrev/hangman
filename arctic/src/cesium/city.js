@@ -580,6 +580,10 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
       const state = movementDirection < 0 ? backwardState : forwardState;
       state.pendingTurn = direction === "left" || direction === "right" ? direction : null;
     },
+    hasPendingTurn(movementDirection = 1) {
+      const state = movementDirection < 0 ? backwardState : forwardState;
+      return Boolean(state.pendingTurn);
+    },
     extendForward() {
       return appendForwardEdge();
     },
@@ -834,6 +838,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
   let queuedSteps = 0;
   let distanceTravelled = 0;
   let lastMoveDirection = 1;
+  let activeFocusBuildingId = null;
   const canvas = viewer.scene.canvas;
   canvas.tabIndex = 0;
   try { canvas.focus({ preventScroll: true }); } catch { /* focus is best-effort */ }
@@ -880,20 +885,34 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
     walk.chooseTurn?.(direction, movementDirection);
     const snapDistance = Math.max(0, Number(settings.turnSnapDistancePoints ?? 10));
     const nudgePoints = Math.max(0, Number(settings.turnNudgePoints ?? 2.25));
+    const snapAlways = settings.turnSnapAlways !== false;
+    const searchEdges = Math.max(1, Number(settings.turnSearchEdges ?? 18));
 
-    if (movementDirection > 0 && cursor >= activeRoute.length - 1 - snapDistance) {
+    if (movementDirection > 0 && (snapAlways || cursor >= activeRoute.length - 1 - snapDistance)) {
       const previous = cursor;
       const endBefore = activeRoute.length - 1;
       cursor = endBefore;
-      const added = Number(walk.extendForward?.() ?? 0);
-      if (added) cursor = Math.min(activeRoute.length - 1, cursor + Math.min(nudgePoints, added));
+      let addedTotal = 0;
+      for (let guard = 0; guard < searchEdges; guard += 1) {
+        const added = Number(walk.extendForward?.() ?? 0);
+        if (!added) break;
+        addedTotal += added;
+        if (!walk.hasPendingTurn?.(movementDirection)) break;
+      }
+      if (addedTotal) cursor = Math.min(activeRoute.length - 1, cursor + Math.min(nudgePoints, addedTotal));
       distanceTravelled += Math.abs(cursor - previous) * Number(settings.roadStepMeters ?? 3.5);
-    } else if (movementDirection < 0 && cursor <= snapDistance) {
+    } else if (movementDirection < 0 && (snapAlways || cursor <= snapDistance)) {
       const previous = cursor;
       cursor = 0;
-      const prepended = Number(walk.extendBackward?.() ?? 0);
-      cursor += prepended;
-      if (prepended) cursor = Math.max(0, cursor - Math.min(nudgePoints, prepended));
+      let prependedTotal = 0;
+      for (let guard = 0; guard < searchEdges; guard += 1) {
+        const prepended = Number(walk.extendBackward?.() ?? 0);
+        if (!prepended) break;
+        cursor += prepended;
+        prependedTotal += prepended;
+        if (!walk.hasPendingTurn?.(movementDirection)) break;
+      }
+      if (prependedTotal) cursor = Math.max(0, cursor - Math.min(nudgePoints, prependedTotal));
       distanceTravelled += Math.abs(cursor - previous) * Number(settings.roadStepMeters ?? 3.5);
     }
 
@@ -915,21 +934,25 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
   };
 
   const onKeyDown = (event) => {
+    if (event.__arcticRouteHandled) return;
+    const key = routeArrowKey(event);
+    if (!key) return;
+
     const target = event.target;
     if (isEditableKeyTarget(target)) return;
 
+    event.__arcticRouteHandled = true;
+    event.preventDefault();
+    event.stopPropagation();
+
     const moveSteps = Math.max(0.1, Number(settings.keyboardMoveSteps ?? 0.85));
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
+    if (key === "ArrowUp") {
       moveBy(moveSteps);
-    } else if (event.key === "ArrowDown") {
-      event.preventDefault();
+    } else if (key === "ArrowDown") {
       moveBy(-moveSteps);
-    } else if (event.key === "ArrowLeft") {
-      event.preventDefault();
+    } else if (key === "ArrowLeft") {
       selectTurn("left");
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
+    } else if (key === "ArrowRight") {
       selectTurn("right");
     }
   };
@@ -940,6 +963,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
 
   canvas.addEventListener("wheel", onWheel, { passive: false });
   canvas.addEventListener("pointerdown", focusCanvas);
+  window.addEventListener("keydown", onKeyDown, true);
   document.addEventListener("keydown", onKeyDown, true);
 
   function applyCursor() {
@@ -948,13 +972,16 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
     walk.updateVisibleBuildings?.(camera);
     viewer.scene.requestRender();
 
-    const focusBuildingId = nearestFocusBuilding(
+    const focusBuildingId = stickyFocusBuilding(
       focusBuildings,
       [camera.lon, camera.lat],
       Number(camera.heading ?? 0),
+      activeFocusBuildingId,
       Number(settings.cardTriggerDistanceMeters ?? 115),
-      Number(settings.cardHideBehindDegrees ?? 98)
+      Number(settings.cardHideBehindDegrees ?? 98),
+      settings
     );
+    activeFocusBuildingId = focusBuildingId;
     onProgress?.({
       progress: (distanceTravelled % 1000) / 1000,
       routeIndex: cursor,
@@ -972,6 +999,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
     destroy() {
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("pointerdown", focusCanvas);
+      window.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keydown", onKeyDown, true);
       if (frame) cancelAnimationFrame(frame);
     }
@@ -998,6 +1026,13 @@ function isEditableKeyTarget(target) {
   ].includes(target.type);
 }
 
+function routeArrowKey(event) {
+  const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+  if (keys.includes(event.code)) return event.code;
+  if (keys.includes(event.key)) return event.key;
+  return null;
+}
+
 function applyCameraPoint(viewer, camera) {
   viewer.camera.setView({
     destination: Cesium.Cartesian3.fromDegrees(camera.lon, camera.lat, camera.height),
@@ -1009,21 +1044,46 @@ function applyCameraPoint(viewer, camera) {
   });
 }
 
-function nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees = 98) {
+function stickyFocusBuilding(buildings, point, cameraHeading, previousId, thresholdMeters, hideBehindDegrees = 98, settings = {}) {
+  const releaseDistance = Math.max(thresholdMeters, Number(settings.cardReleaseDistanceMeters ?? thresholdMeters * 1.65));
+  const releaseBehind = Math.max(hideBehindDegrees, Number(settings.cardReleaseBehindDegrees ?? 180));
+  const switchAdvantage = Math.max(0, Number(settings.cardSwitchAdvantageMeters ?? 45));
+  const previous = previousId ? buildings?.find((building) => building.id === previousId) : null;
+  const previousMetric = previous ? focusMetric(previous, point, cameraHeading) : null;
+
+  if (previousMetric && previousMetric.distance <= releaseDistance && previousMetric.relative <= releaseBehind) {
+    const challengerId = nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees, previousId);
+    if (!challengerId) return previousId;
+
+    const challenger = buildings.find((building) => building.id === challengerId);
+    const challengerMetric = challenger ? focusMetric(challenger, point, cameraHeading) : null;
+    if (challengerMetric && challengerMetric.distance + switchAdvantage < previousMetric.distance) return challengerId;
+    return previousId;
+  }
+
+  return nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees);
+}
+
+function nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees = 98, excludedId = null) {
   let best = null;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const building of buildings ?? []) {
-    const target = [building.lon, building.lat];
-    const distance = haversineMeters(point, target);
+    if (building.id === excludedId) continue;
+    const { distance, relative } = focusMetric(building, point, cameraHeading);
     if (distance > thresholdMeters || distance >= bestDistance) continue;
-    const targetBearing = bearingDegrees(point, target);
-    const relative = Math.abs(shortestAngleDelta(cameraHeading, targetBearing));
-    // Once a building is clearly behind the user, its card disappears immediately.
     if (relative > hideBehindDegrees) continue;
     bestDistance = distance;
     best = building.id;
   }
   return best;
+}
+
+function focusMetric(building, point, cameraHeading) {
+  const target = [building.lon, building.lat];
+  const distance = haversineMeters(point, target);
+  const targetBearing = bearingDegrees(point, target);
+  const relative = Math.abs(shortestAngleDelta(cameraHeading, targetBearing));
+  return { distance, relative };
 }
 
 function interpolateRouteIndex(route, cursor) {

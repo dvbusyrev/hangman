@@ -73,7 +73,7 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
   const regionGeoJson = await loadLocalGeoJson("/data/regions.geojson");
   assertRealRegionShapes(regionGeoJson);
   const regionSpheres = buildRegionBoundingSpheres(regionGeoJson, scenarioById);
-  const regionHitAreas = buildRegionHitAreas(regionGeoJson, scenarioById);
+  const regionHitAreas = buildRegionHitAreas(regionGeoJson, scenarioById, config);
 
   // Do not clamp regional polygons/lines to ground. At regional zoom terrain is irrelevant,
   // while non-ground geometry is dramatically faster and produces smoother thin outlines.
@@ -100,8 +100,10 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
   let selectedRegionId = null;
   let hoveredRegionId = null;
   let lastHoverPickAt = 0;
+  let hoverClearTimer = 0;
   const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   const hoverPickInterval = Math.max(16, Number(config.map?.regionStyle?.hoverPickIntervalMs ?? 70));
+  const hoverClearDelay = Math.max(0, Number(config.map?.regionStyle?.hoverClearDelayMs ?? 120));
   const regionIdAtPosition = (position) => {
     if (!position) return null;
     const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
@@ -118,14 +120,7 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
   // between default/pointer while detailed polygons are being picked.
   viewer.scene.canvas.style.cursor = "pointer";
 
-  // Hover changes only the fill material. Picking is throttled so detailed MultiPolygons do not
-  // make the pointer stutter while the mouse moves across their coastline.
-  handler.setInputAction((movement) => {
-    const now = performance.now();
-    if (now - lastHoverPickAt < hoverPickInterval) return;
-    lastHoverPickAt = now;
-
-    const nextRegionId = regionIdAtPosition(movement.endPosition);
+  const applyHoveredRegion = (nextRegionId) => {
     if (nextRegionId === hoveredRegionId) return;
 
     if (hoveredRegionId && hoveredRegionId !== selectedRegionId) {
@@ -137,6 +132,31 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
       (regionEntities.get(hoveredRegionId) ?? []).forEach((entity) => styleRegion(entity, "hover", config));
     }
     viewer.scene.requestRender();
+  };
+
+  // Hover changes only the fill material. Picking is throttled so detailed MultiPolygons do not
+  // make the pointer stutter while the mouse moves across their coastline.
+  handler.setInputAction((movement) => {
+    const now = performance.now();
+    if (now - lastHoverPickAt < hoverPickInterval) return;
+    lastHoverPickAt = now;
+
+    const nextRegionId = regionIdAtPosition(movement.endPosition);
+    if (!nextRegionId && hoverClearDelay > 0) {
+      if (!hoverClearTimer) {
+        hoverClearTimer = window.setTimeout(() => {
+          hoverClearTimer = 0;
+          applyHoveredRegion(null);
+        }, hoverClearDelay);
+      }
+      return;
+    }
+
+    if (hoverClearTimer) {
+      window.clearTimeout(hoverClearTimer);
+      hoverClearTimer = 0;
+    }
+    applyHoveredRegion(nextRegionId);
   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
   handler.setInputAction((movement) => {
@@ -183,6 +203,7 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
     },
     destroy() {
       viewer.scene.canvas.style.cursor = "default";
+      if (hoverClearTimer) window.clearTimeout(hoverClearTimer);
       if (!handler.isDestroyed()) handler.destroy();
     }
   };
@@ -254,12 +275,16 @@ function buildRegionBoundingSpheres(geoJson, scenarioById) {
   return result;
 }
 
-function buildRegionHitAreas(geoJson, scenarioById) {
+function buildRegionHitAreas(geoJson, scenarioById, config = {}) {
+  const style = config.map?.regionStyle ?? {};
+  const tolerance = Math.max(0, Number(style.hitSimplifyDegrees ?? style.outlineSimplifyDegrees ?? 0.012));
   return (geoJson.features ?? [])
     .map((feature) => {
       const regionId = feature?.properties?.regionId ?? feature?.id;
       if (!scenarioById.has(regionId)) return null;
-      const polygons = geometryPolygons(feature.geometry);
+      const polygons = geometryPolygons(feature.geometry)
+        .map((polygon) => polygon.map((ring) => simplifyRing(ring, tolerance)).filter((ring) => ring.length >= 4))
+        .filter((polygon) => polygon.length);
       const polygonEntries = polygons
         .map((polygon) => ({
           rings: polygon,
