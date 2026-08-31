@@ -42,11 +42,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   padding: 18px 22px 32px;
 }
 
-.prototype-start {
-  min-height: calc(100vh - 132px);
-  padding-top: 42px;
-}
-
 .prototype-shell {
   width: min(100%, 1180px);
   min-height: 720px;
@@ -65,12 +60,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 }
 
 .start-story { justify-content: center; align-items: center; }
-.start-landing {
-  display: grid;
-  width: min(100%, 430px);
-  min-height: 170px;
-  place-items: center;
-}
 .start-card {
   width: min(100%, 650px);
   padding: 34px;
@@ -285,31 +274,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   font-size: 12px;
 }
 
-.turn-controls {
-  position: absolute;
-  z-index: 17;
-  left: 16px;
-  right: 16px;
-  top: 330px;
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
-}
-.turn-controls button {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border: 2px solid var(--line);
-  border-radius: 50%;
-  background: rgba(255,255,255,.92);
-  color: var(--ink);
-  font-size: 24px;
-  line-height: 1;
-  pointer-events: auto;
-}
-.turn-controls button:hover { background: var(--ice); }
-
 .timeline {
   position: absolute;
   z-index: 8;
@@ -404,7 +368,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 
 @media (max-width: 760px) {
   .prototype { min-height: calc(100vh - 86px); padding: 10px 10px 16px; }
-  .prototype-start { min-height: calc(100vh - 88px); padding-top: 30px; }
   .landing-header { padding: 26px 12px 14px; }
   .landing-header h1 { font-size: 28px; }
   .prototype-shell { min-height: 680px; border-radius: 18px; }
@@ -415,7 +378,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .cesium-city { height: 385px; }
   .city-headline { align-items: flex-start; flex-direction: column; gap: 2px; }
   .city-headline span { text-align: left; }
-  .turn-controls { top: 306px; }
   .timeline { padding: 0 18px; }
   .mode-switch { gap: 22px; }
   .info-card { width: 90%; }
@@ -453,7 +415,32 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 }
 
 .journey-step-row {
-  display: block;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+.journey-page-arrow {
+  width: 38px;
+  height: 38px;
+  justify-self: center;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1;
+}
+.journey-page-arrow:hover:not(:disabled) { background: var(--ice); }
+.journey-page-arrow:disabled { opacity: .22; cursor: default; }
+
+.journey-page-arrow:first-child {
+  justify-self: start;
+}
+
+.journey-page-arrow:last-child {
+  justify-self: end;
 }
 
 .journey-steps {
@@ -532,6 +519,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .prototype-shell { min-height: 760px; }
   .story-screen { min-height: 756px; }
   .journey-controls { margin-top: 0; gap: 10px; }
+  .journey-step-row { grid-template-columns: 34px minmax(0, 1fr) 34px; gap: 4px; }
+  .journey-page-arrow { width: 32px; height: 32px; font-size: 17px; }
   .journey-step strong { font-size: 11px; }
   .journey-select-row { grid-template-columns: 1fr; gap: 8px; }
   .region-frame, .cesium-region { min-height: 475px; }

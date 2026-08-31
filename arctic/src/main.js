@@ -256,8 +256,7 @@ async function renderCurrentStory() {
       cityScene?.highlight?.(null);
       updateOfferCard(refs, null);
       routeController?.refresh?.();
-    },
-    onTurn: (direction) => routeController?.turn?.(direction)
+    }
   });
 
   if (!refs.cesiumContainer) return;

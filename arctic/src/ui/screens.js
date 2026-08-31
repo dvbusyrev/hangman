@@ -9,13 +9,13 @@ const journeyPages = [
 ];
 
 export function renderStartScreen(root, { professions, onStart }) {
-  root.innerHTML = `
-    <main class="prototype prototype-start">
-      <form class="start-landing" id="start-form">
+  root.innerHTML = shell(`
+    <section class="story-screen start-story">
+      <form class="start-card start-card-compact" id="start-form">
         <button class="start-button" type="submit">Начать</button>
       </form>
-    </main>
-  `;
+    </section>
+  `);
 
   root.querySelector("#start-form").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -86,8 +86,7 @@ export function renderCityStory(root, {
   onCityChange,
   onProfileChange,
   onTimeline,
-  onMode,
-  onTurn
+  onMode
 }) {
   const page = state.chapter === "nature" ? "nature" : state.chapter === "benefits" ? "benefits" : "life";
 
@@ -111,10 +110,6 @@ export function renderCityStory(root, {
 
   root.querySelectorAll("[name='mode']").forEach((input) => {
     input.addEventListener("change", () => onMode(input.value));
-  });
-
-  root.querySelectorAll("[data-turn]").forEach((button) => {
-    button.addEventListener("click", () => onTurn?.(button.dataset.turn));
   });
 
   return {
@@ -162,9 +157,13 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
     nature: Boolean(state.selectedCity),
     benefits: Boolean(state.selectedCity)
   };
+  const currentIndex = Math.max(0, journeyPages.findIndex((item) => item.id === page));
+  const previousPage = [...journeyPages].slice(0, currentIndex).reverse().find((item) => enabledPages[item.id]);
+  const nextPage = journeyPages.slice(currentIndex + 1).find((item) => enabledPages[item.id]);
 
   return `
     <div class="journey-step-row" aria-label="Этапы выбора">
+      <button type="button" class="journey-page-arrow" data-page-arrow="${previousPage?.id ?? ""}" ${previousPage ? "" : "disabled"} aria-label="Предыдущий экран">←</button>
       <div class="journey-steps" role="radiogroup" aria-label="Страница">
         ${journeyPages.map((item) => `
           <label class="journey-step ${page === item.id ? "is-active" : ""}">
@@ -181,6 +180,7 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
           </label>
         `).join("")}
       </div>
+      <button type="button" class="journey-page-arrow" data-page-arrow="${nextPage?.id ?? ""}" ${nextPage ? "" : "disabled"} aria-label="Следующий экран">→</button>
     </div>
 
     <div class="journey-select-row">
@@ -217,6 +217,12 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
 
 function bindJourneyControls(container, { onPage, onRegionChange, onCityChange, onProfileChange }) {
   if (!container) return;
+  container.querySelectorAll("[data-page-arrow]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const page = button.dataset.pageArrow;
+      if (page) onPage?.(page);
+    });
+  });
   container.querySelectorAll("[data-page-radio]").forEach((input) => {
     input.addEventListener("change", () => {
       if (input.checked) onPage?.(input.value);
@@ -274,10 +280,6 @@ function renderChapter(state, city, nature, benefits, stats, offer) {
         <div id="object-card" class="object-card" ${offer ? "" : "hidden"}>
           ${offer ? renderOfferBody(offer) : ""}
         </div>
-      </div>
-      <div class="turn-controls" aria-label="Повороты на дороге">
-        <button type="button" data-turn="left" aria-label="Повернуть налево">←</button>
-        <button type="button" data-turn="right" aria-label="Повернуть направо">→</button>
       </div>
       ${renderTimeline(state.selectedYears)}
       ${renderMode(state.selectedMode)}

@@ -53,7 +53,7 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
   // raster is generated from the cached roads/buildings and placed on the ground.
   await cityStage(city, "подложка карты", () => installCityBasemap(viewer, raw, config.basemap ?? {}));
 
-  const randomWalk = cityStageSync(city, "маршрут по улицам", () => makeRandomRoadWalk(graph, runtimeCity));
+  const randomWalk = cityStageSync(city, "маршрут по улицам", () => makeRandomRoadWalk(graph, runtimeCity, raw.buildings));
   const preparedBuildings = cityStageSync(city, "подготовка 3D-домов", () => prepareBuildingsForScene(raw.buildings, randomWalk.route, runtimeCity, config.buildings ?? {}));
   let assignment = assignOffersToRandomBuildings(offers, preparedBuildings.features, randomWalk.route);
   verifyRealOsmBuildings(preparedBuildings, city);
@@ -479,21 +479,29 @@ function largestRoadComponent(nodes, edges, adjacency) {
  * real OSM road. From there we pre-generate a random walk in both directions, choosing a new road
  * at intersections. Scrolling then feels stable and can always be reversed.
  */
-function makeRandomRoadWalk(graph, city) {
+function makeRandomRoadWalk(graph, city, buildings = null) {
   const eligible = graph.edges.filter((edge) => edge.length >= 7);
   if (!eligible.length) throw new Error("No sufficiently long road edges for random spawn");
 
   const spawnFocus = resolveSpawnFocusPoint(city);
   const spawnFocusRadius = Math.max(250, Number(city.__navigation?.spawnFocusRadiusMeters ?? 1600));
+  const buildingCenters = sampleBuildingCentersNearFocus(
+    buildings,
+    spawnFocus,
+    spawnFocusRadius * 1.2,
+    Number(city.__navigation?.spawnBuildingSampleLimit ?? 900)
+  );
+  const buildingRadius = Math.max(60, Number(city.__navigation?.spawnBuildingRadiusMeters ?? 170));
   const spawnPool = spawnFocus
     ? eligible.filter((edge) => pointToSegmentMeters(spawnFocus, edge.a, edge.b) <= spawnFocusRadius)
     : eligible;
   const spawnEdge = weightedRandom(spawnPool.length ? spawnPool : eligible, (edge) => {
     const base = edge.length * roadSpawnWeight(edge.highway);
-    if (!spawnFocus) return base;
-    const distance = pointToSegmentMeters(spawnFocus, edge.a, edge.b);
-    const focusWeight = 1 + 5 * Math.max(0, 1 - distance / spawnFocusRadius);
-    return base * focusWeight;
+    const focusWeight = spawnFocus
+      ? 1 + 5 * Math.max(0, 1 - pointToSegmentMeters(spawnFocus, edge.a, edge.b) / spawnFocusRadius)
+      : 1;
+    const buildingWeight = 1 + nearbyBuildingRoadScore(edge, buildingCenters, buildingRadius);
+    return base * focusWeight * buildingWeight;
   });
   const spawnT = 0.18 + Math.random() * 0.64;
   const spawn = lerpCoordinate(spawnEdge.a, spawnEdge.b, spawnT);
@@ -764,6 +772,7 @@ function prepareBuildingsForScene(buildings, route, city, buildingConfig = {}) {
 
 /** Randomly attach current CSV offers to real OSM buildings close to the generated walk. */
 function assignOffersToRandomBuildings(offers, features, route) {
+  const nearRouteMeters = 170;
   const buildingRows = features.map((feature) => ({
     id: feature.properties.buildingId,
     center: [Number(feature.properties.centerLon), Number(feature.properties.centerLat)],
@@ -774,14 +783,18 @@ function assignOffersToRandomBuildings(offers, features, route) {
   }));
 
   const byId = new Map(buildingRows.map((item) => [item.id, item]));
-  // Keep the random-looking placement stable while the user switches Profession / Real estate.
-  // We use OSM ids as a deterministic seed instead of reshuffling the whole city every time.
   const nearRoute = buildingRows
-    .filter((item) => item.routeDistance <= 80)
-    .sort((a, b) => stableUnit(a.id, "near-route") - stableUnit(b.id, "near-route"));
+    .filter((item) => item.routeDistance <= nearRouteMeters)
+    .sort((a, b) => {
+      if (a.routeDistance !== b.routeDistance) return a.routeDistance - b.routeDistance;
+      return stableUnit(a.id, "near-route") - stableUnit(b.id, "near-route");
+    });
   const elsewhere = buildingRows
-    .filter((item) => item.routeDistance > 80)
-    .sort((a, b) => stableUnit(a.id, "elsewhere") - stableUnit(b.id, "elsewhere"));
+    .filter((item) => item.routeDistance > nearRouteMeters)
+    .sort((a, b) => {
+      if (a.routeDistance !== b.routeDistance) return a.routeDistance - b.routeDistance;
+      return stableUnit(a.id, "elsewhere") - stableUnit(b.id, "elsewhere");
+    });
   const available = [...nearRoute, ...elsewhere];
   const used = new Set();
   const offerByBuilding = new Map();
@@ -795,6 +808,7 @@ function assignOffersToRandomBuildings(offers, features, route) {
     if (!target) {
       const pool = available.filter((candidate) => !used.has(candidate.id));
       pool.sort((a, b) =>
+        a.routeDistance - b.routeDistance ||
         stableUnit(`${offer.id}:${a.id}`, "offer-building") -
         stableUnit(`${offer.id}:${b.id}`, "offer-building")
       );
@@ -821,6 +835,8 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
   let distanceTravelled = 0;
   let lastMoveDirection = 1;
   const canvas = viewer.scene.canvas;
+  canvas.tabIndex = 0;
+  try { canvas.focus({ preventScroll: true }); } catch { /* focus is best-effort */ }
 
   const settings = { ...(walk.settings ?? {}), ...(config.navigation ?? {}) };
 
@@ -908,8 +924,13 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
     }
   };
 
+  const focusCanvas = () => {
+    try { canvas.focus({ preventScroll: true }); } catch { /* focus is best-effort */ }
+  };
+
   canvas.addEventListener("wheel", onWheel, { passive: false });
-  window.addEventListener("keydown", onKeyDown);
+  canvas.addEventListener("pointerdown", focusCanvas);
+  document.addEventListener("keydown", onKeyDown, true);
 
   function applyCursor() {
     const camera = interpolateRouteIndex(activeRoute, cursor);
@@ -940,7 +961,8 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
     turn: selectTurn,
     destroy() {
       canvas.removeEventListener("wheel", onWheel);
-      window.removeEventListener("keydown", onKeyDown);
+      canvas.removeEventListener("pointerdown", focusCanvas);
+      document.removeEventListener("keydown", onKeyDown, true);
       if (frame) cancelAnimationFrame(frame);
     }
   };
@@ -1016,6 +1038,40 @@ function resolveSpawnFocusPoint(city) {
   const lon = Number(city.__navigation?.spawnLon ?? city.camera?.lon ?? city.center?.lon);
   const lat = Number(city.__navigation?.spawnLat ?? city.camera?.lat ?? city.center?.lat);
   return Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : null;
+}
+
+function sampleBuildingCentersNearFocus(buildings, focus, radiusMeters, limit) {
+  const max = Math.max(80, Number.isFinite(limit) ? limit : 900);
+  const rows = [];
+  for (const feature of buildings?.features ?? []) {
+    if (feature.geometry?.type !== "Polygon") continue;
+    const ring = feature.geometry.coordinates?.[0];
+    if (!Array.isArray(ring) || ring.length < 4) continue;
+    const center = polygonCentroid(ring);
+    if (!Number.isFinite(center[0]) || !Number.isFinite(center[1])) continue;
+    const focusDistance = focus ? haversineMeters(focus, center) : 0;
+    if (focus && focusDistance > radiusMeters) continue;
+    rows.push({ center, focusDistance, id: feature.properties?.buildingId ?? feature.id ?? rows.length });
+  }
+
+  rows.sort((a, b) => {
+    if (a.focusDistance !== b.focusDistance) return a.focusDistance - b.focusDistance;
+    return stableUnit(a.id, "spawn-building") - stableUnit(b.id, "spawn-building");
+  });
+  return rows.slice(0, max).map((item) => item.center);
+}
+
+function nearbyBuildingRoadScore(edge, buildingCenters, radiusMeters) {
+  if (!buildingCenters?.length) return 0;
+  let score = 0;
+  for (const center of buildingCenters) {
+    const distance = pointToSegmentMeters(center, edge.a, edge.b);
+    if (distance <= radiusMeters) {
+      score += 1 + (radiusMeters - distance) / radiusMeters;
+      if (score >= 10) return 10;
+    }
+  }
+  return score;
 }
 
 function weightedRandom(items, weightFn) {
@@ -1269,7 +1325,7 @@ function facadeGridMaterial(buildingClass, config = {}) {
   const lineThickness = grid.lineThickness ?? {};
   return new Cesium.GridMaterialProperty({
     color: Cesium.Color.fromCssColorString(fill).withAlpha(1),
-    cellAlpha: Number(grid.cellAlpha ?? 0.22),
+    cellAlpha: Number(grid.cellAlpha ?? 1),
     lineCount: new Cesium.Cartesian2(Number(lineCount.x ?? 3), Number(lineCount.y ?? 9)),
     lineThickness: new Cesium.Cartesian2(Number(lineThickness.x ?? 1), Number(lineThickness.y ?? 1))
   });
