@@ -1,0 +1,114 @@
+{
+  "regions": [
+    {
+      "id": "murmansk",
+      "name": "Мурманская область",
+      "center": {
+        "lon": 34.2,
+        "lat": 68.4,
+        "height": 140000
+      },
+      "camera": {
+        "lon": 34.2,
+        "lat": 68.35,
+        "height": 1050000,
+        "heading": 0,
+        "pitch": -66
+      },
+      "cities": [
+        {
+          "id": "murmansk-city",
+          "name": "Мурманск",
+          "ready": true,
+          "buildingsUrl": "/data/murmansk-buildings.geojson",
+          "camera": {
+            "lon": 33.081,
+            "lat": 68.9706,
+            "height": 1450,
+            "heading": 36,
+            "pitch": -38
+          }
+        }
+      ]
+    },
+    {
+      "id": "nenets",
+      "name": "Ненецкий автономный округ",
+      "center": {
+        "lon": 54,
+        "lat": 68.35,
+        "height": 180000
+      },
+      "camera": {
+        "lon": 54,
+        "lat": 68.2,
+        "height": 1350000,
+        "heading": 0,
+        "pitch": -66
+      },
+      "cities": [
+        {
+          "id": "naryan-mar",
+          "name": "Нарьян-Мар",
+          "ready": false,
+          "note": "сценарий готовится"
+        }
+      ]
+    },
+    {
+      "id": "chukotka",
+      "name": "Чукотский автономный округ",
+      "center": {
+        "lon": 171.8,
+        "lat": 65.8,
+        "height": 180000
+      },
+      "camera": {
+        "lon": 171.8,
+        "lat": 65.8,
+        "height": 1450000,
+        "heading": 0,
+        "pitch": -66
+      },
+      "cities": [
+        {
+          "id": "anadyr",
+          "name": "Анадырь",
+          "ready": true,
+          "buildingsUrl": "/data/anadyr-buildings.geojson",
+          "camera": {
+            "lon": 177.5105,
+            "lat": 64.7332,
+            "height": 1350,
+            "heading": 24,
+            "pitch": -40
+          }
+        }
+      ]
+    },
+    {
+      "id": "yakutia",
+      "name": "Республика Саха (Якутия)",
+      "center": {
+        "lon": 136,
+        "lat": 71.5,
+        "height": 260000
+      },
+      "camera": {
+        "lon": 136,
+        "lat": 71.1,
+        "height": 2150000,
+        "heading": 0,
+        "pitch": -66
+      },
+      "cities": [
+        {
+          "id": "tiksi",
+          "name": "Тикси",
+          "ready": false,
+          "note": "сценарий готовится"
+        }
+      ]
+    }
+  ]
+}

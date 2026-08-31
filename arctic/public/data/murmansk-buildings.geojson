@@ -1,0 +1,110 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "building-001",
+      "properties": {
+        "buildingId": "building-001",
+        "name": "Офисный корпус",
+        "height": 46
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [33.0772, 68.9709],
+            [33.0784, 68.9709],
+            [33.0784, 68.97145],
+            [33.0772, 68.97145],
+            [33.0772, 68.9709]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "building-002",
+      "properties": {
+        "buildingId": "building-002",
+        "name": "Жилой дом",
+        "height": 62
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [33.0800, 68.9710],
+            [33.0814, 68.9710],
+            [33.0814, 68.97158],
+            [33.0800, 68.97158],
+            [33.0800, 68.9710]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "building-003",
+      "properties": {
+        "buildingId": "building-003",
+        "name": "Рабочий центр",
+        "height": 78
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [33.0832, 68.97055],
+            [33.0847, 68.97055],
+            [33.0847, 68.97112],
+            [33.0832, 68.97112],
+            [33.0832, 68.97055]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "building-004",
+      "properties": {
+        "buildingId": "building-004",
+        "name": "Сервисный блок",
+        "height": 34
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [33.0790, 68.96995],
+            [33.0801, 68.96995],
+            [33.0801, 68.97042],
+            [33.0790, 68.97042],
+            [33.0790, 68.96995]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "building-005",
+      "properties": {
+        "buildingId": "building-005",
+        "name": "Жилой квартал",
+        "height": 55
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [33.0820, 68.96975],
+            [33.0835, 68.96975],
+            [33.0835, 68.97025],
+            [33.0820, 68.97025],
+            [33.0820, 68.96975]
+          ]
+        ]
+      }
+    }
+  ]
+}

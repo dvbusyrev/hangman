@@ -1,0 +1,85 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "murmansk",
+      "properties": {
+        "regionId": "murmansk",
+        "name": "Мурманская область"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [28.0, 66.0],
+            [41.5, 66.0],
+            [41.5, 70.5],
+            [28.0, 70.5],
+            [28.0, 66.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "nenets",
+      "properties": {
+        "regionId": "nenets",
+        "name": "Ненецкий автономный округ"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [44.0, 66.0],
+            [66.0, 66.0],
+            [66.0, 70.8],
+            [44.0, 70.8],
+            [44.0, 66.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "chukotka",
+      "properties": {
+        "regionId": "chukotka",
+        "name": "Чукотский автономный округ"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [163.0, 62.2],
+            [179.0, 62.2],
+            [179.0, 70.2],
+            [163.0, 70.2],
+            [163.0, 62.2]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "yakutia",
+      "properties": {
+        "regionId": "yakutia",
+        "name": "Республика Саха (Якутия)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [112.0, 68.0],
+            [160.0, 68.0],
+            [160.0, 75.5],
+            [112.0, 75.5],
+            [112.0, 68.0]
+          ]
+        ]
+      }
+    }
+  ]
+}

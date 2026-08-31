@@ -1,0 +1,68 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "building-101",
+      "properties": {
+        "buildingId": "building-101",
+        "name": "Административный корпус",
+        "height": 38
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [177.5086, 64.7330],
+            [177.5100, 64.7330],
+            [177.5100, 64.73355],
+            [177.5086, 64.73355],
+            [177.5086, 64.7330]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "building-102",
+      "properties": {
+        "buildingId": "building-102",
+        "name": "Жилой дом",
+        "height": 44
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [177.5112, 64.7331],
+            [177.5128, 64.7331],
+            [177.5128, 64.73362],
+            [177.5112, 64.73362],
+            [177.5112, 64.7331]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "building-103",
+      "properties": {
+        "buildingId": "building-103",
+        "name": "Рабочий центр",
+        "height": 52
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [177.5098, 64.7323],
+            [177.5114, 64.7323],
+            [177.5114, 64.73282],
+            [177.5098, 64.73282],
+            [177.5098, 64.7323]
+          ]
+        ]
+      }
+    }
+  ]
+}
