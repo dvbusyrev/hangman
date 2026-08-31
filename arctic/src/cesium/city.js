@@ -652,10 +652,9 @@ function extendWalkStateOneEdge(graph, state, city) {
       chosen = chooseClosestTurn(left, -90);
       consumePendingTurn = true;
     } else {
-      // If this is not a usable left turn, continue straight and keep the command queued
-      // for the next junction. At a T-junction without straight continuation we wait.
-      const straight = variants.filter((item) => Math.abs(item.turn) <= straightThreshold);
-      if (straight.length) chosen = chooseClosestTurn(straight, 0);
+      const softLeft = variants.filter((item) => item.turn < 0);
+      chosen = chooseClosestTurn(softLeft.length ? softLeft : variants, -90);
+      consumePendingTurn = true;
     }
   } else if (preference === "right") {
     const right = variants.filter((item) => item.turn > sideThreshold);
@@ -663,8 +662,9 @@ function extendWalkStateOneEdge(graph, state, city) {
       chosen = chooseClosestTurn(right, 90);
       consumePendingTurn = true;
     } else {
-      const straight = variants.filter((item) => Math.abs(item.turn) <= straightThreshold);
-      if (straight.length) chosen = chooseClosestTurn(straight, 0);
+      const softRight = variants.filter((item) => item.turn > 0);
+      chosen = chooseClosestTurn(softRight.length ? softRight : variants, 90);
+      consumePendingTurn = true;
     }
   } else {
     // No arrow was pressed: never choose a left/right branch automatically.
@@ -876,16 +876,27 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
   };
 
   const selectTurn = (direction) => {
-    walk.chooseTurn?.(direction, lastMoveDirection);
+    const movementDirection = lastMoveDirection >= 0 ? 1 : -1;
+    walk.chooseTurn?.(direction, movementDirection);
+    const snapDistance = Math.max(0, Number(settings.turnSnapDistancePoints ?? 10));
+    const nudgePoints = Math.max(0, Number(settings.turnNudgePoints ?? 2.25));
 
-    // If we are already standing exactly at a junction, materialise the selected OSM branch
-    // immediately. The camera remains at the junction; the next Up/scroll moves into it.
-    if (lastMoveDirection >= 0 && cursor >= activeRoute.length - 1.001) {
-      walk.extendForward?.();
-    } else if (lastMoveDirection < 0 && cursor <= 0.001) {
+    if (movementDirection > 0 && cursor >= activeRoute.length - 1 - snapDistance) {
+      const previous = cursor;
+      const endBefore = activeRoute.length - 1;
+      cursor = endBefore;
+      const added = Number(walk.extendForward?.() ?? 0);
+      if (added) cursor = Math.min(activeRoute.length - 1, cursor + Math.min(nudgePoints, added));
+      distanceTravelled += Math.abs(cursor - previous) * Number(settings.roadStepMeters ?? 3.5);
+    } else if (movementDirection < 0 && cursor <= snapDistance) {
+      const previous = cursor;
+      cursor = 0;
       const prepended = Number(walk.extendBackward?.() ?? 0);
       cursor += prepended;
+      if (prepended) cursor = Math.max(0, cursor - Math.min(nudgePoints, prepended));
+      distanceTravelled += Math.abs(cursor - previous) * Number(settings.roadStepMeters ?? 3.5);
     }
+
     applyCursor();
   };
 
@@ -905,8 +916,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
 
   const onKeyDown = (event) => {
     const target = event.target;
-    const editable = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
-    if (editable) return;
+    if (isEditableKeyTarget(target)) return;
 
     const moveSteps = Math.max(0.1, Number(settings.keyboardMoveSteps ?? 0.85));
     if (event.key === "ArrowUp") {
@@ -966,6 +976,26 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
       if (frame) cancelAnimationFrame(frame);
     }
   };
+}
+
+function isEditableKeyTarget(target) {
+  if (target?.isContentEditable) return true;
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
+  if (!(target instanceof HTMLInputElement)) return false;
+  return [
+    "date",
+    "datetime-local",
+    "email",
+    "month",
+    "number",
+    "password",
+    "search",
+    "tel",
+    "text",
+    "time",
+    "url",
+    "week"
+  ].includes(target.type);
 }
 
 function applyCameraPoint(viewer, camera) {

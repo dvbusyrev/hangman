@@ -69,6 +69,8 @@
     "keyboardMoveSteps": 0.75,
     "turnDirectionThresholdDegrees": 10,
     "straightContinuationDegrees": 35,
+    "turnSnapDistancePoints": 14,
+    "turnNudgePoints": 3,
     "spawnFocusRadiusMeters": 1700,
     "spawnBuildingRadiusMeters": 170,
     "spawnBuildingSampleLimit": 900
