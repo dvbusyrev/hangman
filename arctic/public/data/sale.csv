@@ -1,0 +1,15 @@
+id;city_id;building_id;address;area;price;rooms;source
+m-sale-1;murmansk-city;building-004;ул. Полярные Зори, 22;54;5900000;2;
+m-sale-2;murmansk-city;building-006;ул. Капитана Буркова, 18;73;8800000;3;
+m-sale-mid;murmansk-city;building-008;просп. Кирова, 31;61;7400000;2;
+m-sale-3;murmansk-city;building-023;ул. Карла Маркса, 17;37;4700000;1;
+m-sale-4;murmansk-city;building-024;ул. Шмидта, 34;46;6200000;2;
+m-sale-5;murmansk-city;building-025;просп. Ленина, 82;82;11800000;3;
+m-sale-6;murmansk-city;building-026;ул. Радищева, 11;96;15400000;4;
+a-sale-1;anadyr;building-104;ул. Рультытегина, 14;50;6700000;2;
+a-sale-2;anadyr;building-106;ул. Отке, 32;65;10800000;3;
+a-sale-mid;anadyr;building-108;ул. Мира, 7;57;8900000;2;
+a-sale-3;anadyr;building-121;ул. Ленина, 36;42;7600000;1;
+a-sale-4;anadyr;building-122;ул. Энергетиков, 13;59;9800000;2;
+a-sale-5;anadyr;building-123;ул. Строителей, 20;75;13200000;3;
+a-sale-6;anadyr;building-124;ул. Горького, 3;88;16800000;4;

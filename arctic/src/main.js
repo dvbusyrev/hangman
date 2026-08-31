@@ -61,11 +61,11 @@ function showStart() {
 
 function handleStart(selection) {
   setState({
-    profession: selection.profession,
-    experience: selection.experience,
+    profession: selection.profession || professions[0] || "",
+    experience: selection.experience || "none",
     selectedRegion: null,
     selectedCity: null,
-    selectedYears: 1,
+    selectedYears: 0,
     selectedMode: "profession",
     selectedObject: null,
     routeProgress: 0,
@@ -80,11 +80,13 @@ async function showRegions(page = "region") {
   const refs = renderRegionScreen(root, {
     scenarios,
     state,
+    professions,
     page: effectivePage,
     onBack: () => { resetState(); showStart(); },
     onPage: (nextPage) => navigateMapPage(refs, nextPage),
     onRegionChange: (regionId) => handleRegionSelect(refs, regionId),
-    onCityChange: (cityId) => handleCitySelect(cityId)
+    onCityChange: (cityId) => handleCitySelect(cityId),
+    onProfileChange: (patch) => handleMapProfileChange(refs, effectivePage, patch)
   });
 
   try {
@@ -110,8 +112,14 @@ async function showRegions(page = "region") {
 
 async function navigateMapPage(refs, page) {
   if (isTransitioning) return;
-  if (page === "life") {
-    if (state.selectedCity) renderCurrentStory();
+  if (["life", "nature", "benefits"].includes(page)) {
+    if (state.selectedCity) {
+      setState({
+        chapter: page === "nature" ? "nature" : page === "benefits" ? "benefits" : "city",
+        selectedObject: null
+      });
+      renderCurrentStory();
+    }
     return;
   }
   if (!regionMap) {
@@ -160,11 +168,18 @@ function refreshMapJourneyControls(refs, page) {
   updateJourneyControls(refs, {
     scenarios,
     state,
+    professions,
     page,
     onPage: (nextPage) => navigateMapPage(refs, nextPage),
     onRegionChange: (regionId) => handleRegionSelect(refs, regionId),
-    onCityChange: (cityId) => handleCitySelect(cityId)
+    onCityChange: (cityId) => handleCitySelect(cityId),
+    onProfileChange: (patch) => handleMapProfileChange(refs, page, patch)
   });
+}
+
+function handleMapProfileChange(refs, page, patch) {
+  setState({ ...patch, selectedObject: null });
+  refreshMapJourneyControls(refs, page);
 }
 
 function handleCitySelect(cityId) {
@@ -178,7 +193,7 @@ function handleCityPick(city) {
   setState({
     selectedRegion: region?.id ?? state.selectedRegion,
     selectedCity: city.id,
-    selectedYears: 1,
+    selectedYears: 0,
     selectedMode: "profession",
     selectedObject: null,
     routeProgress: 0,
@@ -209,29 +224,22 @@ async function renderCurrentStory() {
   const refs = renderCityStory(root, {
     scenarios,
     state,
+    professions,
     city,
     nature,
     benefits,
     stats,
     offer,
     onBack: () => showRegions("city"),
-    onPage: (page) => {
-      if (page === "region") showRegions("region");
-      else if (page === "city") showRegions("city");
-    },
+    onPage: (page) => navigateMapPage(refs, page),
     onRegionChange: (regionId) => {
       if (!regionId) return;
       setState({ selectedRegion: regionId, selectedCity: null, selectedObject: null });
       showRegions("city");
     },
     onCityChange: (cityId) => handleCitySelect(cityId),
-    onChapter: (chapter) => {
-      if (!chapter) return;
-      const patch = { chapter };
-      if (chapter === "estate") patch.selectedMode = "estate";
-      if (chapter === "work") patch.selectedMode = "profession";
-      patch.selectedObject = null;
-      setState(patch);
+    onProfileChange: (patch) => {
+      setState({ ...patch, selectedObject: null });
       renderCurrentStory();
     },
     onTimeline: (years) => {
@@ -248,7 +256,8 @@ async function renderCurrentStory() {
       cityScene?.highlight?.(null);
       updateOfferCard(refs, null);
       routeController?.refresh?.();
-    }
+    },
+    onTurn: (direction) => routeController?.turn?.(direction)
   });
 
   if (!refs.cesiumContainer) return;

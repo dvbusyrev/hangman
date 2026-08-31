@@ -1,43 +1,27 @@
 import { experienceOptions } from "../state.js";
 
-const chapterOrder = ["city", "estate", "work", "nature", "benefits"];
 const journeyPages = [
   { id: "region", label: "Область" },
   { id: "city", label: "Город" },
-  { id: "life", label: "В городе" }
+  { id: "life", label: "В городе" },
+  { id: "nature", label: "Природа" },
+  { id: "benefits", label: "Бонусы" }
 ];
 
 export function renderStartScreen(root, { professions, onStart }) {
-  root.innerHTML = shell(`
-    <section class="story-screen start-story" aria-labelledby="app-title">
-      <h1 class="story-brand" id="app-title">Примерь жизнь в Арктике</h1>
-      <form class="start-card" id="start-form">
-        <div class="start-fields">
-          <label class="field-control">
-            <span>Профессия</span>
-            <input id="profession" name="profession" list="profession-list" autocomplete="off" value="${escapeHtml(professions[0] ?? "")}" required />
-            <datalist id="profession-list">
-              ${professions.map((profession) => `<option value="${escapeHtml(profession)}"></option>`).join("")}
-            </datalist>
-          </label>
-          <label class="field-control">
-            <span>Опыт работы</span>
-            <select id="experience" name="experience">
-              ${experienceOptions.map((option) => `<option value="${option.id}">${option.label}</option>`).join("")}
-            </select>
-          </label>
-        </div>
+  root.innerHTML = `
+    <main class="prototype prototype-start">
+      <form class="start-landing" id="start-form">
         <button class="start-button" type="submit">Начать</button>
       </form>
-    </section>
-  `);
+    </main>
+  `;
 
   root.querySelector("#start-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
     onStart({
-      profession: form.get("profession").toString().trim(),
-      experience: form.get("experience").toString()
+      profession: professions[0] ?? "",
+      experience: experienceOptions[0]?.id ?? "none"
     });
   });
 }
@@ -45,18 +29,18 @@ export function renderStartScreen(root, { professions, onStart }) {
 export function renderRegionScreen(root, {
   scenarios,
   state,
+  professions,
   page = "region",
   onBack,
   onPage,
   onRegionChange,
-  onCityChange
+  onCityChange,
+  onProfileChange
 }) {
   root.innerHTML = shell(`
     <section class="story-screen region-story">
-      <button class="story-back" id="back-button" type="button" aria-label="К началу">←</button>
-      <h1 class="story-brand">Примерь жизнь в Арктике</h1>
       <div id="journey-controls" class="journey-controls">
-        ${renderJourneyControls({ scenarios, state, page })}
+        ${renderJourneyControls({ scenarios, state, professions, page })}
       </div>
       <div class="region-frame">
         <div id="cesium-container" class="cesium-region"></div>
@@ -64,31 +48,33 @@ export function renderRegionScreen(root, {
     </section>
   `);
 
-  root.querySelector("#back-button").addEventListener("click", onBack);
   const refs = {
     cesiumContainer: root.querySelector("#cesium-container"),
     journeyControls: root.querySelector("#journey-controls")
   };
-  bindJourneyControls(refs.journeyControls, { onPage, onRegionChange, onCityChange });
+  bindJourneyControls(refs.journeyControls, { onPage, onRegionChange, onCityChange, onProfileChange });
   return refs;
 }
 
 export function updateJourneyControls(refs, {
   scenarios,
   state,
+  professions,
   page,
   onPage,
   onRegionChange,
-  onCityChange
+  onCityChange,
+  onProfileChange
 }) {
   if (!refs?.journeyControls) return;
-  refs.journeyControls.innerHTML = renderJourneyControls({ scenarios, state, page });
-  bindJourneyControls(refs.journeyControls, { onPage, onRegionChange, onCityChange });
+  refs.journeyControls.innerHTML = renderJourneyControls({ scenarios, state, professions, page });
+  bindJourneyControls(refs.journeyControls, { onPage, onRegionChange, onCityChange, onProfileChange });
 }
 
 export function renderCityStory(root, {
   scenarios,
   state,
+  professions,
   city,
   nature,
   benefits,
@@ -98,22 +84,18 @@ export function renderCityStory(root, {
   onPage,
   onRegionChange,
   onCityChange,
-  onChapter,
+  onProfileChange,
   onTimeline,
-  onMode
+  onMode,
+  onTurn
 }) {
-  const chapterIndex = Math.max(0, chapterOrder.indexOf(state.chapter));
+  const page = state.chapter === "nature" ? "nature" : state.chapter === "benefits" ? "benefits" : "life";
+
   root.innerHTML = shell(`
     <section class="story-screen city-story" data-chapter="${state.chapter}">
-      <button class="story-back" id="back-button" type="button" aria-label="К выбору города">←</button>
-      <h1 class="story-brand">Примерь жизнь в Арктике</h1>
-
       <div id="journey-controls" class="journey-controls">
-        ${renderJourneyControls({ scenarios, state, page: "life" })}
+        ${renderJourneyControls({ scenarios, state, professions, page })}
       </div>
-
-      <button class="chapter-arrow chapter-prev" id="chapter-prev" type="button" aria-label="Предыдущий экран" ${chapterIndex === 0 ? "disabled" : ""}>←</button>
-      <button class="chapter-arrow chapter-next" id="chapter-next" type="button" aria-label="Следующий экран" ${chapterIndex === chapterOrder.length - 1 ? "disabled" : ""}>→</button>
 
       <div class="game-window">
         ${renderChapter(state, city, nature, benefits, stats, offer)}
@@ -121,10 +103,7 @@ export function renderCityStory(root, {
     </section>
   `);
 
-  root.querySelector("#back-button").addEventListener("click", onBack);
-  bindJourneyControls(root.querySelector("#journey-controls"), { onPage, onRegionChange, onCityChange });
-  root.querySelector("#chapter-prev")?.addEventListener("click", () => onChapter(chapterOrder[chapterIndex - 1]));
-  root.querySelector("#chapter-next")?.addEventListener("click", () => onChapter(chapterOrder[chapterIndex + 1]));
+  bindJourneyControls(root.querySelector("#journey-controls"), { onPage, onRegionChange, onCityChange, onProfileChange });
 
   root.querySelectorAll("[data-years]").forEach((button) => {
     button.addEventListener("click", () => onTimeline(Number(button.dataset.years)));
@@ -132,6 +111,10 @@ export function renderCityStory(root, {
 
   root.querySelectorAll("[name='mode']").forEach((input) => {
     input.addEventListener("change", () => onMode(input.value));
+  });
+
+  root.querySelectorAll("[data-turn]").forEach((button) => {
+    button.addEventListener("click", () => onTurn?.(button.dataset.turn));
   });
 
   return {
@@ -168,35 +151,36 @@ export function positionOfferCard(refs, point) {
   card.classList.toggle("is-below", below);
 }
 
-function renderJourneyControls({ scenarios, state, page }) {
+function renderJourneyControls({ scenarios, state, professions = [], page }) {
   const regions = scenarios?.regions ?? [];
   const selectedRegion = regions.find((region) => region.id === state.selectedRegion) ?? null;
   const cities = selectedRegion?.cities?.filter((city) => city.ready) ?? [];
   const enabledPages = {
     region: true,
     city: Boolean(selectedRegion),
-    life: Boolean(state.selectedCity)
+    life: Boolean(state.selectedCity),
+    nature: Boolean(state.selectedCity),
+    benefits: Boolean(state.selectedCity)
   };
-  const currentIndex = Math.max(0, journeyPages.findIndex((item) => item.id === page));
-  const previousPage = [...journeyPages].slice(0, currentIndex).reverse().find((item) => enabledPages[item.id]);
-  const nextPage = journeyPages.slice(currentIndex + 1).find((item) => enabledPages[item.id]);
 
   return `
     <div class="journey-step-row" aria-label="Этапы выбора">
-      <button type="button" class="journey-page-arrow" data-page="${previousPage?.id ?? ""}" ${previousPage ? "" : "disabled"} aria-label="Предыдущий этап">←</button>
       <div class="journey-steps" role="radiogroup" aria-label="Страница">
         ${journeyPages.map((item) => `
-          <button type="button"
-            class="journey-step ${page === item.id ? "is-active" : ""}"
-            data-page="${item.id}"
-            role="radio"
-            aria-checked="${page === item.id ? "true" : "false"}"
-            ${enabledPages[item.id] ? "" : "disabled"}>
-            <span></span><strong>${item.label}</strong>
-          </button>
+          <label class="journey-step ${page === item.id ? "is-active" : ""}">
+            <input
+              type="radio"
+              name="journey-page"
+              value="${item.id}"
+              data-page-radio
+              ${page === item.id ? "checked" : ""}
+              ${enabledPages[item.id] ? "" : "disabled"}
+            />
+            <span></span>
+            <strong>${item.label}</strong>
+          </label>
         `).join("")}
       </div>
-      <button type="button" class="journey-page-arrow" data-page="${nextPage?.id ?? ""}" ${nextPage ? "" : "disabled"} aria-label="Следующий этап">→</button>
     </div>
 
     <div class="journey-select-row">
@@ -214,16 +198,28 @@ function renderJourneyControls({ scenarios, state, page }) {
           ${cities.map((nextCity) => `<option value="${escapeHtml(nextCity.id)}" ${state.selectedCity === nextCity.id ? "selected" : ""}>${escapeHtml(nextCity.name)}</option>`).join("")}
         </select>
       </label>
+      <label class="journey-select">
+        <span>Профессия</span>
+        <input data-profile-profession list="journey-profession-list" autocomplete="off" value="${escapeHtml(state.profession ?? "")}" />
+        <datalist id="journey-profession-list">
+          ${professions.map((profession) => `<option value="${escapeHtml(profession)}"></option>`).join("")}
+        </datalist>
+      </label>
+      <label class="journey-select">
+        <span>Стаж работы</span>
+        <select data-profile-experience>
+          ${experienceOptions.map((option) => `<option value="${option.id}" ${state.experience === option.id ? "selected" : ""}>${option.label}</option>`).join("")}
+        </select>
+      </label>
     </div>
   `;
 }
 
-function bindJourneyControls(container, { onPage, onRegionChange, onCityChange }) {
+function bindJourneyControls(container, { onPage, onRegionChange, onCityChange, onProfileChange }) {
   if (!container) return;
-  container.querySelectorAll("[data-page]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const page = button.dataset.page;
-      if (page) onPage?.(page);
+  container.querySelectorAll("[data-page-radio]").forEach((input) => {
+    input.addEventListener("change", () => {
+      if (input.checked) onPage?.(input.value);
     });
   });
   container.querySelector("[data-journey-region]")?.addEventListener("change", (event) => {
@@ -231,6 +227,12 @@ function bindJourneyControls(container, { onPage, onRegionChange, onCityChange }
   });
   container.querySelector("[data-journey-city]")?.addEventListener("change", (event) => {
     onCityChange?.(event.currentTarget.value || null);
+  });
+  container.querySelector("[data-profile-profession]")?.addEventListener("change", (event) => {
+    onProfileChange?.({ profession: event.currentTarget.value.trim() });
+  });
+  container.querySelector("[data-profile-experience]")?.addEventListener("change", (event) => {
+    onProfileChange?.({ experience: event.currentTarget.value });
   });
 }
 
@@ -273,6 +275,10 @@ function renderChapter(state, city, nature, benefits, stats, offer) {
           ${offer ? renderOfferBody(offer) : ""}
         </div>
       </div>
+      <div class="turn-controls" aria-label="Повороты на дороге">
+        <button type="button" data-turn="left" aria-label="Повернуть налево">←</button>
+        <button type="button" data-turn="right" aria-label="Повернуть направо">→</button>
+      </div>
       ${renderTimeline(state.selectedYears)}
       ${renderMode(state.selectedMode)}
     </section>
@@ -280,11 +286,17 @@ function renderChapter(state, city, nature, benefits, stats, offer) {
 }
 
 function renderTimeline(selectedYears) {
+  const points = [
+    { years: 0, label: "Сейчас" },
+    { years: 1, label: "1 год" },
+    { years: 3, label: "3 года" },
+    { years: 5, label: "5 лет" }
+  ];
   return `
     <div class="timeline" aria-label="Переход во времени">
-      ${[1, 3, 5].map((years) => `
-        <button type="button" class="timeline-point ${selectedYears === years ? "is-active" : ""}" data-years="${years}">
-          <span></span><strong>${years} ${years === 1 ? "год" : "года"}</strong>
+      ${points.map((point) => `
+        <button type="button" class="timeline-point ${selectedYears === point.years ? "is-active" : ""}" data-years="${point.years}">
+          <span></span><strong>${point.label}</strong>
         </button>
       `).join("")}
     </div>
@@ -313,8 +325,9 @@ function renderOfferBody(offer) {
   return `
     <span class="card-kicker">${offer.kind === "rent" ? "Аренда" : "Покупка"}</span>
     <strong>${escapeHtml(offer.address)}</strong>
-    <h3>${Number(offer.area)} м²</h3>
+    <h3>${Number(offer.area)} м²${offer.rooms ? ` · ${Number(offer.rooms)} комн.` : ""}</h3>
     <p>${money(offer.price)}${offer.kind === "rent" ? "/мес" : ""}</p>
+    ${offer.kind === "sale" ? `<small>≈ ${money(Math.round(Number(offer.price) / 240))}/мес по простой модели</small>` : ""}
   `;
 }
 

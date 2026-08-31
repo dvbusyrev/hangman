@@ -73,6 +73,7 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
   const regionGeoJson = await loadLocalGeoJson("/data/regions.geojson");
   assertRealRegionShapes(regionGeoJson);
   const regionSpheres = buildRegionBoundingSpheres(regionGeoJson, scenarioById);
+  const regionHitAreas = buildRegionHitAreas(regionGeoJson, scenarioById);
 
   // Do not clamp regional polygons/lines to ground. At regional zoom terrain is irrelevant,
   // while non-ground geometry is dramatically faster and produces smoother thin outlines.
@@ -101,6 +102,17 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
   let lastHoverPickAt = 0;
   const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   const hoverPickInterval = Math.max(16, Number(config.map?.regionStyle?.hoverPickIntervalMs ?? 70));
+  const regionIdAtPosition = (position) => {
+    if (!position) return null;
+    const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
+    if (!cartesian) return null;
+    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+    return findRegionAtLonLat(
+      regionHitAreas,
+      Cesium.Math.toDegrees(cartographic.longitude),
+      Cesium.Math.toDegrees(cartographic.latitude)
+    );
+  };
 
   // Region selection is an interactive map: keep one stable hand cursor instead of flickering
   // between default/pointer while detailed polygons are being picked.
@@ -113,8 +125,7 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
     if (now - lastHoverPickAt < hoverPickInterval) return;
     lastHoverPickAt = now;
 
-    const picked = viewer.scene.pick(movement.endPosition);
-    const nextRegionId = resolvePickedRegionId(picked, scenarioById, cityById);
+    const nextRegionId = regionIdAtPosition(movement.endPosition);
     if (nextRegionId === hoveredRegionId) return;
 
     if (hoveredRegionId && hoveredRegionId !== selectedRegionId) {
@@ -130,16 +141,14 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick, onCityPi
 
   handler.setInputAction((movement) => {
     const picked = viewer.scene.pick(movement.position);
-    if (!Cesium.defined(picked) || !picked.id) return;
-
-    const cityId = readEntityProperty(picked.id, "cityId");
+    const cityId = readEntityProperty(picked?.id, "cityId");
     if (cityId && cityById.has(cityId)) {
       const city = cityById.get(cityId);
       if (city?.ready) onCityPick?.(city);
       return;
     }
 
-    const regionId = resolvePickedRegionId(picked, scenarioById, cityById);
+    const regionId = regionIdAtPosition(movement.position) ?? resolvePickedRegionId(picked, scenarioById, cityById);
     const region = scenarioById.get(regionId);
     if (region) onRegionPick?.(region);
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -243,6 +252,92 @@ function buildRegionBoundingSpheres(geoJson, scenarioById) {
     if (positions.length >= 3) result.set(regionId, Cesium.BoundingSphere.fromPoints(positions));
   }
   return result;
+}
+
+function buildRegionHitAreas(geoJson, scenarioById) {
+  return (geoJson.features ?? [])
+    .map((feature) => {
+      const regionId = feature?.properties?.regionId ?? feature?.id;
+      if (!scenarioById.has(regionId)) return null;
+      const polygons = geometryPolygons(feature.geometry);
+      const polygonEntries = polygons
+        .map((polygon) => ({
+          rings: polygon,
+          bounds: polygonBounds(polygon)
+        }))
+        .filter((entry) => entry.bounds);
+      if (!polygonEntries.length) return null;
+      return { regionId, polygons: polygonEntries };
+    })
+    .filter(Boolean);
+}
+
+function findRegionAtLonLat(hitAreas, lon, lat) {
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+  for (const area of hitAreas) {
+    for (const polygon of area.polygons) {
+      if (!boundsContain(polygon.bounds, lon, lat)) continue;
+      if (pointInPolygon(lon, lat, polygon.rings)) return area.regionId;
+    }
+  }
+  return null;
+}
+
+function geometryPolygons(geometry) {
+  if (!geometry) return [];
+  if (geometry.type === "Polygon") return Array.isArray(geometry.coordinates) ? [geometry.coordinates] : [];
+  if (geometry.type === "MultiPolygon") return Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+  return [];
+}
+
+function polygonBounds(polygon) {
+  let west = Number.POSITIVE_INFINITY;
+  let east = Number.NEGATIVE_INFINITY;
+  let south = Number.POSITIVE_INFINITY;
+  let north = Number.NEGATIVE_INFINITY;
+  let count = 0;
+  for (const ring of polygon ?? []) {
+    for (const point of ring ?? []) {
+      const lon = Number(point?.[0]);
+      const lat = Number(point?.[1]);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      west = Math.min(west, lon);
+      east = Math.max(east, lon);
+      south = Math.min(south, lat);
+      north = Math.max(north, lat);
+      count += 1;
+    }
+  }
+  return count ? { west, east, south, north } : null;
+}
+
+function boundsContain(bounds, lon, lat) {
+  return lon >= bounds.west && lon <= bounds.east && lat >= bounds.south && lat <= bounds.north;
+}
+
+function pointInPolygon(lon, lat, rings) {
+  if (!rings?.length || !pointInRing(lon, lat, rings[0])) return false;
+  for (let index = 1; index < rings.length; index += 1) {
+    if (pointInRing(lon, lat, rings[index])) return false;
+  }
+  return true;
+}
+
+function pointInRing(lon, lat, ring) {
+  let inside = false;
+  const points = Array.isArray(ring) ? ring : [];
+  for (let i = 0, j = points.length - 1; i < points.length; j = i, i += 1) {
+    const xi = Number(points[i]?.[0]);
+    const yi = Number(points[i]?.[1]);
+    const xj = Number(points[j]?.[0]);
+    const yj = Number(points[j]?.[1]);
+    if (![xi, yi, xj, yj].every(Number.isFinite)) continue;
+    const crosses = (yi > lat) !== (yj > lat);
+    if (!crosses) continue;
+    const atLon = ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
+    if (lon < atLon) inside = !inside;
+  }
+  return inside;
 }
 
 function sampledCartesianPositions(geometry, maxPoints) {

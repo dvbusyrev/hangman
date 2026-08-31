@@ -1,0 +1,77 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "murmansk-city",
+      "properties": {
+        "cityId": "murmansk-city",
+        "regionId": "murmansk",
+        "name": "Мурманск",
+        "ready": true,
+        "source": "OpenStreetMap place location / project scenario"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          33.07497,
+          68.97066
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "naryan-mar",
+      "properties": {
+        "cityId": "naryan-mar",
+        "regionId": "nenets",
+        "name": "Нарьян-Мар",
+        "ready": true,
+        "source": "OpenStreetMap place location / project scenario"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          53.00693,
+          67.63805
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "anadyr",
+      "properties": {
+        "cityId": "anadyr",
+        "regionId": "chukotka",
+        "name": "Анадырь",
+        "ready": true,
+        "source": "OpenStreetMap place location / project scenario"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          177.5103,
+          64.7331
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tiksi",
+      "properties": {
+        "cityId": "tiksi",
+        "regionId": "yakutia",
+        "name": "Тикси",
+        "ready": true,
+        "source": "OpenStreetMap place location / project scenario"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          128.8694,
+          71.6366
+        ]
+      }
+    }
+  ]
+}

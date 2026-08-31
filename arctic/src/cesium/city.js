@@ -58,12 +58,11 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
   let assignment = assignOffersToRandomBuildings(offers, preparedBuildings.features, randomWalk.route);
   verifyRealOsmBuildings(preparedBuildings, city);
 
-  // Avoid Cesium.GeoJsonDataSource for the large full-city export. On a large Murmansk
-  // dataset GeoJsonDataSource can hit browser recursion/argument limits while expanding a
-  // FeatureCollection. We create only the configured 3D subset directly as Cesium entities.
-  const { source, entityById, summaries } = cityStageSync(city, "создание 3D-геометрии домов", () => createBuildingDataSource(
+  // Avoid Cesium.GeoJsonDataSource for the large full-city export. Cesium keeps only a
+  // small window of nearby 3D buildings active while the local OSM cache remains complete.
+  const { source, entityById, summaries, updateVisibleBuildings } = cityStageSync(city, "создание 3D-геометрии домов", () => createBuildingDataSource(
     preparedBuildings,
-    assignment,
+    () => assignment,
     config.buildings ?? {},
     config.lighting ?? {}
   ));
@@ -108,36 +107,27 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
     }
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-  applyCameraPoint(viewer, interpolateRouteIndex(randomWalk.route, randomWalk.spawnIndex));
-  viewer.scene.requestRender();
+  let selectedBuildingId = null;
+  let lastCameraPoint = null;
 
-  const restyleBuildings = (selectedBuildingId = null) => {
-    entityById.forEach((entity, id) => {
-      const offer = assignment.offerByBuilding.get(id);
-      const summary = summaries.find((item) => item.id === id);
-      entity.polygon.material = materialForBuilding(
-        summary?.textureUrl ?? null,
-        summary?.buildingClass ?? "unknown",
-        offer,
-        id === selectedBuildingId,
-        config.buildings ?? {}
-      );
-      // Selection is expressed only by a solid material color. No alpha/outline flicker.
-      entity.polygon.outline = false;
-      entity.polygon.outlineColor = Cesium.Color.TRANSPARENT;
-    });
+  const refreshVisibleBuildings = (camera = lastCameraPoint) => {
+    if (!camera) return;
+    lastCameraPoint = camera;
+    updateVisibleBuildings(camera, selectedBuildingId);
     viewer.scene.requestRender();
   };
 
   const setOffers = (nextOffers = []) => {
     assignment = assignOffersToRandomBuildings(nextOffers, preparedBuildings.features, randomWalk.route);
     syncFocusBuildings();
-    restyleBuildings(null);
+    selectedBuildingId = null;
+    refreshVisibleBuildings();
     return assignment.assignedOffers;
   };
 
-  // Normalize the initial style as well, so textured buildings never become translucent/outlined.
-  restyleBuildings(null);
+  const spawnCamera = interpolateRouteIndex(randomWalk.route, randomWalk.spawnIndex);
+  applyCameraPoint(viewer, spawnCamera);
+  refreshVisibleBuildings(spawnCamera);
 
   return {
     buildings: summaries,
@@ -171,7 +161,11 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
       return { x: point.x, y: point.y };
     },
     highlight(buildingId) {
-      restyleBuildings(buildingId);
+      selectedBuildingId = buildingId;
+      refreshVisibleBuildings();
+    },
+    updateVisibleBuildings(camera) {
+      refreshVisibleBuildings(camera);
     },
     destroy() {
       if (!pickHandler.isDestroyed()) pickHandler.destroy();
@@ -197,25 +191,18 @@ function cityStageSync(city, label, action) {
   }
 }
 
-function createBuildingDataSource(preparedBuildings, assignment, buildingConfig, lightingConfig) {
+function createBuildingDataSource(preparedBuildings, getAssignment, buildingConfig, lightingConfig) {
   const source = new Cesium.CustomDataSource("osm-buildings");
   const entityById = new Map();
   const summaries = [];
+  const summaryById = new Map();
+  const maxVisible = Math.max(10, Number(buildingConfig.maxVisibleBuildings ?? 180));
+  const visibleRadiusMeters = Math.max(40, Number(buildingConfig.visibleRadiusMeters ?? 220));
 
   for (const feature of preparedBuildings.features ?? []) {
     if (feature.geometry?.type !== "Polygon") continue;
     const ring = feature.geometry.coordinates?.[0];
     if (!Array.isArray(ring) || ring.length < 4) continue;
-
-    const degrees = [];
-    const usableLength = sameCoordinate(ring[0], ring.at(-1)) ? ring.length - 1 : ring.length;
-    for (let index = 0; index < usableLength; index += 1) {
-      const lon = Number(ring[index]?.[0]);
-      const lat = Number(ring[index]?.[1]);
-      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
-      degrees.push(lon, lat);
-    }
-    if (degrees.length < 6) continue;
 
     const properties = feature.properties ?? {};
     const buildingId = String(properties.buildingId ?? feature.id ?? "");
@@ -225,35 +212,7 @@ function createBuildingDataSource(preparedBuildings, assignment, buildingConfig,
     const height = Number(properties.height || 12);
     const buildingClass = String(properties.buildingClass || "unknown");
     const textureUrl = properties.textureUrl || null;
-    const offer = assignment.offerByBuilding.get(buildingId);
-    const positions = Cesium.Cartesian3.fromDegreesArray(degrees);
-    if (!positions || positions.length < 3) continue;
-
-    const entity = source.entities.add({
-      id: buildingId,
-      name: buildingId,
-      properties: {
-        buildingId,
-        osmBuildingId,
-        osmId: properties.osmId ?? null,
-        address: properties.address ?? null,
-        height,
-        buildingClass,
-        textureUrl
-      },
-      polygon: {
-        hierarchy: new Cesium.PolygonHierarchy(positions),
-        height: 0,
-        extrudedHeight: height,
-        shadows: lightingConfig?.shadows ? Cesium.ShadowMode.ENABLED : Cesium.ShadowMode.DISABLED,
-        material: materialForBuilding(textureUrl, buildingClass, offer, false, buildingConfig),
-        outline: false,
-        outlineColor: Cesium.Color.TRANSPARENT
-      }
-    });
-
-    entityById.set(buildingId, entity);
-    summaries.push({
+    const summary = {
       id: buildingId,
       osmBuildingId,
       osmId: properties.osmId ?? null,
@@ -261,13 +220,116 @@ function createBuildingDataSource(preparedBuildings, assignment, buildingConfig,
       height,
       lon: Number(properties.centerLon),
       lat: Number(properties.centerLat),
-      hasOffer: Boolean(offer),
+      hasOffer: Boolean(getAssignment().offerByBuilding.get(buildingId)),
       buildingClass,
-      textureUrl
-    });
+      textureUrl,
+      ring
+    };
+
+    if (!Number.isFinite(summary.lon) || !Number.isFinite(summary.lat)) continue;
+
+    summaries.push(summary);
+    summaryById.set(buildingId, summary);
   }
 
-  return { source, entityById, summaries };
+  const restyleBuildings = (selectedBuildingId = null) => {
+    const assignment = getAssignment();
+    entityById.forEach((entity, id) => {
+      const summary = summaryById.get(id);
+      const offer = assignment.offerByBuilding.get(id);
+      if (!summary || !entity.polygon) return;
+
+      entity.polygon.material = materialForBuilding(
+        summary.textureUrl ?? null,
+        summary.buildingClass ?? "unknown",
+        offer,
+        id === selectedBuildingId,
+        buildingConfig
+      );
+      entity.polygon.outline = false;
+      entity.polygon.outlineColor = Cesium.Color.TRANSPARENT;
+    });
+  };
+
+  const updateVisibleBuildings = (camera, selectedBuildingId = null) => {
+    if (!camera || !Number.isFinite(camera.lon) || !Number.isFinite(camera.lat)) return;
+
+    const origin = [camera.lon, camera.lat];
+    const candidates = summaries
+      .map((summary) => ({
+        summary,
+        distance: haversineMeters(origin, [summary.lon, summary.lat])
+      }))
+      .filter((item) => item.distance <= visibleRadiusMeters || item.summary.id === selectedBuildingId)
+      .sort((a, b) => {
+        if (a.summary.id === selectedBuildingId) return -1;
+        if (b.summary.id === selectedBuildingId) return 1;
+        return a.distance - b.distance;
+      })
+      .slice(0, maxVisible);
+
+    const desiredIds = new Set(candidates.map((item) => item.summary.id));
+
+    entityById.forEach((entity, id) => {
+      if (!desiredIds.has(id)) {
+        source.entities.remove(entity);
+        entityById.delete(id);
+      }
+    });
+
+    for (const { summary } of candidates) {
+      if (!entityById.has(summary.id)) {
+        const entity = createBuildingEntity(source, summary, getAssignment(), buildingConfig, lightingConfig);
+        if (entity) entityById.set(summary.id, entity);
+      }
+    }
+
+    restyleBuildings(selectedBuildingId);
+  };
+
+  return { source, entityById, summaries, updateVisibleBuildings, restyleBuildings };
+}
+
+function createBuildingEntity(source, summary, assignment, buildingConfig, lightingConfig) {
+  const degrees = [];
+  const usableLength = sameCoordinate(summary.ring[0], summary.ring.at(-1)) ? summary.ring.length - 1 : summary.ring.length;
+
+  for (let index = 0; index < usableLength; index += 1) {
+    const lon = Number(summary.ring[index]?.[0]);
+    const lat = Number(summary.ring[index]?.[1]);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+    degrees.push(lon, lat);
+  }
+
+  if (degrees.length < 6) return null;
+
+  const positions = Cesium.Cartesian3.fromDegreesArray(degrees);
+  if (!positions || positions.length < 3) return null;
+
+  const offer = assignment.offerByBuilding.get(summary.id);
+
+  return source.entities.add({
+    id: summary.id,
+    name: summary.id,
+    properties: {
+      buildingId: summary.id,
+      osmBuildingId: summary.osmBuildingId,
+      osmId: summary.osmId ?? null,
+      address: summary.address ?? null,
+      height: summary.height,
+      buildingClass: summary.buildingClass,
+      textureUrl: summary.textureUrl
+    },
+    polygon: {
+      hierarchy: new Cesium.PolygonHierarchy(positions),
+      height: 0,
+      extrudedHeight: summary.height,
+      shadows: lightingConfig?.shadows ? Cesium.ShadowMode.ENABLED : Cesium.ShadowMode.DISABLED,
+      material: materialForBuilding(summary.textureUrl, summary.buildingClass, offer, false, buildingConfig),
+      outline: false,
+      outlineColor: Cesium.Color.TRANSPARENT
+    }
+  });
 }
 
 async function loadCitySceneData(city) {
@@ -421,7 +483,18 @@ function makeRandomRoadWalk(graph, city) {
   const eligible = graph.edges.filter((edge) => edge.length >= 7);
   if (!eligible.length) throw new Error("No sufficiently long road edges for random spawn");
 
-  const spawnEdge = weightedRandom(eligible, (edge) => edge.length * roadSpawnWeight(edge.highway));
+  const spawnFocus = resolveSpawnFocusPoint(city);
+  const spawnFocusRadius = Math.max(250, Number(city.__navigation?.spawnFocusRadiusMeters ?? 1600));
+  const spawnPool = spawnFocus
+    ? eligible.filter((edge) => pointToSegmentMeters(spawnFocus, edge.a, edge.b) <= spawnFocusRadius)
+    : eligible;
+  const spawnEdge = weightedRandom(spawnPool.length ? spawnPool : eligible, (edge) => {
+    const base = edge.length * roadSpawnWeight(edge.highway);
+    if (!spawnFocus) return base;
+    const distance = pointToSegmentMeters(spawnFocus, edge.a, edge.b);
+    const focusWeight = 1 + 5 * Math.max(0, 1 - distance / spawnFocusRadius);
+    return base * focusWeight;
+  });
   const spawnT = 0.18 + Math.random() * 0.64;
   const spawn = lerpCoordinate(spawnEdge.a, spawnEdge.b, spawnT);
   const forwardToB = Math.random() >= 0.5;
@@ -841,6 +914,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
   function applyCursor() {
     const camera = interpolateRouteIndex(activeRoute, cursor);
     applyCameraPoint(viewer, camera);
+    walk.updateVisibleBuildings?.(camera);
     viewer.scene.requestRender();
 
     const focusBuildingId = nearestFocusBuilding(
@@ -863,6 +937,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
   return {
     getIndex: () => cursor,
     refresh: applyCursor,
+    turn: selectTurn,
     destroy() {
       canvas.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onKeyDown);
@@ -935,6 +1010,12 @@ function coordinateKey(coord) {
 
 function lerpCoordinate(a, b, t) {
   return [Number(a[0]) + (Number(b[0]) - Number(a[0])) * t, Number(a[1]) + (Number(b[1]) - Number(a[1])) * t];
+}
+
+function resolveSpawnFocusPoint(city) {
+  const lon = Number(city.__navigation?.spawnLon ?? city.camera?.lon ?? city.center?.lon);
+  const lat = Number(city.__navigation?.spawnLat ?? city.camera?.lat ?? city.center?.lat);
+  return Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : null;
 }
 
 function weightedRandom(items, weightFn) {
@@ -1164,15 +1245,33 @@ function stableUnit(value, salt = "") {
 function materialForBuilding(textureUrl, buildingClass, offer, selected, config) {
   // A building with a card is always highlighted by one opaque solid color.
   // No transparency and no texture swapping on approach, so the visual state cannot flicker.
+  if (selected) return colors.selected;
   if (offer) return colors[offer.kind] ?? colors.neutral;
-  if (!textureUrl) return colors.neutral;
 
-  const repeat = config.textureRepeat ?? {};
-  return new Cesium.ImageMaterialProperty({
-    image: textureUrl,
-    repeat: new Cesium.Cartesian2(Number(repeat.x ?? 3), Number(repeat.y ?? 5)),
-    color: Cesium.Color.WHITE,
-    transparent: false
+  if (textureUrl && config.useImageTextures === true) {
+    const repeat = config.textureRepeat ?? {};
+    return new Cesium.ImageMaterialProperty({
+      image: textureUrl,
+      repeat: new Cesium.Cartesian2(Number(repeat.x ?? 3), Number(repeat.y ?? 5)),
+      color: Cesium.Color.WHITE,
+      transparent: false
+    });
+  }
+
+  return facadeGridMaterial(buildingClass, config);
+}
+
+function facadeGridMaterial(buildingClass, config = {}) {
+  const grid = config.facadeGrid ?? {};
+  const palette = grid.colors ?? {};
+  const fill = palette[buildingClass] ?? palette.unknown ?? "#d9e1e4";
+  const lineCount = grid.lineCount ?? {};
+  const lineThickness = grid.lineThickness ?? {};
+  return new Cesium.GridMaterialProperty({
+    color: Cesium.Color.fromCssColorString(fill).withAlpha(1),
+    cellAlpha: Number(grid.cellAlpha ?? 0.22),
+    lineCount: new Cesium.Cartesian2(Number(lineCount.x ?? 3), Number(lineCount.y ?? 9)),
+    lineThickness: new Cesium.Cartesian2(Number(lineThickness.x ?? 1), Number(lineThickness.y ?? 1))
   });
 }
 

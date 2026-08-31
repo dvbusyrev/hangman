@@ -1,0 +1,193 @@
+{
+  "map": {
+    "onlineOsm": true,
+    "initialCamera": {
+      "lon": 104,
+      "lat": 70,
+      "height": 7900000,
+      "heading": 0,
+      "pitch": -90
+    },
+    "regionStyle": {
+      "defaultAlpha": 0.28,
+      "hoverAlpha": 0.76,
+      "selectedAlpha": 0.7,
+      "russiaAlpha": 0.1,
+      "fillColor": "#70b8cf",
+      "selectedFillColor": "#2f9fc3",
+      "outlineColor": "#315e70",
+      "outlineAlpha": 0.88,
+      "outlineWidth": 1.6,
+      "outlineSimplifyDegrees": 0.012,
+      "outlineHeightMeters": 600,
+      "fillHeightMeters": 0,
+      "hoverPickIntervalMs": 24
+    },
+    "regionViews": {
+      "murmansk": {
+        "height": 720000,
+        "offsetLon": 1.2,
+        "offsetLat": 0.15,
+        "heading": 0,
+        "pitch": -72
+      },
+      "nenets": {
+        "height": 900000,
+        "offsetLon": 1.0,
+        "offsetLat": 0.0,
+        "heading": 0,
+        "pitch": -72
+      },
+      "chukotka": {
+        "height": 1050000,
+        "offsetLon": -1.2,
+        "offsetLat": 0.0,
+        "heading": 0,
+        "pitch": -72
+      },
+      "yakutia": {
+        "height": 1550000,
+        "offsetLon": 0.0,
+        "offsetLat": 0.2,
+        "heading": 0,
+        "pitch": -72
+      }
+    }
+  },
+  "navigation": {
+    "cameraHeightMeters": 2.15,
+    "cameraPitchDegrees": -1.0,
+    "fieldOfViewDegrees": 70,
+    "roadStepMeters": 2.8,
+    "wheelDivisor": 340,
+    "maxWheelStepsPerEvent": 0.75,
+    "extendMarginPoints": 110,
+    "extendMeters": 1000,
+    "cardTriggerDistanceMeters": 105,
+    "cardHideBehindDegrees": 92,
+    "cardAnchorHeightFactor": 0.62,
+    "keyboardMoveSteps": 0.75,
+    "turnDirectionThresholdDegrees": 10,
+    "straightContinuationDegrees": 35,
+    "spawnFocusRadiusMeters": 1700
+  },
+  "cityOverrides": {
+    "murmansk-city": {},
+    "naryan-mar": {},
+    "anadyr": {},
+    "tiksi": {}
+  },
+  "buildings": {
+    "maxVisibleBuildings": 240,
+    "visibleRadiusMeters": 520,
+    "floorHeightMeters": 3.05,
+    "maxHeightMeters": 65,
+    "useCachedHeightWithoutLevels": true,
+    "residential": {
+      "minFloors": 4,
+      "maxFloors": 16,
+      "fallbackFloors": [
+        5,
+        7,
+        9,
+        12,
+        14
+      ]
+    },
+    "house": {
+      "minFloors": 1,
+      "maxFloors": 3,
+      "fallbackFloors": [
+        1,
+        2,
+        2,
+        3
+      ]
+    },
+    "industrial": {
+      "minHeightMeters": 6,
+      "maxHeightMeters": 16
+    },
+    "nonResidential": {
+      "minHeightMeters": 5,
+      "maxHeightMeters": 24
+    },
+    "unknown": {
+      "minHeightMeters": 5,
+      "maxHeightMeters": 24
+    },
+    "textures": {
+      "residential": [
+        "/textures/panel-grey.svg",
+        "/textures/panel-cold.svg"
+      ],
+      "house": [
+        "/textures/plaster-grey.svg"
+      ],
+      "industrial": [
+        "/textures/industrial-grey.svg"
+      ],
+      "nonResidential": [
+        "/textures/concrete-grey.svg",
+        "/textures/industrial-grey.svg"
+      ],
+      "unknown": [
+        "/textures/concrete-grey.svg"
+      ]
+    },
+    "textureRepeat": {
+      "x": 3,
+      "y": 5
+    },
+    "useImageTextures": false,
+    "facadeGrid": {
+      "cellAlpha": 0.2,
+      "lineCount": {
+        "x": 3,
+        "y": 9
+      },
+      "lineThickness": {
+        "x": 1,
+        "y": 1
+      },
+      "colors": {
+        "residential": "#d7dee1",
+        "house": "#d3ddd6",
+        "industrial": "#cfcac2",
+        "nonResidential": "#d9d5cc",
+        "unknown": "#d9e1e4"
+      }
+    }
+  },
+  "basemap": {
+    "cityOfflineRaster": true,
+    "resolution": 3072,
+    "paddingRatio": 0.035,
+    "background": "#e8ece7",
+    "roadCasing": "#c2beb6",
+    "roadFill": "#faf8f3",
+    "buildingFootprint": "#c1b9b0",
+    "preferOnlineOsm": true,
+    "onlineOsmAlpha": 1,
+    "water": "#b8d8e8",
+    "waterLine": "#91bed3",
+    "park": "#c9dfb4",
+    "forest": "#b9d2a8",
+    "grass": "#d7e6c4",
+    "residentialLand": "#e8e3dc",
+    "industrialLand": "#d8d3cc",
+    "commercialLand": "#e6d8d3",
+    "cemetery": "#cad8c1",
+    "parking": "#d9d9d5",
+    "buildingStroke": "#aaa29a",
+    "majorRoad": "#f6d59a",
+    "rail": "#8f8c88"
+  },
+  "lighting": {
+    "enabled": true,
+    "isoTime": "2026-06-21T12:00:00Z",
+    "shadows": false,
+    "fog": true,
+    "fogDensity": 8e-05
+  }
+}

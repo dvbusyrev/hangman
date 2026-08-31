@@ -1,78 +1,87 @@
-# Примерь жизнь в Арктике — offline + CSV + random road walk
+# Примерь жизнь в Арктике
 
 Vite + vanilla JavaScript + CesiumJS.
 
-This version is designed so the **presentation runtime does not need internet access**.
+Технический MVP-прототип: лендинг с заголовком, окно игры, выбор региона/города, Cesium-сцена города, движение по дороге, карточки вакансий и недвижимости, экраны природы и бонусов.
 
-Runtime reads only local files:
+## Быстрый запуск
 
-- local Cesium JS/assets;
-- local Russia/region/city GeoJSON;
-- local OSM building footprints;
-- local OSM public roads;
-- local OSM road network (the walking route is generated randomly in the browser);
-- local CSV with professions, vacancies and real estate;
-- local JSON with nature/benefits/scenarios.
+```bash
+npm install
+npm run dev
+```
 
-There are **no runtime calls to OSM tiles, Nominatim or Overpass**.
+Vite выведет локальный адрес, обычно:
 
-## 1. Prepare once while internet is available
+```text
+http://127.0.0.1:5173
+```
+
+Если порт занят, Vite выберет следующий свободный порт.
+
+## Проверка сборки
+
+```bash
+npm run build
+```
+
+Команда также копирует локальные Cesium assets в `public/cesium`.
+
+## Данные
+
+Основные данные лежат в `public/data/`:
+
+```text
+regions.geojson              — границы арктических регионов
+russia-boundary.geojson      — контур России
+cities.geojson               — точки городов
+*-buildings.geojson          — локальные OSM-здания
+*-roads.geojson              — локальные OSM-дороги
+*-context.geojson            — локальная OSM-подложка города
+scenarios.json               — конфигурация регионов и городов
+config.json                  — настройки карты, маршрута и домов
+professions.csv              — список профессий
+vacancies.csv                — вакансии
+rent.csv                     — аренда
+sale.csv                     — покупка
+nature.json                  — экран природы
+benefits.json                — экран бонусов
+```
+
+CSV-файлы можно править вручную и обновлять страницу в браузере. Формат описан в `public/data/CSV_FORMAT.md`.
+
+## Offline-режим
+
+Для полной офлайн-подготовки:
 
 ```bash
 npm install
 npm run offline:sync
-```
-
-`offline:sync`:
-
-1. copies Cesium browser assets locally;
-2. downloads region boundaries to local GeoJSON;
-3. downloads real OSM buildings and public roads for prepared cities;
-4. stores the local OSM road network (a compatibility route file is also exported);
-5. verifies all files required for offline use.
-
-Generated city files look like:
-
-```text
-public/data/murmansk-buildings.geojson
-public/data/murmansk-roads.geojson
-public/data/murmansk-route.json
-
-public/data/anadyr-buildings.geojson
-public/data/anadyr-roads.geojson
-public/data/anadyr-route.json
-...
-```
-
-## 2. Verify offline readiness
-
-```bash
 npm run offline:check
 ```
 
-The command exits with an error and lists missing files if something is not ready.
+После этого приложение можно запускать через `npm run dev` или собирать через `npm run offline:build`. Сами GeoJSON/CSV читаются локально. В `public/data/config.json` можно отключить онлайн-тайлы OSM, если нужен строго офлайн-показ:
 
-## 3. Development / presentation on the same prepared laptop
-
-Internet can now be disabled:
-
-```bash
-npm run dev
+```json
+{
+  "map": { "onlineOsm": false },
+  "basemap": { "preferOnlineOsm": false }
+}
 ```
 
-The browser uses local data only.
+`offline:sync` копирует Cesium assets, выгружает границы регионов, OSM-дома, OSM-дороги и проверяет наличие файлов для подготовленных городов.
 
-## 4. Optional: make a presentation build
+## Сборка для показа
 
-While the project is prepared:
+После подготовки данных:
 
 ```bash
 npm run offline:build
 ```
 
-This creates `dist/` with all local Cesium/data assets.
+Команда создаёт `dist/` с локальными Cesium/data assets.
 
-Then it can be served without Vite/network requests using the built-in Node server:
+Затем билд можно поднять без Vite:
 
 ```bash
 npm run offline:serve
@@ -84,9 +93,9 @@ Open:
 http://127.0.0.1:4173
 ```
 
-## CSV instead of a database
+## CSV вместо базы
 
-The data team can edit ordinary UTF-8 CSV files in `public/data/`:
+Данные можно править в обычных UTF-8 CSV-файлах в `public/data/`:
 
 ```text
 professions.csv   — profession autocomplete list
@@ -95,11 +104,11 @@ rent.csv          — rental offers
 sale.csv          — purchase offers
 ```
 
-The frontend parses them directly at startup. PostgreSQL/backend/import is not required for the MVP.
+Frontend читает их напрямую при старте. PostgreSQL/backend/import для MVP не нужны.
 
-Recommended Excel format: **CSV UTF-8**, separator `;`.
+Рекомендуемый формат Excel: **CSV UTF-8**, разделитель `;`.
 
-Detailed columns and examples: `public/data/CSV_FORMAT.md`.
+Колонки и примеры: `public/data/CSV_FORMAT.md`.
 
 ### Vacancies example
 
@@ -108,7 +117,7 @@ id;city_id;building_id;profession;position;company;salary_from;salary_to;min_exp
 m-work-1;murmansk-city;;Программист;Java-разработчик;Арктик Софт;145000;165000;2;
 ```
 
-`building_id` may be empty. When the 3D city opens, the row is randomly assigned to a real OSM building near the generated walk. A real `osm-way-*` id can still be supplied to pin a card to a specific building.
+`building_id` можно оставить пустым. Когда открывается 3D-город, строка привязывается к реальному OSM-дому рядом с маршрутом. Реальный `osm-way-*` id можно указать вручную, если карточку нужно закрепить за конкретным зданием.
 
 ### Real estate example
 
@@ -117,34 +126,35 @@ id;city_id;building_id;address;area;price;rooms;source
 m-rent-1;murmansk-city;;просп. Ленина, 64;42;32000;1;
 ```
 
-After editing CSV during development, simply refresh the browser.
+После правки CSV в режиме разработки достаточно обновить страницу.
 
-## Random walk in the 3D city
+## Маршрут в 3D-городе
 
-Each time a city scene opens:
+При каждом открытии города:
 
-- the app picks a random point on the largest connected local OSM public-road network;
+- the app picks a random point near the configured city camera on the largest connected local OSM public-road network;
 - a road walk is generated in both directions from that spawn point;
-- at intersections the next street is selected randomly, while immediate U-turns/tiny loops are avoided when alternatives exist;
+- at intersections the next street is chosen by keyboard or on-screen left/right turn arrows;
 - the mouse wheel moves forward/backward along that generated walk;
 - available CSV job/real-estate records are randomly attached to real OSM houses near the walk;
+- only the nearest configured amount of 3D houses is rendered for performance;
 - houses with a card are highlighted by type;
 - when the camera comes close to a highlighted house, its card opens automatically;
 - clicking the highlighted house also opens the card.
 
-The browser still makes no network calls during the presentation. The randomness uses only already-downloaded local roads/buildings.
+## Симуляция времени
 
-## Time simulation
+Используется прототипное правило:
 
-The app still uses the prototype rule:
-
-- effective experience = current experience + selected horizon (1/3/5 years);
+- selected horizon: `Сейчас`, `1 год`, `3 года`, `5 лет`;
+- effective experience = current experience + selected horizon;
 - available jobs are filtered by `min_experience`;
 - average available salary is calculated from the matching vacancies;
-- rental budget = 30% of average salary;
-- conditional purchase budget = average salary × 60.
+- housing budget = 40% of average salary;
+- rent is visible when monthly rent is within that budget;
+- purchase is visible when the simplified monthly equivalent `price / 240` is within that budget.
 
-These are scenario assumptions for the MVP, not a financial forecast.
+Это сценарные допущения для MVP, не финансовый прогноз.
 
 ## OSM
 
