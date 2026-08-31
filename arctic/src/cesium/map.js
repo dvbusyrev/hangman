@@ -10,6 +10,7 @@ const arcticInitialCamera = {
 
 const defaultRegionColor = Cesium.Color.fromCssColorString("#4fc3f7").withAlpha(0.38);
 const selectedRegionColor = Cesium.Color.fromCssColorString("#ffcc66").withAlpha(0.62);
+const russiaBoundaryColor = Cesium.Color.fromCssColorString("#244b5f").withAlpha(0.2);
 const outlineColor = Cesium.Color.fromCssColorString("#f6fbff");
 
 export function createArcticViewer(container) {
@@ -46,6 +47,8 @@ export function createArcticViewer(container) {
 
 export async function setupRegionMap(viewer, scenarios, { onRegionPick }) {
   const scenarioById = new Map(scenarios.regions.map((region) => [region.id, region]));
+  await addRussiaBoundary(viewer);
+
   const regionSource = await Cesium.GeoJsonDataSource.load("/data/regions.geojson", {
     clampToGround: false
   });
@@ -99,6 +102,24 @@ export async function setupRegionMap(viewer, scenarios, { onRegionPick }) {
       handler.destroy();
     }
   };
+}
+
+async function addRussiaBoundary(viewer) {
+  const countrySource = await Cesium.GeoJsonDataSource.load("/data/russia-boundary.geojson", {
+    clampToGround: false
+  });
+
+  await viewer.dataSources.add(countrySource);
+
+  countrySource.entities.values.forEach((entity) => {
+    if (!entity.polygon) {
+      return;
+    }
+
+    entity.polygon.material = russiaBoundaryColor;
+    entity.polygon.outline = true;
+    entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#5d7d8d").withAlpha(0.72);
+  });
 }
 
 export function flyToCamera(viewer, camera, duration = 1) {

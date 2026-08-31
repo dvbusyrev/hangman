@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node scripts/copy-cesium-assets.mjs && vite --host 127.0.0.1",
     "build": "node scripts/copy-cesium-assets.mjs && vite build",
+    "data:osm-boundaries": "node scripts/fetch-osm-boundaries.mjs",
+    "data:shapes": "node scripts/export-boundary-shapes.mjs",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {

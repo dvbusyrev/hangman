@@ -7,7 +7,7 @@
 1. стартовый экран;
 2. выбор профессии и опыта;
 3. переход к Cesium-карте;
-4. отображение 4 mock-регионов Арктики;
+4. отображение 4 арктических регионов из OSM GeoJSON;
 5. выбор Мурманской области;
 6. flyTo к региону;
 7. выбор Мурманска;
@@ -41,7 +41,7 @@ http://127.0.0.1:5173/
 6. Дождаться перехода в городскую сцену.
 7. Проверить, что видны mock-здания и в боковой панели перечислены `building-001`, `building-002`, `building-003` и другие.
 
-## Где лежат mock-данные
+## Где лежат данные
 
 Основные сценарии городов и камер:
 
@@ -49,9 +49,10 @@ http://127.0.0.1:5173/
 public/data/scenarios.json
 ```
 
-Mock-геометрия регионов:
+OSM-геометрия России и арктических регионов:
 
 ```text
+public/data/russia-boundary.geojson
 public/data/regions.geojson
 ```
 
@@ -75,11 +76,45 @@ public/data/anadyr-buildings.geojson
 
 `buildingId` потом будет использоваться для привязки вакансий, аренды и покупки.
 
+## OSM-границы
+
+Контур России и границы 4 арктических регионов выгружаются из OpenStreetMap через Nominatim:
+
+```bash
+npm run data:osm-boundaries
+```
+
+Результат:
+
+```text
+public/data/russia-boundary.geojson
+public/data/regions.geojson
+```
+
+В `regions.geojson` сохраняются те же `regionId`, которые использует приложение: `murmansk`, `nenets`, `chukotka`, `yakutia`.
+
+Для GIS-обмена можно дополнительно собрать shapefile-архивы:
+
+```bash
+npm run data:shapes
+```
+
+Результат:
+
+```text
+data/osm-boundaries/russia-boundary-shapefile.zip
+data/osm-boundaries/arctic-regions-shapefile.zip
+```
+
+Для экспорта shapefile нужен установленный `ogr2ogr`.
+
 ## Команды
 
 ```bash
 npm run dev
 npm run build
+npm run data:osm-boundaries
+npm run data:shapes
 ```
 
 `npm run build` также копирует локальные ассеты Cesium в `public/cesium`. Эта папка не коммитится.
