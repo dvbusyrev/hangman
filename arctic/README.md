@@ -1,152 +1,153 @@
-# Примерь жизнь в Арктике — MVP
+# Примерь жизнь в Арктике — offline + CSV + random road walk
 
-Технический прототип на **Vite + vanilla JavaScript + CesiumJS**.
+Vite + vanilla JavaScript + CesiumJS.
 
-## Что уже есть
+This version is designed so the **presentation runtime does not need internet access**.
 
-- стартовый экран: профессия + опыт;
-- карта России в Cesium;
-- четыре арктических региона:
-  - Мурманская область;
-  - Ненецкий АО;
-  - Чукотский АО;
-  - Республика Саха (Якутия);
-- после выбора региона на карте появляются города:
-  - Мурманск;
-  - Нарьян-Мар;
-  - Анадырь;
-  - Тикси;
-- полноценные 3D-сценарии сейчас включены для **Мурманска** и **Анадыря**;
-- движение колёсиком по заданному маршруту;
-- интерактивные здания и карточки;
-- профессия / недвижимость;
-- 1 / 3 / 5 лет;
-- природа и бонусы.
+Runtime reads only local files:
 
-## Запуск
+- local Cesium JS/assets;
+- local Russia/region/city GeoJSON;
+- local OSM building footprints;
+- local OSM public roads;
+- local OSM road network (the walking route is generated randomly in the browser);
+- local CSV with professions, vacancies and real estate;
+- local JSON with nature/benefits/scenarios.
+
+There are **no runtime calls to OSM tiles, Nominatim or Overpass**.
+
+## 1. Prepare once while internet is available
 
 ```bash
 npm install
-npm run dev
+npm run offline:sync
 ```
 
-После `npm install` Cesium автоматически копируется из `node_modules/cesium/Build/Cesium` в `public/cesium`.
+`offline:sync`:
 
-## Загрузка настоящих данных OpenStreetMap
+1. copies Cesium browser assets locally;
+2. downloads region boundaries to local GeoJSON;
+3. downloads real OSM buildings and public roads for prepared cities;
+4. stores the local OSM road network (a compatibility route file is also exported);
+5. verifies all files required for offline use.
 
-В архиве лежат fallback-GeoJSON, поэтому интерфейс можно запустить сразу.
-
-Чтобы заменить их реальными данными OSM, один раз при наличии интернета выполните:
-
-```bash
-npm run data:osm
-```
-
-Команда выполняет два импорта:
-
-```bash
-npm run data:osm-boundaries
-npm run data:osm-buildings
-```
-
-### `data:osm-boundaries`
-
-Получает через OpenStreetMap Nominatim:
-
-- границу России;
-- Мурманскую область;
-- Ненецкий АО;
-- Чукотский АО;
-- Республику Саха (Якутия).
-
-И перезаписывает:
-
-```text
-public/data/russia-boundary.geojson
-public/data/regions.geojson
-```
-
-Используемые OSM relation id находятся в `scripts/fetch-osm-boundaries.mjs`.
-
-### `data:osm-buildings`
-
-Получает через Overpass API реальные OSM building footprints вокруг демонстрационных маршрутов:
-
-- Мурманск;
-- Анадырь.
-
-Перезаписывает:
+Generated city files look like:
 
 ```text
 public/data/murmansk-buildings.geojson
+public/data/murmansk-roads.geojson
+public/data/murmansk-route.json
+
 public/data/anadyr-buildings.geojson
+public/data/anadyr-roads.geojson
+public/data/anadyr-route.json
+...
 ```
 
-Если в OSM есть `height` или `building:levels`, они используются для 3D-высоты. Если высоты нет, импортёр назначает стабильную условную высоту.
+## 2. Verify offline readiness
 
-Важно: импортёр автоматически выбирает ближайшие к маршруту реальные OSM-здания и присваивает им сценарные id `building-001...` / `building-101...`. Поэтому существующие карточки и маршрут продолжают работать после замены mock-геометрии настоящей.
+```bash
+npm run offline:check
+```
 
-Overpass — внешний публичный сервис, поэтому при временной ошибке или rate limit просто повторите команду позже. Во время самой презентации интернет для OSM не нужен: GeoJSON уже лежит локально.
+The command exits with an error and lists missing files if something is not ready.
 
-## Города на карте
+## 3. Development / presentation on the same prepared laptop
 
-Точки городов находятся в:
+Internet can now be disabled:
+
+```bash
+npm run dev
+```
+
+The browser uses local data only.
+
+## 4. Optional: make a presentation build
+
+While the project is prepared:
+
+```bash
+npm run offline:build
+```
+
+This creates `dist/` with all local Cesium/data assets.
+
+Then it can be served without Vite/network requests using the built-in Node server:
+
+```bash
+npm run offline:serve
+```
+
+Open:
 
 ```text
-public/data/cities.geojson
+http://127.0.0.1:4173
 ```
 
-После клика по региону Cesium показывает только города выбранного региона. Город можно выбрать как кнопкой, так и кликом по точке непосредственно на карте.
+## CSV instead of a database
 
-На текущем MVP:
-
-- `Мурманск` — ready;
-- `Анадырь` — ready;
-- `Нарьян-Мар` — сценарий готовится;
-- `Тикси` — сценарий готовится.
-
-## Данные продукта
-
-География и здания отделены от продуктовых данных.
+The data team can edit ordinary UTF-8 CSV files in `public/data/`:
 
 ```text
-public/data/
-├── russia-boundary.geojson
-├── regions.geojson
-├── cities.geojson
-├── murmansk-buildings.geojson
-├── anadyr-buildings.geojson
-├── scenarios.json
-├── offers.json
-├── professions.json
-├── nature.json
-└── benefits.json
+professions.csv   — profession autocomplete list
+vacancies.csv     — jobs/salaries/experience
+rent.csv          — rental offers
+sale.csv          — purchase offers
 ```
 
-`offers.json` пока содержит подготовленные сценарные вакансии и недвижимость. Позже его можно генерировать из Excel без изменения Cesium-части.
+The frontend parses them directly at startup. PostgreSQL/backend/import is not required for the MVP.
 
-## Откуда берутся данные
+Recommended Excel format: **CSV UTF-8**, separator `;`.
 
-- административные границы — © OpenStreetMap contributors, через Nominatim;
-- здания — © OpenStreetMap contributors, через Overpass API;
-- города — координаты точек OSM, зафиксированные локально для демонстрационного сценария;
-- вакансии, недвижимость, природа и бонусы — пока демонстрационные данные проекта.
+Detailed columns and examples: `public/data/CSV_FORMAT.md`.
 
-## Архитектурный принцип MVP
+### Vacancies example
 
-Backend, Spring, PostgreSQL, PostGIS и GeoServer сейчас сознательно не используются.
-Все нужные данные готовятся заранее и читаются как локальные JSON/GeoJSON. Это делает демонстрацию детерминированной и не зависящей от внешних сервисов.
+```csv
+id;city_id;building_id;profession;position;company;salary_from;salary_to;min_experience;source
+m-work-1;murmansk-city;;Программист;Java-разработчик;Арктик Софт;145000;165000;2;
+```
 
-## v0.5 — карта и OSM без дополнительной команды
+`building_id` may be empty. When the 3D city opens, the row is randomly assigned to a real OSM building near the generated walk. A real `osm-way-*` id can still be supplied to pin a card to a specific building.
 
-В этой версии при обычном `npm run dev` приложение само пытается:
+### Real estate example
 
-- показать реальную подложку OpenStreetMap на глобусе Cesium;
-- получить реальные границы 4 регионов из OpenStreetMap через Nominatim;
-- после выбора региона показать на Cesium точки городов из `public/data/cities.geojson`;
-- после входа в Мурманск или Анадырь получить реальные здания OSM через Overpass и экструдировать их;
-- связать ближайшие к маршруту OSM-здания со сценарными `buildingId`, чтобы существующие карточки продолжили работать.
+```csv
+id;city_id;building_id;address;area;price;rooms;source
+m-rent-1;murmansk-city;;просп. Ленина, 64;42;32000;1;
+```
 
-Если сеть или OSM API недоступны, приложение автоматически использует локальные fallback GeoJSON и не ломает демонстрацию.
+After editing CSV during development, simply refresh the browser.
 
-Перед офлайн-презентацией по-прежнему рекомендуется один раз выполнить `npm run data:osm`, чтобы сохранить реальные данные локально.
+## Random walk in the 3D city
+
+Each time a city scene opens:
+
+- the app picks a random point on the largest connected local OSM public-road network;
+- a road walk is generated in both directions from that spawn point;
+- at intersections the next street is selected randomly, while immediate U-turns/tiny loops are avoided when alternatives exist;
+- the mouse wheel moves forward/backward along that generated walk;
+- available CSV job/real-estate records are randomly attached to real OSM houses near the walk;
+- houses with a card are highlighted by type;
+- when the camera comes close to a highlighted house, its card opens automatically;
+- clicking the highlighted house also opens the card.
+
+The browser still makes no network calls during the presentation. The randomness uses only already-downloaded local roads/buildings.
+
+## Time simulation
+
+The app still uses the prototype rule:
+
+- effective experience = current experience + selected horizon (1/3/5 years);
+- available jobs are filtered by `min_experience`;
+- average available salary is calculated from the matching vacancies;
+- rental budget = 30% of average salary;
+- conditional purchase budget = average salary × 60.
+
+These are scenario assumptions for the MVP, not a financial forecast.
+
+## OSM
+
+OSM data is downloaded only during the explicit preparation command and stored locally for the demo.
+
+© OpenStreetMap contributors, ODbL.

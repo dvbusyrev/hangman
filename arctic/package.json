@@ -1,6 +1,6 @@
 {
   "name": "arctic-life-prototype",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,8 +13,18 @@
     "postinstall": "npm run cesium:copy",
     "data:osm-boundaries": "node scripts/fetch-osm-boundaries.mjs",
     "data:shapes": "node scripts/export-boundary-shapes.mjs",
-    "data:osm-buildings": "node scripts/fetch-osm-buildings.mjs",
-    "data:osm": "npm run data:osm-boundaries && npm run data:osm-buildings"
+    "data:osm-buildings": "npm run data:osm-city",
+    "data:osm": "npm run data:osm-boundaries && npm run data:osm-city",
+    "data:osm-city": "node scripts/fetch-osm-city-data.mjs",
+    "offline:sync": "npm run cesium:copy && npm run data:osm && npm run offline:check",
+    "offline:check": "node scripts/check-offline-data.mjs",
+    "offline:build": "npm run offline:check && npm run build",
+    "offline:serve": "node scripts/serve-dist.mjs",
+    "data:osm-city:murmansk": "node scripts/fetch-osm-city-data.mjs murmansk-city",
+    "data:osm-city:naryan": "node scripts/fetch-osm-city-data.mjs naryan-mar",
+    "data:osm-city:anadyr": "node scripts/fetch-osm-city-data.mjs anadyr",
+    "data:osm-city:tiksi": "node scripts/fetch-osm-city-data.mjs tiksi",
+    "data:check-city": "node scripts/check-city-export.mjs"
   },
   "dependencies": {
     "cesium": "^1.132.0"

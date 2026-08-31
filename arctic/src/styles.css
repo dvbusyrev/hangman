@@ -213,50 +213,76 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .cesium-city { width: 100%; height: 410px; background: #e8edef; }
 .city-overlay {
   position: absolute;
-  z-index: 10;
-  top: 76px;
-  left: 50%;
-  width: min(72%, 390px);
-  transform: translateX(-50%);
+  z-index: 16;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 410px;
   pointer-events: none;
-}
-.object-card {
-  min-height: 155px;
-  padding: 22px;
-  border: 2px solid var(--line);
-  border-radius: 22px;
-  background: rgba(255,255,255,.95);
-  text-align: center;
-}
-.object-card.is-empty { display: grid; place-items: center; }
-.object-card .card-kicker { display: block; margin-bottom: 6px; color: var(--muted); font-size: 12px; text-transform: uppercase; }
-.object-card strong { display: block; font-size: 14px; }
-.object-card h3 { margin: 8px 0 5px; font-size: 21px; }
-.object-card p { margin: 0; font-size: 16px; }
-.empty-card { max-width: 300px; color: var(--muted); line-height: 1.45; }
-.route-hint {
-  position: absolute;
-  z-index: 8;
-  left: 16px;
-  top: 373px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: rgba(255,255,255,.86);
-  color: var(--muted);
-  font-size: 12px;
-}
-.route-progress {
-  position: absolute;
-  z-index: 8;
-  right: 16px;
-  top: 390px;
-  width: 150px;
-  height: 5px;
-  border-radius: 99px;
-  background: rgba(44,58,65,.15);
   overflow: hidden;
 }
-.route-progress span { display: block; height: 100%; background: #53666f; }
+.object-card {
+  position: absolute;
+  width: min(286px, calc(100% - 28px));
+  min-height: 108px;
+  padding: 14px 16px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.98);
+  text-align: left;
+  transform: translate(-50%, -100%);
+  transition: opacity .12s ease, transform .12s ease;
+  box-shadow: 0 7px 20px rgba(20, 31, 36, .18);
+}
+.object-card[hidden] { display: none; }
+.object-card::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -15px;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 15px solid var(--line);
+}
+.object-card::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: -11px;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 12px solid #fff;
+}
+.object-card.is-below { transform: translate(-50%, 0); }
+.object-card.is-below::after {
+  top: -15px;
+  bottom: auto;
+  border-top: 0;
+  border-bottom: 15px solid var(--line);
+}
+.object-card.is-below::before {
+  top: -11px;
+  bottom: auto;
+  border-top: 0;
+  border-bottom: 12px solid #fff;
+}
+.object-card .card-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.object-card strong { display: block; font-size: 13px; }
+.object-card h3 { margin: 6px 0 4px; font-size: 18px; }
+.object-card p { margin: 0; font-size: 15px; }
 
 .timeline {
   position: absolute;
@@ -385,4 +411,117 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.78);
   pointer-events: none;
+}
+
+/* Three-stage journey navigation: region -> city -> life. */
+.prototype-shell { min-height: 830px; }
+.story-screen { min-height: 826px; }
+
+.journey-controls {
+  width: min(100%, 760px);
+  margin: -6px auto 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.journey-step-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+.journey-page-arrow {
+  width: 38px;
+  height: 38px;
+  justify-self: center;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1;
+}
+.journey-page-arrow:hover:not(:disabled) { background: var(--ice); }
+.journey-page-arrow:disabled { opacity: .22; cursor: default; }
+
+.journey-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.journey-steps::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 16.5%;
+  right: 16.5%;
+  top: 9px;
+  height: 2px;
+  background: var(--soft-line);
+}
+.journey-step {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0 4px;
+}
+.journey-step > span {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+}
+.journey-step.is-active > span {
+  box-shadow: inset 0 0 0 5px #fff;
+  background: #303e45;
+}
+.journey-step strong { font-size: 13px; font-weight: 650; }
+.journey-step:disabled { opacity: .34; cursor: default; }
+
+.journey-select-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+}
+.journey-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+.journey-select select {
+  min-width: 235px;
+  height: 40px;
+  padding: 0 34px 0 11px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+}
+.journey-select select:disabled { opacity: .45; }
+
+.region-frame { min-height: 540px; }
+.cesium-region { min-height: 540px; }
+
+@media (max-width: 760px) {
+  .prototype-shell { min-height: 760px; }
+  .story-screen { min-height: 756px; }
+  .journey-controls { margin-top: 0; gap: 10px; }
+  .journey-step-row { grid-template-columns: 34px minmax(0, 1fr) 34px; gap: 3px; }
+  .journey-page-arrow { width: 32px; height: 32px; font-size: 17px; }
+  .journey-step strong { font-size: 11px; }
+  .journey-select-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .journey-select { justify-content: space-between; }
+  .journey-select select { min-width: 0; width: min(72%, 270px); }
+  .region-frame, .cesium-region { min-height: 475px; }
 }

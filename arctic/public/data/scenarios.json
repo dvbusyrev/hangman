@@ -100,7 +100,24 @@
               "pitch": -12,
               "buildingId": "building-008"
             }
-          ]
+          ],
+          "osmPadding": 0.0045,
+          "roadsUrl": "/data/murmansk-roads.geojson",
+          "routeUrl": "/data/murmansk-route.json",
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "buildingCorridorMeters": 0,
+          "maxBuildings": 2200,
+          "randomWalkMeters": 2000,
+          "walkStepMeters": 8,
+          "initialRandomWalkMeters": 800,
+          "osmBbox": [
+            68.88,
+            32.88,
+            69.065,
+            33.27
+          ],
+          "contextUrl": "/data/murmansk-context.geojson"
         }
       ]
     },
@@ -123,8 +140,89 @@
         {
           "id": "naryan-mar",
           "name": "Нарьян-Мар",
-          "ready": false,
-          "note": "Сценарий готовится"
+          "ready": true,
+          "buildingsUrl": "/data/naryan-mar-buildings.geojson",
+          "osmPadding": 0.006,
+          "camera": {
+            "lon": 53.0069,
+            "lat": 67.6381,
+            "height": 1200,
+            "heading": 35,
+            "pitch": -42
+          },
+          "route": [
+            {
+              "lon": 52.993,
+              "lat": 67.6338,
+              "height": 92,
+              "heading": 48,
+              "pitch": -12
+            },
+            {
+              "lon": 52.997,
+              "lat": 67.635,
+              "height": 88,
+              "heading": 48,
+              "pitch": -12,
+              "buildingId": "building-201"
+            },
+            {
+              "lon": 53.001,
+              "lat": 67.6362,
+              "height": 86,
+              "heading": 48,
+              "pitch": -12,
+              "buildingId": "building-202"
+            },
+            {
+              "lon": 53.005,
+              "lat": 67.6374,
+              "height": 84,
+              "heading": 48,
+              "pitch": -12,
+              "buildingId": "building-203"
+            },
+            {
+              "lon": 53.009,
+              "lat": 67.6386,
+              "height": 84,
+              "heading": 48,
+              "pitch": -12,
+              "buildingId": "building-204"
+            },
+            {
+              "lon": 53.013,
+              "lat": 67.6398,
+              "height": 86,
+              "heading": 48,
+              "pitch": -12,
+              "buildingId": "building-205"
+            },
+            {
+              "lon": 53.017,
+              "lat": 67.641,
+              "height": 90,
+              "heading": 48,
+              "pitch": -12,
+              "buildingId": "building-206"
+            }
+          ],
+          "roadsUrl": "/data/naryan-mar-roads.geojson",
+          "routeUrl": "/data/naryan-mar-route.json",
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "buildingCorridorMeters": 0,
+          "maxBuildings": 1400,
+          "randomWalkMeters": 1800,
+          "walkStepMeters": 8,
+          "initialRandomWalkMeters": 700,
+          "osmBbox": [
+            67.6,
+            52.86,
+            67.7,
+            53.15
+          ],
+          "contextUrl": "/data/naryan-mar-context.geojson"
         }
       ]
     },
@@ -228,7 +326,24 @@
               "pitch": -12,
               "buildingId": "building-108"
             }
-          ]
+          ],
+          "osmPadding": 0.007,
+          "roadsUrl": "/data/anadyr-roads.geojson",
+          "routeUrl": "/data/anadyr-route.json",
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "buildingCorridorMeters": 0,
+          "maxBuildings": 1200,
+          "randomWalkMeters": 1600,
+          "walkStepMeters": 8,
+          "initialRandomWalkMeters": 650,
+          "osmBbox": [
+            64.7,
+            177.4,
+            64.78,
+            177.64
+          ],
+          "contextUrl": "/data/anadyr-context.geojson"
         }
       ]
     },
@@ -251,8 +366,89 @@
         {
           "id": "tiksi",
           "name": "Тикси",
-          "ready": false,
-          "note": "Сценарий готовится"
+          "ready": true,
+          "buildingsUrl": "/data/tiksi-buildings.geojson",
+          "osmPadding": 0.008,
+          "camera": {
+            "lon": 128.8694,
+            "lat": 71.6366,
+            "height": 1200,
+            "heading": 35,
+            "pitch": -42
+          },
+          "route": [
+            {
+              "lon": 128.852,
+              "lat": 71.6325,
+              "height": 92,
+              "heading": 55,
+              "pitch": -12
+            },
+            {
+              "lon": 128.858,
+              "lat": 71.6338,
+              "height": 88,
+              "heading": 55,
+              "pitch": -12,
+              "buildingId": "building-301"
+            },
+            {
+              "lon": 128.864,
+              "lat": 71.6351,
+              "height": 86,
+              "heading": 55,
+              "pitch": -12,
+              "buildingId": "building-302"
+            },
+            {
+              "lon": 128.87,
+              "lat": 71.6364,
+              "height": 84,
+              "heading": 55,
+              "pitch": -12,
+              "buildingId": "building-303"
+            },
+            {
+              "lon": 128.876,
+              "lat": 71.6377,
+              "height": 84,
+              "heading": 55,
+              "pitch": -12,
+              "buildingId": "building-304"
+            },
+            {
+              "lon": 128.882,
+              "lat": 71.639,
+              "height": 88,
+              "heading": 55,
+              "pitch": -12,
+              "buildingId": "building-305"
+            },
+            {
+              "lon": 128.888,
+              "lat": 71.6403,
+              "height": 92,
+              "heading": 55,
+              "pitch": -12,
+              "buildingId": "building-306"
+            }
+          ],
+          "roadsUrl": "/data/tiksi-roads.geojson",
+          "routeUrl": "/data/tiksi-route.json",
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "buildingCorridorMeters": 0,
+          "maxBuildings": 1100,
+          "randomWalkMeters": 1500,
+          "walkStepMeters": 8,
+          "initialRandomWalkMeters": 650,
+          "osmBbox": [
+            71.59,
+            128.7,
+            71.71,
+            129.05
+          ],
+          "contextUrl": "/data/tiksi-context.geojson"
         }
       ]
     }

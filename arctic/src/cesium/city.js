@@ -3,74 +3,175 @@ const Cesium = window.Cesium;
 if (!Cesium) {
   throw new Error("Cesium browser script is not loaded. Check /cesium/Cesium.js and run npm install or npm run cesium:copy.");
 }
-import { disableFreeCamera, flyToCamera, readEntityProperty } from "./map.js";
+
+import { addOnlineOsmLayer, disableFreeCamera, readEntityProperty } from "./map.js";
 
 const colors = {
-  neutral: Cesium.Color.fromCssColorString("#d9e1e4").withAlpha(0.88),
-  work: Cesium.Color.fromCssColorString("#f1d75a").withAlpha(0.92),
-  rent: Cesium.Color.fromCssColorString("#6bb6e7").withAlpha(0.92),
-  sale: Cesium.Color.fromCssColorString("#79cb8c").withAlpha(0.92),
-  selected: Cesium.Color.fromCssColorString("#ffffff").withAlpha(1)
+  neutral: Cesium.Color.fromCssColorString("#d9e1e4").withAlpha(1),
+  work: Cesium.Color.fromCssColorString("#f1d75a").withAlpha(1),
+  rent: Cesium.Color.fromCssColorString("#6bb6e7").withAlpha(1),
+  sale: Cesium.Color.fromCssColorString("#79cb8c").withAlpha(1),
+  selected: Cesium.Color.fromCssColorString("#ff8a00").withAlpha(1),
+  road: Cesium.Color.fromCssColorString("#5c6970").withAlpha(0.76),
+  route: Cesium.Color.fromCssColorString("#f6f7f7").withAlpha(0.95)
 };
 
-const osmCityCache = new Map();
-const overpassEndpoints = [
-  "https://overpass-api.de/api/interpreter",
-  "https://overpass.kumi.systems/api/interpreter"
-];
+const cityDataCache = new Map();
 
-export async function enterCityScene(viewer, city, { offerByBuilding = new Map(), onBuildingPick } = {}) {
+/** Read local OSM city data in the background while the region camera is flying. */
+export function preloadCityScene(city) {
+  loadCitySceneData(city).catch((error) => {
+    console.warn(`${city.name}: background OSM preload failed`, error);
+  });
+}
+
+/**
+ * Enter the city using only locally saved OSM data.
+ * Each entry creates a new random road walk and randomly binds the currently visible offers
+ * to real OSM buildings near that walk. If CSV building_id already contains a real OSM id,
+ * that explicit binding is preserved.
+ */
+export async function enterCityScene(viewer, city, { offers = [], onBuildingPick, config = {} } = {}) {
   viewer.dataSources.removeAll();
   viewer.entities.removeAll();
   disableFreeCamera(viewer);
 
+  const runtimeCity = resolveRuntimeCity(city, config);
+
+  viewer.scene.requestRenderMode = true;
+  viewer.scene.maximumRenderTimeChange = Number.POSITIVE_INFINITY;
   viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#dce8ed");
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#d7e1e4");
+  applyCityLighting(viewer, config.lighting ?? {});
+  setCameraFrustum(viewer, runtimeCity.__navigation.fieldOfViewDegrees);
 
-  const buildings = await loadCityBuildingData(city);
-  const source = await Cesium.GeoJsonDataSource.load(buildings, { clampToGround: false });
-  await viewer.dataSources.add(source);
+  const raw = await cityStage(city, "чтение локальных OSM GeoJSON", () => loadCitySceneData(city));
+  const graph = cityStageSync(city, "построение графа улиц", () => buildRoadGraph(raw.roads));
+  if (!graph.edges.length) throw new Error(`${city.name}: в локальном OSM-файле нет пригодной дорожной сети`);
 
-  const entityById = new Map();
-  const summaries = [];
+  // Roads are no longer rendered as Cesium polylines. Instead, a lightweight local OSM-like
+  // raster is generated from the cached roads/buildings and placed on the ground.
+  await cityStage(city, "подложка карты", () => installCityBasemap(viewer, raw, config.basemap ?? {}));
 
-  source.entities.values.forEach((entity) => {
-    if (!entity.polygon) return;
-    const buildingId = readEntityProperty(entity, "buildingId") || entity.id;
-    const height = Number(readEntityProperty(entity, "height") || 18);
-    entity.name = buildingId;
-    entity.polygon.height = 0;
-    entity.polygon.extrudedHeight = height;
-    entity.polygon.material = materialForOffer(offerByBuilding.get(buildingId));
-    entity.polygon.outline = true;
-    entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#65757c").withAlpha(0.8);
-    entityById.set(buildingId, entity);
-    summaries.push({ id: buildingId, height });
-  });
+  const randomWalk = cityStageSync(city, "маршрут по улицам", () => makeRandomRoadWalk(graph, runtimeCity));
+  const preparedBuildings = cityStageSync(city, "подготовка 3D-домов", () => prepareBuildingsForScene(raw.buildings, randomWalk.route, runtimeCity, config.buildings ?? {}));
+  let assignment = assignOffersToRandomBuildings(offers, preparedBuildings.features, randomWalk.route);
+  verifyRealOsmBuildings(preparedBuildings, city);
+
+  // Avoid Cesium.GeoJsonDataSource for the large full-city export. On a large Murmansk
+  // dataset GeoJsonDataSource can hit browser recursion/argument limits while expanding a
+  // FeatureCollection. We create only the configured 3D subset directly as Cesium entities.
+  const { source, entityById, summaries } = cityStageSync(city, "создание 3D-геометрии домов", () => createBuildingDataSource(
+    preparedBuildings,
+    assignment,
+    config.buildings ?? {},
+    config.lighting ?? {}
+  ));
+  await cityStage(city, "добавление 3D-домов в Cesium", () => viewer.dataSources.add(source));
+
+  if (!summaries.length) throw new Error(`${city.name}: OSM GeoJSON contains no polygon buildings`);
+
+  // Do not draw the whole generated walk. It can grow for a long time and the local OSM roads
+  // already provide the visible street network. Keeping the route invisible also improves FPS.
+
+  const focusBuildings = [];
+  const syncFocusBuildings = () => {
+    focusBuildings.length = 0;
+    for (const building of summaries) {
+      building.hasOffer = assignment.offerByBuilding.has(building.id);
+      if (building.hasOffer && Number.isFinite(building.lon) && Number.isFinite(building.lat)) {
+        focusBuildings.push(building);
+      }
+    }
+  };
+  syncFocusBuildings();
+
+  const anchorById = new Map(
+    summaries
+      .filter((building) => Number.isFinite(building.lon) && Number.isFinite(building.lat))
+      .map((building) => [
+        building.id,
+        Cesium.Cartesian3.fromDegrees(
+          building.lon,
+          building.lat,
+          Math.max(2.5, Number(building.height || 12) * Number(runtimeCity.__navigation.cardAnchorHeightFactor ?? 0.62))
+        )
+      ])
+  );
 
   const pickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   pickHandler.setInputAction((movement) => {
     const picked = viewer.scene.pick(movement.position);
     const buildingId = picked?.id?.name || readEntityProperty(picked?.id, "buildingId");
-    if (buildingId && entityById.has(buildingId)) onBuildingPick?.(buildingId);
+    if (buildingId && assignment.offerByBuilding.has(buildingId)) {
+      onBuildingPick?.(buildingId, assignment.offerByBuilding.get(buildingId));
+    }
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-  await flyToCamera(viewer, city.camera, 0.9);
+  applyCameraPoint(viewer, interpolateRouteIndex(randomWalk.route, randomWalk.spawnIndex));
+  viewer.scene.requestRender();
+
+  const restyleBuildings = (selectedBuildingId = null) => {
+    entityById.forEach((entity, id) => {
+      const offer = assignment.offerByBuilding.get(id);
+      const summary = summaries.find((item) => item.id === id);
+      entity.polygon.material = materialForBuilding(
+        summary?.textureUrl ?? null,
+        summary?.buildingClass ?? "unknown",
+        offer,
+        id === selectedBuildingId,
+        config.buildings ?? {}
+      );
+      // Selection is expressed only by a solid material color. No alpha/outline flicker.
+      entity.polygon.outline = false;
+      entity.polygon.outlineColor = Cesium.Color.TRANSPARENT;
+    });
+    viewer.scene.requestRender();
+  };
+
+  const setOffers = (nextOffers = []) => {
+    assignment = assignOffersToRandomBuildings(nextOffers, preparedBuildings.features, randomWalk.route);
+    syncFocusBuildings();
+    restyleBuildings(null);
+    return assignment.assignedOffers;
+  };
+
+  // Normalize the initial style as well, so textured buildings never become translucent/outlined.
+  restyleBuildings(null);
 
   return {
     buildings: summaries,
-    entityById,
-    setOffers(nextOfferByBuilding) {
-      entityById.forEach((entity, buildingId) => {
-        entity.polygon.material = materialForOffer(nextOfferByBuilding.get(buildingId));
-      });
+    focusBuildings,
+    route: randomWalk.route,
+    spawnIndex: randomWalk.spawnIndex,
+    extendForward(meters = 900) {
+      return randomWalk.extendForward(meters);
     },
-    highlight(buildingId, nextOfferByBuilding = offerByBuilding) {
-      entityById.forEach((entity, id) => {
-        entity.polygon.material = id === buildingId
-          ? colors.selected
-          : materialForOffer(nextOfferByBuilding.get(id));
-      });
+    extendBackward(meters = 900) {
+      return randomWalk.extendBackward(meters);
+    },
+    entityById,
+    get offerByBuilding() {
+      return assignment.offerByBuilding;
+    },
+    get assignedOffers() {
+      return assignment.assignedOffers;
+    },
+    settings: runtimeCity.__navigation,
+    setOffers,
+    getOffer(buildingId) {
+      return assignment.offerByBuilding.get(buildingId) ?? null;
+    },
+    getScreenAnchor(buildingId) {
+      const world = anchorById.get(buildingId);
+      if (!world) return null;
+      const point = viewer.scene.cartesianToCanvasCoordinates?.(world)
+        ?? Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, world);
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+      return { x: point.x, y: point.y };
+    },
+    highlight(buildingId) {
+      restyleBuildings(buildingId);
     },
     destroy() {
       if (!pickHandler.isDestroyed()) pickHandler.destroy();
@@ -78,132 +179,797 @@ export async function enterCityScene(viewer, city, { offerByBuilding = new Map()
   };
 }
 
-async function loadCityBuildingData(city) {
-  if (osmCityCache.has(city.id)) return osmCityCache.get(city.id);
-
+async function cityStage(city, label, action) {
   try {
-    const geojson = await fetchOsmBuildings(city);
-    if (geojson.features.length) {
-      osmCityCache.set(city.id, geojson);
-      console.info(`${city.name}: loaded ${geojson.features.length} real OSM buildings.`);
-      return geojson;
-    }
+    return await action();
   } catch (error) {
-    console.warn(`${city.name}: live OSM buildings unavailable; using local GeoJSON fallback.`, error);
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${city.name}: этап «${label}»: ${message}`, { cause: error });
   }
-
-  // The fallback file allows an offline demo. `npm run data:osm-buildings` can replace it with
-  // the same real OSM geometry before the presentation.
-  const response = await fetch(city.buildingsUrl);
-  if (!response.ok) throw new Error(`Cannot load ${city.buildingsUrl}: ${response.status}`);
-  const fallback = await response.json();
-  osmCityCache.set(city.id, fallback);
-  return fallback;
 }
 
-async function fetchOsmBuildings(city) {
-  const bbox = routeBbox(city.route, city.id === "anadyr" ? 0.007 : 0.0045);
-  const [south, west, north, east] = bbox;
-  const query = `[out:json][timeout:35];\n(\n  way["building"](${south},${west},${north},${east});\n);\nout body;\n>;\nout skel qt;`;
+function cityStageSync(city, label, action) {
+  try {
+    return action();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${city.name}: этап «${label}»: ${message}`, { cause: error });
+  }
+}
 
-  let lastError = null;
-  for (const endpoint of overpassEndpoints) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: new URLSearchParams({ data: query }),
-        signal: controller.signal
-      });
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-      const data = await response.json();
-      return overpassToGeoJson(data, city);
-    } catch (error) {
-      lastError = error;
-    } finally {
-      clearTimeout(timer);
+function createBuildingDataSource(preparedBuildings, assignment, buildingConfig, lightingConfig) {
+  const source = new Cesium.CustomDataSource("osm-buildings");
+  const entityById = new Map();
+  const summaries = [];
+
+  for (const feature of preparedBuildings.features ?? []) {
+    if (feature.geometry?.type !== "Polygon") continue;
+    const ring = feature.geometry.coordinates?.[0];
+    if (!Array.isArray(ring) || ring.length < 4) continue;
+
+    const degrees = [];
+    const usableLength = sameCoordinate(ring[0], ring.at(-1)) ? ring.length - 1 : ring.length;
+    for (let index = 0; index < usableLength; index += 1) {
+      const lon = Number(ring[index]?.[0]);
+      const lat = Number(ring[index]?.[1]);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      degrees.push(lon, lat);
+    }
+    if (degrees.length < 6) continue;
+
+    const properties = feature.properties ?? {};
+    const buildingId = String(properties.buildingId ?? feature.id ?? "");
+    if (!buildingId) continue;
+
+    const osmBuildingId = String(properties.osmBuildingId ?? buildingId);
+    const height = Number(properties.height || 12);
+    const buildingClass = String(properties.buildingClass || "unknown");
+    const textureUrl = properties.textureUrl || null;
+    const offer = assignment.offerByBuilding.get(buildingId);
+    const positions = Cesium.Cartesian3.fromDegreesArray(degrees);
+    if (!positions || positions.length < 3) continue;
+
+    const entity = source.entities.add({
+      id: buildingId,
+      name: buildingId,
+      properties: {
+        buildingId,
+        osmBuildingId,
+        osmId: properties.osmId ?? null,
+        address: properties.address ?? null,
+        height,
+        buildingClass,
+        textureUrl
+      },
+      polygon: {
+        hierarchy: new Cesium.PolygonHierarchy(positions),
+        height: 0,
+        extrudedHeight: height,
+        shadows: lightingConfig?.shadows ? Cesium.ShadowMode.ENABLED : Cesium.ShadowMode.DISABLED,
+        material: materialForBuilding(textureUrl, buildingClass, offer, false, buildingConfig),
+        outline: false,
+        outlineColor: Cesium.Color.TRANSPARENT
+      }
+    });
+
+    entityById.set(buildingId, entity);
+    summaries.push({
+      id: buildingId,
+      osmBuildingId,
+      osmId: properties.osmId ?? null,
+      address: properties.address ?? null,
+      height,
+      lon: Number(properties.centerLon),
+      lat: Number(properties.centerLat),
+      hasOffer: Boolean(offer),
+      buildingClass,
+      textureUrl
+    });
+  }
+
+  return { source, entityById, summaries };
+}
+
+async function loadCitySceneData(city) {
+  if (cityDataCache.has(city.id)) return cityDataCache.get(city.id);
+
+  const promise = (async () => {
+    const [localBuildings, localRoads, localContext] = await Promise.all([
+      loadLocalOsmGeoJson(city.buildingsUrl, "building"),
+      loadLocalOsmGeoJson(city.roadsUrl, "road"),
+      city.contextUrl ? loadOptionalGeoJson(city.contextUrl) : Promise.resolve(null)
+    ]);
+
+    if (!localBuildings) {
+      throw new Error(`${city.name}: нет локального OSM-файла домов ${city.buildingsUrl}. Запустите npm run offline:sync заранее, пока есть интернет.`);
+    }
+    if (!localRoads) {
+      throw new Error(`${city.name}: нет локального OSM-файла дорог ${city.roadsUrl}. Запустите npm run offline:sync заранее, пока есть интернет.`);
+    }
+
+    console.info(`${city.name}: OFFLINE OSM scene: ${localBuildings.features.length} buildings, ${localRoads.features.length} roads, ${localContext?.features?.length ?? 0} map objects.`);
+    return { buildings: localBuildings, roads: localRoads, context: localContext };
+  })();
+
+  cityDataCache.set(city.id, promise);
+  try {
+    return await promise;
+  } catch (error) {
+    cityDataCache.delete(city.id);
+    throw error;
+  }
+}
+
+async function loadLocalOsmGeoJson(url, kind) {
+  if (!url) return null;
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!isRealOsmGeoJson(data, kind)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+async function loadOptionalGeoJson(url) {
+  if (!url) return null;
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data?.type === "FeatureCollection" && Array.isArray(data.features) ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+function isRealOsmGeoJson(data, kind) {
+  if (data?.type !== "FeatureCollection" || !Array.isArray(data.features) || !data.features.length) return false;
+  if (!String(data.properties?.source ?? "").includes("OpenStreetMap")) return false;
+  if (kind === "building") {
+    return data.features.some((feature) => feature.geometry?.type === "Polygon" && feature.properties?.source === "OpenStreetMap");
+  }
+  return data.features.some((feature) => feature.geometry?.type === "LineString" && feature.properties?.source === "OpenStreetMap");
+}
+
+/** Build a compact undirected graph from the real OSM road LineStrings. */
+function buildRoadGraph(roads) {
+  const nodes = new Map();
+  const edges = [];
+  const adjacency = new Map();
+
+  const addNode = (coord) => {
+    const key = coordinateKey(coord);
+    if (!nodes.has(key)) nodes.set(key, [Number(coord[0]), Number(coord[1])]);
+    if (!adjacency.has(key)) adjacency.set(key, []);
+    return key;
+  };
+
+  for (const feature of roads.features ?? []) {
+    if (feature.geometry?.type !== "LineString") continue;
+    const coordinates = feature.geometry.coordinates;
+    for (let index = 1; index < coordinates.length; index += 1) {
+      const a = [Number(coordinates[index - 1][0]), Number(coordinates[index - 1][1])];
+      const b = [Number(coordinates[index][0]), Number(coordinates[index][1])];
+      const length = haversineMeters(a, b);
+      if (!Number.isFinite(length) || length < 1.5) continue;
+      const aKey = addNode(a);
+      const bKey = addNode(b);
+      const edge = {
+        id: edges.length,
+        aKey,
+        bKey,
+        a,
+        b,
+        length,
+        highway: feature.properties?.highway ?? "residential",
+        name: feature.properties?.name ?? null
+      };
+      edges.push(edge);
+      adjacency.get(aKey).push(edge.id);
+      adjacency.get(bKey).push(edge.id);
     }
   }
-  throw lastError ?? new Error("All Overpass endpoints failed");
+
+  const componentEdges = largestRoadComponent(nodes, edges, adjacency);
+  return {
+    nodes,
+    adjacency,
+    edges: componentEdges.map((index) => edges[index]),
+    edgeById: new Map(componentEdges.map((index) => [index, edges[index]])),
+    allowedEdgeIds: new Set(componentEdges)
+  };
 }
 
-function overpassToGeoJson(data, city) {
-  const nodeById = new Map();
-  const ways = [];
-  for (const element of data.elements ?? []) {
-    if (element.type === "node") nodeById.set(element.id, [element.lon, element.lat]);
-    if (element.type === "way" && element.tags?.building) ways.push(element);
+function largestRoadComponent(nodes, edges, adjacency) {
+  const visited = new Set();
+  let bestEdges = [];
+
+  for (const nodeKey of nodes.keys()) {
+    if (visited.has(nodeKey)) continue;
+    const queue = [nodeKey];
+    visited.add(nodeKey);
+    const componentEdgeIds = new Set();
+
+    while (queue.length) {
+      const current = queue.shift();
+      for (const edgeId of adjacency.get(current) ?? []) {
+        componentEdgeIds.add(edgeId);
+        const edge = edges[edgeId];
+        const next = edge.aKey === current ? edge.bKey : edge.aKey;
+        if (!visited.has(next)) {
+          visited.add(next);
+          queue.push(next);
+        }
+      }
+    }
+
+    if (componentEdgeIds.size > bestEdges.length) bestEdges = [...componentEdgeIds];
   }
 
-  const features = ways.map((way) => wayToFeature(way, nodeById)).filter(Boolean);
-  assignScenarioBuildingIds(features, city.route);
+  return bestEdges;
+}
+
+/**
+ * Create one random path through the road graph. The spawn point is an interior point of a random
+ * real OSM road. From there we pre-generate a random walk in both directions, choosing a new road
+ * at intersections. Scrolling then feels stable and can always be reversed.
+ */
+function makeRandomRoadWalk(graph, city) {
+  const eligible = graph.edges.filter((edge) => edge.length >= 7);
+  if (!eligible.length) throw new Error("No sufficiently long road edges for random spawn");
+
+  const spawnEdge = weightedRandom(eligible, (edge) => edge.length * roadSpawnWeight(edge.highway));
+  const spawnT = 0.18 + Math.random() * 0.64;
+  const spawn = lerpCoordinate(spawnEdge.a, spawnEdge.b, spawnT);
+  const forwardToB = Math.random() >= 0.5;
+  const forwardEndKey = forwardToB ? spawnEdge.bKey : spawnEdge.aKey;
+  const backwardEndKey = forwardToB ? spawnEdge.aKey : spawnEdge.bKey;
+  const forwardEnd = forwardToB ? spawnEdge.b : spawnEdge.a;
+  const backwardEnd = forwardToB ? spawnEdge.a : spawnEdge.b;
+
+  // Important: we do NOT pre-generate random turns anymore. The route only reaches the
+  // next real OSM junction. Left/right arrows choose the branch there; without a choice
+  // the walk continues only along a sufficiently straight continuation.
+  const forwardState = createWalkState(forwardEndKey, spawnEdge.id, [spawn, forwardEnd]);
+  const backwardState = createWalkState(backwardEndKey, spawnEdge.id, [spawn, backwardEnd]);
+  const stepMeters = Number(city.walkStepMeters ?? 3.5);
+  const route = [];
+
+  const backwardReversed = [...backwardState.coordinates].reverse();
+  const combined = [...backwardReversed.slice(0, -1), ...forwardState.coordinates];
+  const densified = densifyLine(removeConsecutiveDuplicates(combined), stepMeters);
+  route.length = 0;
+  for (const cameraPoint of cameraRouteFromCoordinates(densified, city)) {
+    route.push(cameraPoint);
+  }
+
+  let nearestIndex = 0;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  route.forEach((point, index) => {
+    const distance = haversineMeters([point.lon, point.lat], spawn);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = index;
+    }
+  });
+
+  const appendForwardEdge = () => {
+    const oldTail = forwardState.coordinates.at(-1);
+    const next = extendWalkStateOneEdge(graph, forwardState, city);
+    if (!next) return 0;
+    const dense = densifyLine(removeConsecutiveDuplicates([oldTail, next]), stepMeters);
+    const cameras = cameraRouteFromCoordinates(dense, city);
+    if (cameras.length < 2) return 0;
+    const previousLast = route.at(-1);
+    previousLast.heading = bearingDegrees([previousLast.lon, previousLast.lat], [cameras[1].lon, cameras[1].lat]);
+    const added = cameras.length - 1;
+    for (let index = 1; index < cameras.length; index += 1) {
+      route.push(cameras[index]);
+    }
+    return added;
+  };
+
+  const prependBackwardEdge = () => {
+    const oldTail = backwardState.coordinates.at(-1);
+    const next = extendWalkStateOneEdge(graph, backwardState, city);
+    if (!next) return 0;
+    const denseOutward = densifyLine(removeConsecutiveDuplicates([oldTail, next]), stepMeters);
+    const denseTowardSpawn = denseOutward.reverse();
+    const cameras = cameraRouteFromCoordinates(denseTowardSpawn, city);
+    if (cameras.length < 2) return 0;
+    const prepended = cameras.slice(0, -1);
+    for (let index = prepended.length - 1; index >= 0; index -= 1) {
+      route.unshift(prepended[index]);
+    }
+    if (route.length >= 2) {
+      route[0].heading = bearingDegrees([route[0].lon, route[0].lat], [route[1].lon, route[1].lat]);
+    }
+    return prepended.length;
+  };
+
+  return {
+    route,
+    spawnIndex: nearestIndex,
+    spawnRoad: spawnEdge.name ?? spawnEdge.highway,
+    settings: city.__navigation ?? {},
+    chooseTurn(direction, movementDirection = 1) {
+      const state = movementDirection < 0 ? backwardState : forwardState;
+      state.pendingTurn = direction === "left" || direction === "right" ? direction : null;
+    },
+    extendForward() {
+      return appendForwardEdge();
+    },
+    extendBackward() {
+      return prependBackwardEdge();
+    }
+  };
+}
+
+function createWalkState(currentKey, previousEdgeId, coordinates) {
+  return {
+    currentKey,
+    previousEdgeId,
+    pendingTurn: null,
+    recentEdges: [previousEdgeId],
+    coordinates: [...coordinates]
+  };
+}
+
+/**
+ * Extend by exactly ONE OSM edge. This is what makes junctions interactive: the application
+ * never decides a chain of future turns for the user. Left/right is consumed at the next
+ * junction, otherwise only a straight continuation is accepted. At a dead end we turn back
+ * on the same road so the walk can remain endless.
+ */
+function extendWalkStateOneEdge(graph, state, city) {
+  const previousEdge = graph.edgeById.get(state.previousEdgeId) ?? graph.edges.find((edge) => edge.id === state.previousEdgeId);
+  let candidates = (graph.adjacency.get(state.currentKey) ?? [])
+    .filter((edgeId) => graph.allowedEdgeIds.has(edgeId))
+    .map((edgeId) => graph.edgeById.get(edgeId) ?? graph.edges.find((edge) => edge.id === edgeId))
+    .filter(Boolean);
+
+  if (!candidates.length) return null;
+
+  // Prefer every road except the edge we just came from. If there is no alternative this is
+  // a genuine dead end and a U-turn is the only way to keep the route infinite.
+  const nonBacktracking = candidates.filter((edge) => edge.id !== previousEdge?.id);
+  if (nonBacktracking.length) candidates = nonBacktracking;
+
+  const variants = candidates.map((edge) => {
+    const junction = edge.aKey === state.currentKey ? edge.a : edge.b;
+    const out = edge.aKey === state.currentKey ? edge.b : edge.a;
+    const previousIn = previousEdge
+      ? (previousEdge.aKey === state.currentKey ? previousEdge.b : previousEdge.a)
+      : state.coordinates.at(-2) ?? junction;
+    const incomingHeading = bearingDegrees(previousIn, junction);
+    const outgoingHeading = bearingDegrees(junction, out);
+    return {
+      edge,
+      nextCoord: out,
+      nextKey: edge.aKey === state.currentKey ? edge.bKey : edge.aKey,
+      turn: shortestAngleDelta(incomingHeading, outgoingHeading)
+    };
+  });
+
+  const preference = state.pendingTurn;
+  const straightThreshold = Number(city.__navigation?.straightContinuationDegrees ?? 48);
+  const sideThreshold = Number(city.__navigation?.turnDirectionThresholdDegrees ?? 12);
+  let chosen = null;
+
+  let consumePendingTurn = false;
+
+  if (variants.length === 1) {
+    // Ordinary OSM ways are split into many small graph edges. A pending Left/Right command
+    // must survive those intermediate nodes and be consumed only at a REAL branching junction.
+    chosen = variants[0];
+  } else if (preference === "left") {
+    const left = variants.filter((item) => item.turn < -sideThreshold);
+    if (left.length) {
+      chosen = chooseClosestTurn(left, -90);
+      consumePendingTurn = true;
+    } else {
+      // If this is not a usable left turn, continue straight and keep the command queued
+      // for the next junction. At a T-junction without straight continuation we wait.
+      const straight = variants.filter((item) => Math.abs(item.turn) <= straightThreshold);
+      if (straight.length) chosen = chooseClosestTurn(straight, 0);
+    }
+  } else if (preference === "right") {
+    const right = variants.filter((item) => item.turn > sideThreshold);
+    if (right.length) {
+      chosen = chooseClosestTurn(right, 90);
+      consumePendingTurn = true;
+    } else {
+      const straight = variants.filter((item) => Math.abs(item.turn) <= straightThreshold);
+      if (straight.length) chosen = chooseClosestTurn(straight, 0);
+    }
+  } else {
+    // No arrow was pressed: never choose a left/right branch automatically.
+    const straight = variants.filter((item) => Math.abs(item.turn) <= straightThreshold);
+    if (straight.length) chosen = chooseClosestTurn(straight, 0);
+  }
+
+  if (!chosen) return null;
+
+  if (consumePendingTurn) state.pendingTurn = null;
+  state.coordinates.push(chosen.nextCoord);
+  state.previousEdgeId = chosen.edge.id;
+  state.recentEdges.push(chosen.edge.id);
+  state.currentKey = chosen.nextKey;
+  return chosen.nextCoord;
+}
+
+function chooseClosestTurn(variants, targetDegrees) {
+  if (!variants.length) return null;
+  return [...variants].sort((a, b) => {
+    const aScore = Math.abs(a.turn - targetDegrees);
+    const bScore = Math.abs(b.turn - targetDegrees);
+    if (aScore !== bScore) return aScore - bScore;
+    return roadSpawnWeight(b.edge.highway) - roadSpawnWeight(a.edge.highway);
+  })[0];
+}
+
+function roadSpawnWeight(highway) {
+  const weight = {
+    motorway: 0.3,
+    trunk: 0.5,
+    primary: 0.8,
+    secondary: 1.0,
+    tertiary: 1.15,
+    unclassified: 1.0,
+    residential: 1.4,
+    living_street: 1.35,
+    service: 0.72,
+    pedestrian: 0.8,
+    road: 0.75
+  };
+  return weight[highway] ?? 1;
+}
+
+function cameraRouteFromCoordinates(coordinates, city) {
+  return coordinates.map((point, index) => {
+    const prev = coordinates[Math.max(0, index - 1)];
+    const next = coordinates[Math.min(coordinates.length - 1, index + 1)];
+    const heading = index === coordinates.length - 1
+      ? bearingDegrees(prev, point)
+      : bearingDegrees(point, next);
+    return {
+      lon: point[0],
+      lat: point[1],
+      height: Number(city.routeHeight ?? 10),
+      heading,
+      pitch: Number(city.routePitch ?? -5)
+    };
+  });
+}
+
+function prepareBuildingsForScene(buildings, route, city, buildingConfig = {}) {
+  const all = buildings.features
+    .filter((feature) => feature.geometry?.type === "Polygon")
+    .map((feature) => {
+      const clone = structuredClone(feature);
+      const center = polygonCentroid(clone.geometry.coordinates[0]);
+      clone.properties ??= {};
+      clone.properties.centerLon = center[0];
+      clone.properties.centerLat = center[1];
+      clone.properties.osmBuildingId ??= clone.properties.buildingId ?? clone.id;
+      clone.properties.buildingId = clone.properties.osmBuildingId;
+      clone.id = clone.properties.osmBuildingId;
+
+      const buildingClass = classifyBuilding(clone.properties.building);
+      clone.properties.buildingClass = buildingClass;
+      clone.properties.height = configuredBuildingHeight(clone.properties, buildingClass, buildingConfig);
+      clone.properties.textureUrl = chooseBuildingTexture(clone.properties.osmBuildingId, buildingClass, buildingConfig);
+      const routeDistance = distancePointToRouteMeters(center, route);
+      return { feature: clone, center, routeDistance };
+    });
+
+  const limit = Math.max(1, Number(city.maxBuildings ?? 1200));
+  let candidates = all;
+  if (all.length > limit) {
+    // Keep a dense real 3D neighbourhood around the spawn, but also reserve part of the budget
+    // for deterministic buildings spread across the whole exported city. The 2D base map still
+    // contains EVERY downloaded OSM footprint.
+    const nearCount = Math.round(limit * 0.68);
+    const near = [...all].sort((a, b) => a.routeDistance - b.routeDistance).slice(0, nearCount);
+    const used = new Set(near.map((item) => item.feature.id));
+    const spread = all
+      .filter((item) => !used.has(item.feature.id))
+      .sort((a, b) => stableUnit(a.feature.id, "city-spread") - stableUnit(b.feature.id, "city-spread"))
+      .slice(0, limit - near.length);
+    candidates = [...near, ...spread];
+  }
 
   return {
     type: "FeatureCollection",
-    properties: {
-      cityId: city.id,
-      cityName: city.name,
-      source: "OpenStreetMap via Overpass API",
-      attribution: "© OpenStreetMap contributors"
-    },
-    features
+    properties: { ...buildings.properties, renderedBuildings: candidates.length, totalBuildings: all.length },
+    features: candidates.map((item) => item.feature)
   };
 }
 
-function wayToFeature(way, nodeById) {
-  const coordinates = (way.nodes ?? []).map((id) => nodeById.get(id)).filter(Boolean);
-  if (coordinates.length < 4) return null;
-  const first = coordinates[0];
-  const last = coordinates[coordinates.length - 1];
-  if (first[0] !== last[0] || first[1] !== last[1]) coordinates.push([...first]);
+/** Randomly attach current CSV offers to real OSM buildings close to the generated walk. */
+function assignOffersToRandomBuildings(offers, features, route) {
+  const buildingRows = features.map((feature) => ({
+    id: feature.properties.buildingId,
+    center: [Number(feature.properties.centerLon), Number(feature.properties.centerLat)],
+    routeDistance: distancePointToRouteMeters(
+      [Number(feature.properties.centerLon), Number(feature.properties.centerLat)],
+      route
+    )
+  }));
 
-  const tags = way.tags ?? {};
-  const levels = numberOrNull(tags["building:levels"]);
-  const explicitHeight = parseMeters(tags.height ?? tags["building:height"]);
-  const height = explicitHeight ?? (levels ? Math.max(3, levels * 3.1) : 9 + (Number(way.id) % 7) * 3);
-  const address = [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(", ");
+  const byId = new Map(buildingRows.map((item) => [item.id, item]));
+  // Keep the random-looking placement stable while the user switches Profession / Real estate.
+  // We use OSM ids as a deterministic seed instead of reshuffling the whole city every time.
+  const nearRoute = buildingRows
+    .filter((item) => item.routeDistance <= 80)
+    .sort((a, b) => stableUnit(a.id, "near-route") - stableUnit(b.id, "near-route"));
+  const elsewhere = buildingRows
+    .filter((item) => item.routeDistance > 80)
+    .sort((a, b) => stableUnit(a.id, "elsewhere") - stableUnit(b.id, "elsewhere"));
+  const available = [...nearRoute, ...elsewhere];
+  const used = new Set();
+  const offerByBuilding = new Map();
+  const assignedOffers = [];
 
-  return {
-    type: "Feature",
-    id: `osm-way-${way.id}`,
-    properties: {
-      buildingId: `osm-way-${way.id}`,
-      osmId: way.id,
-      name: tags.name ?? null,
-      address: address || null,
-      height,
-      levels,
-      source: "OpenStreetMap"
-    },
-    geometry: { type: "Polygon", coordinates: [coordinates] }
-  };
+  for (const offer of offers) {
+    let target = null;
+    if (offer.buildingId && byId.has(offer.buildingId) && !used.has(offer.buildingId)) {
+      target = byId.get(offer.buildingId);
+    }
+    if (!target) {
+      const pool = available.filter((candidate) => !used.has(candidate.id));
+      pool.sort((a, b) =>
+        stableUnit(`${offer.id}:${a.id}`, "offer-building") -
+        stableUnit(`${offer.id}:${b.id}`, "offer-building")
+      );
+      target = pool[0] ?? null;
+    }
+    if (!target) break;
+
+    used.add(target.id);
+    const assigned = { ...offer, buildingId: target.id };
+    assignedOffers.push(assigned);
+    offerByBuilding.set(target.id, assigned);
+  }
+
+  return { assignedOffers, offerByBuilding };
 }
 
-function assignScenarioBuildingIds(features, route) {
-  const available = new Set(features.map((_, index) => index));
-  const focuses = route.filter((point) => point.buildingId);
+export function createRouteController(viewer, walk, focusBuildings, { initialIndex = null, onProgress, config = {} } = {}) {
+  const activeRoute = walk?.route;
+  if (!Array.isArray(activeRoute) || activeRoute.length < 2) throw new Error("No OSM road walk available");
 
-  for (const focus of focuses) {
-    let bestIndex = null;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    for (const index of available) {
-      const centroid = polygonCentroid(features[index].geometry.coordinates[0]);
-      const dx = centroid[0] - Number(focus.lon);
-      const dy = centroid[1] - Number(focus.lat);
-      const distance = dx * dx + dy * dy;
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
+  let cursor = clamp(Number.isFinite(initialIndex) ? initialIndex : Number(walk.spawnIndex ?? 0), 0, activeRoute.length - 1);
+  let frame = 0;
+  let queuedSteps = 0;
+  let distanceTravelled = 0;
+  let lastMoveDirection = 1;
+  const canvas = viewer.scene.canvas;
+
+  const settings = { ...(walk.settings ?? {}), ...(config.navigation ?? {}) };
+
+  const ensureTargetExists = (target, direction) => {
+    let nextTarget = target;
+    let guard = 0;
+
+    if (direction > 0) {
+      while (nextTarget > activeRoute.length - 1 && guard < 8) {
+        guard += 1;
+        const added = Number(walk.extendForward?.() ?? 0);
+        if (!added) break; // at a junction that needs Left/Right, remain there
+      }
+    } else if (direction < 0) {
+      while (nextTarget < 0 && guard < 8) {
+        guard += 1;
+        const prepended = Number(walk.extendBackward?.() ?? 0);
+        if (!prepended) break;
+        cursor += prepended;
+        nextTarget += prepended;
       }
     }
-    if (bestIndex == null) continue;
-    features[bestIndex].properties.originalBuildingId = features[bestIndex].properties.buildingId;
-    features[bestIndex].properties.buildingId = focus.buildingId;
-    features[bestIndex].id = focus.buildingId;
-    available.delete(bestIndex);
+
+    return nextTarget;
+  };
+
+  const moveBy = (steps) => {
+    if (!Number.isFinite(steps) || Math.abs(steps) < 0.0001) return;
+    const direction = Math.sign(steps);
+    lastMoveDirection = direction || lastMoveDirection;
+    const previous = cursor;
+    let target = cursor + steps;
+    target = ensureTargetExists(target, direction);
+    cursor = clamp(target, 0, activeRoute.length - 1);
+    distanceTravelled += Math.abs(cursor - previous) * Number(settings.roadStepMeters ?? 3.5);
+    applyCursor();
+  };
+
+  const selectTurn = (direction) => {
+    walk.chooseTurn?.(direction, lastMoveDirection);
+
+    // If we are already standing exactly at a junction, materialise the selected OSM branch
+    // immediately. The camera remains at the junction; the next Up/scroll moves into it.
+    if (lastMoveDirection >= 0 && cursor >= activeRoute.length - 1.001) {
+      walk.extendForward?.();
+    } else if (lastMoveDirection < 0 && cursor <= 0.001) {
+      const prepended = Number(walk.extendBackward?.() ?? 0);
+      cursor += prepended;
+    }
+    applyCursor();
+  };
+
+  const onWheel = (event) => {
+    event.preventDefault();
+    const divisor = Math.max(60, Number(settings.wheelDivisor ?? 260));
+    const maxSteps = Math.max(0.25, Number(settings.maxWheelStepsPerEvent ?? 1.15));
+    queuedSteps += clamp(event.deltaY / divisor, -maxSteps, maxSteps);
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      const steps = queuedSteps;
+      queuedSteps = 0;
+      frame = 0;
+      moveBy(steps);
+    });
+  };
+
+  const onKeyDown = (event) => {
+    const target = event.target;
+    const editable = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
+    if (editable) return;
+
+    const moveSteps = Math.max(0.1, Number(settings.keyboardMoveSteps ?? 0.85));
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      moveBy(moveSteps);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      moveBy(-moveSteps);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      selectTurn("left");
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      selectTurn("right");
+    }
+  };
+
+  canvas.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("keydown", onKeyDown);
+
+  function applyCursor() {
+    const camera = interpolateRouteIndex(activeRoute, cursor);
+    applyCameraPoint(viewer, camera);
+    viewer.scene.requestRender();
+
+    const focusBuildingId = nearestFocusBuilding(
+      focusBuildings,
+      [camera.lon, camera.lat],
+      Number(camera.heading ?? 0),
+      Number(settings.cardTriggerDistanceMeters ?? 115),
+      Number(settings.cardHideBehindDegrees ?? 98)
+    );
+    onProgress?.({
+      progress: (distanceTravelled % 1000) / 1000,
+      routeIndex: cursor,
+      buildingId: focusBuildingId,
+      camera
+    });
   }
+
+  applyCursor();
+
+  return {
+    getIndex: () => cursor,
+    refresh: applyCursor,
+    destroy() {
+      canvas.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKeyDown);
+      if (frame) cancelAnimationFrame(frame);
+    }
+  };
+}
+
+function applyCameraPoint(viewer, camera) {
+  viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(camera.lon, camera.lat, camera.height),
+    orientation: {
+      heading: Cesium.Math.toRadians(camera.heading ?? 0),
+      pitch: Cesium.Math.toRadians(camera.pitch ?? -5),
+      roll: 0
+    }
+  });
+}
+
+function nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees = 98) {
+  let best = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const building of buildings ?? []) {
+    const target = [building.lon, building.lat];
+    const distance = haversineMeters(point, target);
+    if (distance > thresholdMeters || distance >= bestDistance) continue;
+    const targetBearing = bearingDegrees(point, target);
+    const relative = Math.abs(shortestAngleDelta(cameraHeading, targetBearing));
+    // Once a building is clearly behind the user, its card disappears immediately.
+    if (relative > hideBehindDegrees) continue;
+    bestDistance = distance;
+    best = building.id;
+  }
+  return best;
+}
+
+function interpolateRouteIndex(route, cursor) {
+  const index = clamp(Math.floor(cursor), 0, route.length - 2);
+  const local = clamp(cursor - index, 0, 1);
+  const a = route[index];
+  const b = route[index + 1];
+  const lerp = (key, fallback = 0) => Number(a[key] ?? fallback) + (Number(b[key] ?? a[key] ?? fallback) - Number(a[key] ?? fallback)) * local;
+  return {
+    lon: lerp("lon"),
+    lat: lerp("lat"),
+    height: lerp("height", 10),
+    heading: interpolateAngle(Number(a.heading ?? 0), Number(b.heading ?? a.heading ?? 0), local),
+    pitch: lerp("pitch", -5)
+  };
+}
+
+function interpolateAngle(a, b, t) {
+  return a + shortestAngleDelta(a, b) * t;
+}
+
+function shortestAngleDelta(a, b) {
+  return ((b - a + 540) % 360) - 180;
+}
+
+function sameCoordinate(a, b) {
+  return Array.isArray(a) && Array.isArray(b)
+    && Number(a[0]) === Number(b[0])
+    && Number(a[1]) === Number(b[1]);
+}
+
+function coordinateKey(coord) {
+  // 6 decimals preserves OSM shared-node identity while absorbing harmless JSON float noise.
+  return `${Number(coord[0]).toFixed(6)},${Number(coord[1]).toFixed(6)}`;
+}
+
+function lerpCoordinate(a, b, t) {
+  return [Number(a[0]) + (Number(b[0]) - Number(a[0])) * t, Number(a[1]) + (Number(b[1]) - Number(a[1])) * t];
+}
+
+function weightedRandom(items, weightFn) {
+  if (!items.length) return null;
+  const weights = items.map((item) => Math.max(0.001, Number(weightFn(item)) || 0.001));
+  const total = weights.reduce((sum, value) => sum + value, 0);
+  let value = Math.random() * total;
+  for (let index = 0; index < items.length; index += 1) {
+    value -= weights[index];
+    if (value <= 0) return items[index];
+  }
+  return items.at(-1);
+}
+
+function shuffle(items) {
+  for (let index = items.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [items[index], items[swap]] = [items[swap], items[index]];
+  }
+  return items;
+}
+
+function removeConsecutiveDuplicates(coordinates) {
+  const result = [];
+  for (const point of coordinates) {
+    if (!result.length || haversineMeters(result.at(-1), point) > 0.35) result.push(point);
+  }
+  return result;
+}
+
+function roadWidth(highway) {
+  if (["motorway", "trunk", "primary"].includes(highway)) return 6;
+  if (["secondary", "tertiary"].includes(highway)) return 5;
+  if (["service", "pedestrian"].includes(highway)) return 2.6;
+  return 3.5;
 }
 
 function polygonCentroid(ring) {
@@ -217,125 +983,489 @@ function polygonCentroid(ring) {
   return [lon / count, lat / count];
 }
 
-function routeBbox(route, padding) {
-  const lats = route.map((point) => Number(point.lat));
-  const lons = route.map((point) => Number(point.lon));
-  return [
-    Math.min(...lats) - padding,
-    Math.min(...lons) - padding,
-    Math.max(...lats) + padding,
-    Math.max(...lons) + padding
-  ];
+function distancePointToRouteMeters(point, route) {
+  let best = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < route.length - 1; index += 1) {
+    best = Math.min(best, pointToSegmentMeters(
+      point,
+      [route[index].lon, route[index].lat],
+      [route[index + 1].lon, route[index + 1].lat]
+    ));
+  }
+  return best;
 }
 
-function parseMeters(value) {
-  if (value == null) return null;
-  const parsed = Number.parseFloat(String(value).replace(",", "."));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+function pointToSegmentMeters(point, a, b) {
+  const lat0 = Number(point[1]) * Math.PI / 180;
+  const scaleX = 111320 * Math.cos(lat0);
+  const scaleY = 110540;
+  const px = (Number(point[0]) - Number(a[0])) * scaleX;
+  const py = (Number(point[1]) - Number(a[1])) * scaleY;
+  const bx = (Number(b[0]) - Number(a[0])) * scaleX;
+  const by = (Number(b[1]) - Number(a[1])) * scaleY;
+  const len2 = bx * bx + by * by;
+  const t = len2 ? clamp((px * bx + py * by) / len2, 0, 1) : 0;
+  return Math.hypot(px - bx * t, py - by * t);
 }
 
-function numberOrNull(value) {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : null;
+function lineLengthMeters(coordinates) {
+  let sum = 0;
+  for (let index = 1; index < coordinates.length; index += 1) {
+    sum += haversineMeters(coordinates[index - 1], coordinates[index]);
+  }
+  return sum;
 }
 
-export function createRouteController(viewer, city, { initialProgress = 0, onProgress } = {}) {
-  const route = Array.isArray(city.route) && city.route.length >= 2 ? city.route : fallbackRoute(city);
-  let progress = clamp(initialProgress, 0, 1);
-  let wheelLocked = false;
+function routeLengthFromCameraPoints(route) {
+  let sum = 0;
+  for (let index = 1; index < route.length; index += 1) {
+    sum += haversineMeters([route[index - 1].lon, route[index - 1].lat], [route[index].lon, route[index].lat]);
+  }
+  return sum;
+}
 
-  const canvas = viewer.scene.canvas;
-  const onWheel = (event) => {
-    event.preventDefault();
-    if (wheelLocked) return;
-    wheelLocked = true;
-    requestAnimationFrame(() => {
-      const direction = Math.sign(event.deltaY);
-      progress = clamp(progress + direction * 0.075, 0, 1);
-      applyProgress(false);
-      wheelLocked = false;
-    });
-  };
-  canvas.addEventListener("wheel", onWheel, { passive: false });
-
-  function applyProgress(animate = false) {
-    const camera = interpolateRoute(route, progress);
-    const destination = Cesium.Cartesian3.fromDegrees(camera.lon, camera.lat, camera.height);
-    const orientation = {
-      heading: Cesium.Math.toRadians(camera.heading ?? 0),
-      pitch: Cesium.Math.toRadians(camera.pitch ?? -12),
-      roll: 0
-    };
-
-    if (animate) {
-      viewer.camera.flyTo({ destination, orientation, duration: 0.25 });
-    } else {
-      viewer.camera.setView({ destination, orientation });
+function densifyLine(coordinates, stepMeters) {
+  if (!coordinates.length) return [];
+  const result = [coordinates[0]];
+  for (let index = 1; index < coordinates.length; index += 1) {
+    const a = coordinates[index - 1];
+    const b = coordinates[index];
+    const distance = haversineMeters(a, b);
+    const steps = Math.max(1, Math.ceil(distance / stepMeters));
+    for (let part = 1; part <= steps; part += 1) {
+      const t = part / steps;
+      result.push(lerpCoordinate(a, b, t));
     }
+  }
+  return result;
+}
 
-    const focusBuildingId = nearestFocusBuilding(route, progress);
-    onProgress?.({ progress, buildingId: focusBuildingId });
+function bearingDegrees(a, b) {
+  const lon1 = Number(a[0]) * Math.PI / 180;
+  const lat1 = Number(a[1]) * Math.PI / 180;
+  const lon2 = Number(b[0]) * Math.PI / 180;
+  const lat2 = Number(b[1]) * Math.PI / 180;
+  const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function haversineMeters(a, b) {
+  const radius = 6371000;
+  const lat1 = Number(a[1]) * Math.PI / 180;
+  const lat2 = Number(b[1]) * Math.PI / 180;
+  const dLat = lat2 - lat1;
+  const dLon = (Number(b[0]) - Number(a[0])) * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * radius * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function resolveRuntimeCity(city, config) {
+  const override = config.cityOverrides?.[city.id] ?? {};
+  const navigation = {
+    ...(config.navigation ?? {}),
+    ...(override.navigation ?? {}),
+    ...Object.fromEntries(Object.entries(override).filter(([key]) => key !== "navigation"))
+  };
+
+  return {
+    ...city,
+    routeHeight: Number(navigation.cameraHeightMeters ?? city.routeHeight ?? 2.2),
+    routePitch: Number(navigation.cameraPitchDegrees ?? city.routePitch ?? -1.5),
+    walkStepMeters: Number(navigation.roadStepMeters ?? city.walkStepMeters ?? 3.5),
+    __navigation: navigation
+  };
+}
+
+function setCameraFrustum(viewer, fovDegrees) {
+  const fov = Number(fovDegrees);
+  if (!Number.isFinite(fov) || !viewer.camera?.frustum || !("fov" in viewer.camera.frustum)) return;
+  viewer.camera.frustum.fov = Cesium.Math.toRadians(clamp(fov, 35, 110));
+}
+
+
+function verifyRealOsmBuildings(collection, city) {
+  const features = collection?.features ?? [];
+  const osmIds = new Set();
+  const footprintSignatures = new Set();
+  for (const feature of features) {
+    const id = String(feature?.properties?.osmBuildingId ?? feature?.id ?? "");
+    if (id.startsWith("osm-way-")) osmIds.add(id);
+    const ring = feature?.geometry?.coordinates?.[0];
+    if (Array.isArray(ring)) {
+      footprintSignatures.add(ring.map((point) => `${Number(point[0]).toFixed(6)},${Number(point[1]).toFixed(6)}`).join("|"));
+    }
+  }
+  if (osmIds.size !== features.length || footprintSignatures.size !== features.length) {
+    throw new Error(`${city.name}: buildings cache is not a unique real OSM footprint collection`);
+  }
+  console.info(`${city.name}: verified ${features.length} unique OpenStreetMap building footprints (${osmIds.size} osm-way ids).`);
+}
+
+function classifyBuilding(value) {
+  const type = String(value ?? "yes").toLowerCase();
+  if (["apartments", "residential", "dormitory", "hotel"].includes(type)) return "residential";
+  if (["house", "detached", "semidetached_house", "terrace", "bungalow", "cabin", "hut"].includes(type)) return "house";
+  if (["industrial", "warehouse", "hangar", "factory"].includes(type)) return "industrial";
+  if ([
+    "commercial", "retail", "office", "school", "kindergarten", "college", "university",
+    "hospital", "clinic", "civic", "public", "service", "garage", "garages", "church",
+    "sports_centre", "train_station", "transportation"
+  ].includes(type)) return "nonResidential";
+  return "unknown";
+}
+
+function configuredBuildingHeight(properties, buildingClass, config) {
+  const floorHeight = Number(config.floorHeightMeters ?? 3.05);
+  const levels = Number(properties.levels);
+  if (Number.isFinite(levels) && levels > 0) {
+    return clamp(levels * floorHeight, 3, Number(config.maxHeightMeters ?? 48));
   }
 
-  applyProgress(false);
+  if (config.useCachedHeightWithoutLevels === true) {
+    const cached = Number(properties.height);
+    if (Number.isFinite(cached) && cached > 0) return clamp(cached, 3, Number(config.maxHeightMeters ?? 48));
+  }
 
-  return {
-    getProgress: () => progress,
-    setProgress(value) {
-      progress = clamp(value, 0, 1);
-      applyProgress(true);
-    },
-    destroy() {
-      canvas.removeEventListener("wheel", onWheel);
+  const seed = stableUnit(properties.osmBuildingId ?? properties.osmId ?? properties.buildingId, buildingClass);
+  if (buildingClass === "residential" || buildingClass === "house") {
+    const band = config[buildingClass] ?? {};
+    const fallback = Array.isArray(band.fallbackFloors) && band.fallbackFloors.length
+      ? band.fallbackFloors
+      : [Number(band.minFloors ?? 2), Number(band.maxFloors ?? 6)];
+    const index = Math.min(fallback.length - 1, Math.floor(seed * fallback.length));
+    const floors = Number(fallback[index] ?? band.minFloors ?? 2);
+    return clamp(floors * floorHeight, 3, Number(config.maxHeightMeters ?? 48));
+  }
+
+  const band = config[buildingClass] ?? config.unknown ?? {};
+  const min = Number(band.minHeightMeters ?? 7);
+  const max = Number(band.maxHeightMeters ?? 18);
+  return clamp(min + (max - min) * seed, 3, Number(config.maxHeightMeters ?? 48));
+}
+
+function chooseBuildingTexture(id, buildingClass, config) {
+  const list = config.textures?.[buildingClass] ?? config.textures?.unknown ?? [];
+  if (!Array.isArray(list) || !list.length) return null;
+  const index = Math.min(list.length - 1, Math.floor(stableUnit(id, `texture-${buildingClass}`) * list.length));
+  return list[index];
+}
+
+function stableUnit(value, salt = "") {
+  const text = `${salt}:${String(value ?? "")}`;
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 4294967295;
+}
+
+function materialForBuilding(textureUrl, buildingClass, offer, selected, config) {
+  // A building with a card is always highlighted by one opaque solid color.
+  // No transparency and no texture swapping on approach, so the visual state cannot flicker.
+  if (offer) return colors[offer.kind] ?? colors.neutral;
+  if (!textureUrl) return colors.neutral;
+
+  const repeat = config.textureRepeat ?? {};
+  return new Cesium.ImageMaterialProperty({
+    image: textureUrl,
+    repeat: new Cesium.Cartesian2(Number(repeat.x ?? 3), Number(repeat.y ?? 5)),
+    color: Cesium.Color.WHITE,
+    transparent: false
+  });
+}
+
+function applyCityLighting(viewer, config = {}) {
+  const enabled = config.enabled !== false;
+  viewer.scene.globe.enableLighting = enabled;
+  viewer.scene.sun.show = enabled;
+  viewer.scene.moon.show = false;
+  viewer.scene.skyBox.show = false;
+  if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = enabled;
+  if (viewer.scene.fog) {
+    viewer.scene.fog.enabled = enabled && config.fog !== false;
+    if (Number.isFinite(Number(config.fogDensity))) viewer.scene.fog.density = Number(config.fogDensity);
+  }
+  viewer.scene.highDynamicRange = enabled;
+
+  // Stable Arctic summer daytime: the sun is above the horizon and does not move while the
+  // user scrolls. This gives the city a readable daylight direction without continuous renders.
+  if (enabled) {
+    const iso = String(config.isoTime ?? "2026-06-21T12:00:00Z");
+    try { viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(iso); } catch { /* keep Cesium clock */ }
+    if (Cesium.SunLight) viewer.scene.light = new Cesium.SunLight();
+  }
+  viewer.shadows = Boolean(config.shadows ?? false);
+}
+
+async function installCityBasemap(viewer, raw, config = {}) {
+  viewer.imageryLayers.removeAll();
+
+  const online = typeof navigator === "undefined" || navigator.onLine !== false;
+  let onlineLayer = null;
+  if (online && config.preferOnlineOsm !== false) {
+    onlineLayer = addOnlineOsmLayer(viewer, { alpha: Number(config.onlineOsmAlpha ?? 1) });
+    if (onlineLayer) onlineLayer.show = true;
+  }
+
+  // A full-city local raster is expensive to build. When normal OSM tiles are available we do
+  // not render thousands of cached footprints into a 3K canvas on the main UI thread. The local
+  // fallback is generated only offline (or when explicitly forced).
+  const needLocalFallback = config.cityOfflineRaster !== false
+    && (!onlineLayer || config.alwaysBuildOfflineRaster === true);
+
+  if (!needLocalFallback) return;
+
+  const rendered = await renderLocalBasemap(raw, config);
+  if (!rendered) return;
+
+  const options = {
+    rectangle: rendered.rectangle,
+    credit: new Cesium.Credit("OpenStreetMap")
+  };
+  try {
+    const provider = typeof Cesium.SingleTileImageryProvider.fromUrl === "function"
+      ? await Cesium.SingleTileImageryProvider.fromUrl(rendered.url, options)
+      : new Cesium.SingleTileImageryProvider({ url: rendered.url, ...options });
+    const layer = viewer.imageryLayers.addImageryProvider(provider);
+    layer.alpha = 1;
+  } catch (error) {
+    console.warn("Local city basemap could not be installed.", error);
+  } finally {
+    rendered.revoke?.();
+  }
+}
+
+async function renderLocalBasemap(raw, config) {
+  if (typeof document === "undefined") return null;
+
+  // Do not flatten a whole city into one JS array and then call Math.min(...array).
+  // A full Murmansk export can contain hundreds of thousands of coordinates and spreading
+  // that many arguments exceeds the JavaScript engine call-stack/argument limit.
+  const bounds = computeGeoJsonBounds(raw.roads, raw.buildings, raw.context);
+  if (!bounds) return null;
+
+  let { west, east, south, north } = bounds;
+  const padding = Number(config.paddingRatio ?? 0.035);
+  const dx = Math.max(0.001, east - west), dy = Math.max(0.001, north - south);
+  west -= dx * padding; east += dx * padding; south -= dy * padding; north += dy * padding;
+
+  const size = clamp(Math.round(Number(config.resolution ?? 3072)), 1024, 4096);
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) return null;
+
+  const palette = {
+    background: config.background ?? "#e8ece7",
+    water: config.water ?? "#b8d8e8",
+    waterLine: config.waterLine ?? "#91bed3",
+    park: config.park ?? "#c9dfb4",
+    forest: config.forest ?? "#b9d2a8",
+    grass: config.grass ?? "#d7e6c4",
+    residential: config.residentialLand ?? "#e8e3dc",
+    industrial: config.industrialLand ?? "#d8d3cc",
+    commercial: config.commercialLand ?? "#e6d8d3",
+    cemetery: config.cemetery ?? "#cad8c1",
+    parking: config.parking ?? "#d9d9d5",
+    building: config.buildingFootprint ?? "#c1b9b0",
+    buildingStroke: config.buildingStroke ?? "#aaa29a",
+    roadCasing: config.roadCasing ?? "#c2beb6",
+    roadFill: config.roadFill ?? "#faf8f3",
+    majorRoad: config.majorRoad ?? "#f6d59a",
+    rail: config.rail ?? "#8f8c88"
+  };
+
+  ctx.fillStyle = palette.background;
+  ctx.fillRect(0, 0, size, size);
+
+  const project = ([lon, lat]) => [
+    ((Number(lon) - west) / (east - west)) * size,
+    size - ((Number(lat) - south) / (north - south)) * size
+  ];
+
+  // OSM landuse/natural/leisure areas form the map body.
+  const contextFeatures = raw.context?.features ?? [];
+  for (const feature of contextFeatures) {
+    if (feature.geometry?.type !== "Polygon") continue;
+    const style = contextAreaStyle(feature.properties ?? {}, palette);
+    if (!style) continue;
+    drawPolygon(ctx, feature.geometry.coordinates, project, style.fill, style.stroke, Math.max(1, size / 2200));
+  }
+
+  // Waterways, coastlines and railways are drawn before streets/buildings.
+  for (const feature of contextFeatures) {
+    if (feature.geometry?.type !== "LineString") continue;
+    const props = feature.properties ?? {};
+    if (props.kind === "waterway" || props.natural === "coastline") {
+      drawLine(ctx, feature.geometry.coordinates, project, palette.waterLine, Math.max(1.5, size / 1500));
+    } else if (props.kind === "railway") {
+      drawLine(ctx, feature.geometry.coordinates, project, palette.rail, Math.max(1.1, size / 2100), [5, 5]);
     }
-  };
-}
+  }
 
-function interpolateRoute(route, progress) {
-  const scaled = progress * (route.length - 1);
-  const index = Math.min(Math.floor(scaled), route.length - 2);
-  const local = scaled - index;
-  const a = route[index];
-  const b = route[index + 1];
-  const lerp = (key, fallback = 0) => Number(a[key] ?? fallback) + (Number(b[key] ?? a[key] ?? fallback) - Number(a[key] ?? fallback)) * local;
+  // Roads: casing + fill, with main streets slightly warmer just like a normal map.
+  const roadFeatures = (raw.roads?.features ?? []).filter((feature) => feature.geometry?.type === "LineString");
+  for (const pass of ["casing", "fill"]) {
+    for (const feature of roadFeatures) {
+      const highway = feature.properties?.highway;
+      const width = scaledRoadWidth(highway, size);
+      const isMajor = ["motorway", "trunk", "primary", "secondary"].includes(highway);
+      const color = pass === "casing"
+        ? palette.roadCasing
+        : isMajor ? palette.majorRoad : palette.roadFill;
+      drawLine(ctx, feature.geometry.coordinates, project, color, pass === "casing" ? width + Math.max(1.5, size / 1600) : width);
+    }
+  }
+
+  // All downloaded real OSM footprints remain visible in 2D even if only a configurable number
+  // are extruded into 3D for performance.
+  for (const feature of raw.buildings?.features ?? []) {
+    if (feature.geometry?.type !== "Polygon") continue;
+    drawPolygon(ctx, feature.geometry.coordinates, project, palette.building, palette.buildingStroke, Math.max(0.7, size / 3600));
+  }
+
+  const blob = await canvasToBlob(canvas);
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
 
   return {
-    lon: lerp("lon"),
-    lat: lerp("lat"),
-    height: lerp("height", 90),
-    heading: lerp("heading", 0),
-    pitch: lerp("pitch", -12)
+    url,
+    revoke() {
+      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+    },
+    rectangle: Cesium.Rectangle.fromDegrees(west, south, east, north)
   };
 }
 
-function nearestFocusBuilding(route, progress) {
-  const target = progress * (route.length - 1);
-  let best = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  route.forEach((point, index) => {
-    if (!point.buildingId) return;
-    const distance = Math.abs(index - target);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = point.buildingId;
+function canvasToBlob(canvas) {
+  return new Promise((resolve) => {
+    try {
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    } catch {
+      resolve(null);
     }
   });
-  return bestDistance <= 0.9 ? best : null;
 }
 
-function fallbackRoute(city) {
-  const lon = city.camera.lon;
-  const lat = city.camera.lat;
-  return [
-    { lon: lon - 0.006, lat: lat - 0.003, height: 95, heading: 65, pitch: -13 },
-    { lon, lat, height: 90, heading: 65, pitch: -13 },
-    { lon: lon + 0.006, lat: lat + 0.002, height: 90, heading: 65, pitch: -13 }
-  ];
+function computeGeoJsonBounds(...collections) {
+  let west = Number.POSITIVE_INFINITY;
+  let east = Number.NEGATIVE_INFINITY;
+  let south = Number.POSITIVE_INFINITY;
+  let north = Number.NEGATIVE_INFINITY;
+  let count = 0;
+
+  const accept = (point) => {
+    if (!Array.isArray(point) || point.length < 2) return;
+    const lon = Number(point[0]);
+    const lat = Number(point[1]);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+    if (lon < west) west = lon;
+    if (lon > east) east = lon;
+    if (lat < south) south = lat;
+    if (lat > north) north = lat;
+    count += 1;
+  };
+
+  for (const collection of collections) {
+    for (const feature of collection?.features ?? []) {
+      visitGeometryCoordinates(feature?.geometry, accept);
+    }
+  }
+
+  return count ? { west, east, south, north, count } : null;
 }
 
-function materialForOffer(offer) {
-  if (!offer) return colors.neutral;
-  return colors[offer.kind] ?? colors.neutral;
+function visitGeometryCoordinates(geometry, accept) {
+  if (!geometry) return;
+  const coordinates = geometry.coordinates;
+  switch (geometry.type) {
+    case "Point":
+      accept(coordinates);
+      break;
+    case "MultiPoint":
+    case "LineString":
+      for (const point of coordinates ?? []) accept(point);
+      break;
+    case "MultiLineString":
+    case "Polygon":
+      for (const line of coordinates ?? []) {
+        for (const point of line ?? []) accept(point);
+      }
+      break;
+    case "MultiPolygon":
+      for (const polygon of coordinates ?? []) {
+        for (const ring of polygon ?? []) {
+          for (const point of ring ?? []) accept(point);
+        }
+      }
+      break;
+    case "GeometryCollection":
+      for (const child of geometry.geometries ?? []) visitGeometryCoordinates(child, accept);
+      break;
+    default:
+      break;
+  }
+}
+
+function contextAreaStyle(props, palette) {
+  const landuse = String(props.landuse ?? "");
+  const natural = String(props.natural ?? "");
+  const leisure = String(props.leisure ?? "");
+  const amenity = String(props.amenity ?? "");
+  if (natural === "water" || props.water) return { fill: palette.water, stroke: palette.waterLine };
+  if (["wood", "forest"].includes(natural) || landuse === "forest") return { fill: palette.forest, stroke: null };
+  if (["park", "garden", "playground", "pitch"].includes(leisure)) return { fill: palette.park, stroke: null };
+  if (["grass", "meadow", "recreation_ground", "village_green"].includes(landuse)) return { fill: palette.grass, stroke: null };
+  if (landuse === "residential") return { fill: palette.residential, stroke: null };
+  if (["industrial", "brownfield", "construction"].includes(landuse)) return { fill: palette.industrial, stroke: null };
+  if (["commercial", "retail"].includes(landuse)) return { fill: palette.commercial, stroke: null };
+  if (landuse === "cemetery") return { fill: palette.cemetery, stroke: null };
+  if (amenity === "parking") return { fill: palette.parking, stroke: null };
+  return null;
+}
+
+function drawPolygon(ctx, coordinates, project, fill, stroke = null, lineWidth = 1) {
+  if (!Array.isArray(coordinates) || !coordinates.length) return;
+  ctx.beginPath();
+  for (const ring of coordinates) {
+    if (!Array.isArray(ring) || ring.length < 3) continue;
+    ring.forEach((point, index) => {
+      const [x, y] = project(point);
+      if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+  }
+  ctx.fillStyle = fill;
+  ctx.fill("evenodd");
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+  }
+}
+
+function drawLine(ctx, coordinates, project, color, width, dash = null) {
+  if (!Array.isArray(coordinates) || coordinates.length < 2) return;
+  ctx.beginPath();
+  coordinates.forEach((point, index) => {
+    const [x, y] = project(point);
+    if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.setLineDash(dash ?? []);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function scaledRoadWidth(highway, size) {
+  const base = roadWidth(highway);
+  return Math.max(1.5, base * (size / 1024));
 }
 
 function clamp(value, min, max) {
