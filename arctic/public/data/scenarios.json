@@ -4,16 +4,16 @@
       "id": "murmansk",
       "name": "Мурманская область",
       "center": {
-        "lon": 34.2,
-        "lat": 68.4,
-        "height": 140000
+        "lon": 34.0,
+        "lat": 68.7,
+        "height": 0
       },
       "camera": {
-        "lon": 34.2,
-        "lat": 68.35,
-        "height": 1050000,
+        "lon": 34.0,
+        "lat": 68.7,
+        "height": 900000,
         "heading": 0,
-        "pitch": -66
+        "pitch": -70
       },
       "cities": [
         {
@@ -22,12 +22,85 @@
           "ready": true,
           "buildingsUrl": "/data/murmansk-buildings.geojson",
           "camera": {
-            "lon": 33.081,
-            "lat": 68.9706,
-            "height": 1450,
-            "heading": 36,
-            "pitch": -38
-          }
+            "lon": 33.075,
+            "lat": 68.972,
+            "height": 1300,
+            "heading": 25,
+            "pitch": -42
+          },
+          "route": [
+            {
+              "lon": 33.067,
+              "lat": 68.9675,
+              "height": 95,
+              "heading": 34,
+              "pitch": -12
+            },
+            {
+              "lon": 33.0692,
+              "lat": 68.969,
+              "height": 90,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-001"
+            },
+            {
+              "lon": 33.0717,
+              "lat": 68.9703,
+              "height": 88,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-002"
+            },
+            {
+              "lon": 33.074,
+              "lat": 68.9714,
+              "height": 86,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-003"
+            },
+            {
+              "lon": 33.0764,
+              "lat": 68.9726,
+              "height": 86,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-004"
+            },
+            {
+              "lon": 33.0789,
+              "lat": 68.9738,
+              "height": 88,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-005"
+            },
+            {
+              "lon": 33.0814,
+              "lat": 68.975,
+              "height": 90,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-006"
+            },
+            {
+              "lon": 33.0838,
+              "lat": 68.9762,
+              "height": 92,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-007"
+            },
+            {
+              "lon": 33.0862,
+              "lat": 68.9774,
+              "height": 94,
+              "heading": 34,
+              "pitch": -12,
+              "buildingId": "building-008"
+            }
+          ]
         }
       ]
     },
@@ -35,23 +108,23 @@
       "id": "nenets",
       "name": "Ненецкий автономный округ",
       "center": {
-        "lon": 54,
-        "lat": 68.35,
-        "height": 180000
+        "lon": 54.0,
+        "lat": 68.8,
+        "height": 0
       },
       "camera": {
-        "lon": 54,
-        "lat": 68.2,
-        "height": 1350000,
+        "lon": 54.0,
+        "lat": 68.8,
+        "height": 1000000,
         "heading": 0,
-        "pitch": -66
+        "pitch": -70
       },
       "cities": [
         {
           "id": "naryan-mar",
           "name": "Нарьян-Мар",
           "ready": false,
-          "note": "сценарий готовится"
+          "note": "Сценарий готовится"
         }
       ]
     },
@@ -59,16 +132,16 @@
       "id": "chukotka",
       "name": "Чукотский автономный округ",
       "center": {
-        "lon": 171.8,
-        "lat": 65.8,
-        "height": 180000
+        "lon": 171.5,
+        "lat": 66.5,
+        "height": 0
       },
       "camera": {
-        "lon": 171.8,
-        "lat": 65.8,
-        "height": 1450000,
+        "lon": 171.5,
+        "lat": 66.5,
+        "height": 1200000,
         "heading": 0,
-        "pitch": -66
+        "pitch": -70
       },
       "cities": [
         {
@@ -77,12 +150,85 @@
           "ready": true,
           "buildingsUrl": "/data/anadyr-buildings.geojson",
           "camera": {
-            "lon": 177.5105,
-            "lat": 64.7332,
-            "height": 1350,
-            "heading": 24,
-            "pitch": -40
-          }
+            "lon": 177.515,
+            "lat": 64.735,
+            "height": 1300,
+            "heading": 48,
+            "pitch": -42
+          },
+          "route": [
+            {
+              "lon": 177.502,
+              "lat": 64.73,
+              "height": 90,
+              "heading": 63,
+              "pitch": -12
+            },
+            {
+              "lon": 177.507,
+              "lat": 64.7315,
+              "height": 86,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-101"
+            },
+            {
+              "lon": 177.512,
+              "lat": 64.733,
+              "height": 84,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-102"
+            },
+            {
+              "lon": 177.517,
+              "lat": 64.7345,
+              "height": 84,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-103"
+            },
+            {
+              "lon": 177.522,
+              "lat": 64.736,
+              "height": 86,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-104"
+            },
+            {
+              "lon": 177.527,
+              "lat": 64.7375,
+              "height": 88,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-105"
+            },
+            {
+              "lon": 177.532,
+              "lat": 64.739,
+              "height": 90,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-106"
+            },
+            {
+              "lon": 177.537,
+              "lat": 64.7405,
+              "height": 92,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-107"
+            },
+            {
+              "lon": 177.542,
+              "lat": 64.742,
+              "height": 94,
+              "heading": 63,
+              "pitch": -12,
+              "buildingId": "building-108"
+            }
+          ]
         }
       ]
     },
@@ -90,23 +236,23 @@
       "id": "yakutia",
       "name": "Республика Саха (Якутия)",
       "center": {
-        "lon": 136,
-        "lat": 71.5,
-        "height": 260000
+        "lon": 127.0,
+        "lat": 67.5,
+        "height": 0
       },
       "camera": {
-        "lon": 136,
-        "lat": 71.1,
-        "height": 2150000,
+        "lon": 127.0,
+        "lat": 67.5,
+        "height": 1800000,
         "heading": 0,
-        "pitch": -66
+        "pitch": -70
       },
       "cities": [
         {
           "id": "tiksi",
           "name": "Тикси",
           "ready": false,
-          "note": "сценарий готовится"
+          "note": "Сценарий готовится"
         }
       ]
     }

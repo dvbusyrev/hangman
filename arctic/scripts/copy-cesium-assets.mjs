@@ -17,15 +17,12 @@ try {
 
 const cesiumSource = path.join(path.dirname(cesiumPackagePath), "Build", "Cesium");
 const cesiumTarget = path.join(rootDir, "public", "cesium");
-const requiredAssets = ["Assets", "ThirdParty", "Workers", "Widgets"];
 
+// Copy the complete browser build, including Cesium.js, widgets.css,
+// Workers, Assets and ThirdParty. This lets index.html load Cesium explicitly
+// as a normal script while Vite serves everything from /public.
 await rm(cesiumTarget, { recursive: true, force: true });
-await mkdir(cesiumTarget, { recursive: true });
+await mkdir(path.dirname(cesiumTarget), { recursive: true });
+await cp(cesiumSource, cesiumTarget, { recursive: true });
 
-await Promise.all(
-  requiredAssets.map((assetDir) =>
-    cp(path.join(cesiumSource, assetDir), path.join(cesiumTarget, assetDir), {
-      recursive: true
-    })
-  )
-);
+console.log(`Cesium browser build copied to ${cesiumTarget}`);

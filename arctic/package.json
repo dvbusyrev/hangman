@@ -1,19 +1,25 @@
 {
   "name": "arctic-life-prototype",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/copy-cesium-assets.mjs && vite --host 127.0.0.1",
-    "build": "node scripts/copy-cesium-assets.mjs && vite build",
+    "cesium:copy": "node scripts/copy-cesium-assets.mjs",
+    "predev": "npm run cesium:copy",
+    "dev": "vite",
+    "prebuild": "npm run cesium:copy",
+    "build": "vite build",
+    "preview": "vite preview",
+    "postinstall": "npm run cesium:copy",
     "data:osm-boundaries": "node scripts/fetch-osm-boundaries.mjs",
     "data:shapes": "node scripts/export-boundary-shapes.mjs",
-    "preview": "vite preview --host 127.0.0.1"
+    "data:osm-buildings": "node scripts/fetch-osm-buildings.mjs",
+    "data:osm": "npm run data:osm-boundaries && npm run data:osm-buildings"
   },
   "dependencies": {
-    "cesium": "^1.121.1"
+    "cesium": "^1.132.0"
   },
   "devDependencies": {
-    "vite": "^8.2.2"
+    "vite": "^7.0.0"
   }
 }
