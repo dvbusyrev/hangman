@@ -12,7 +12,6 @@ import {
   renderCityStory,
   renderRegionScreen,
   renderStartScreen,
-  updateTurnHint,
   updateJourneyControls,
   updateOfferCard
 } from "./ui/screens.js";
@@ -278,9 +277,8 @@ async function renderCurrentStory() {
     routeController = createRouteController(viewer, cityScene, cityScene.focusBuildings, {
       initialIndex: cityScene.spawnIndex,
       config: prototypeConfig,
-      onProgress: ({ progress, buildingId, turnHint }) => {
+      onProgress: ({ progress, buildingId }) => {
         setState({ routeProgress: progress });
-        updateTurnHint(refs, turnHint);
         if (buildingId) {
           const nextOffer = cityScene?.getOffer(buildingId);
           if (buildingId !== activeRouteBuildingId || state.selectedObject !== nextOffer?.id) {

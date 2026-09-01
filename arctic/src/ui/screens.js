@@ -115,7 +115,6 @@ export function renderCityStory(root, {
   return {
     cesiumContainer: root.querySelector("#cesium-container"),
     objectCard: root.querySelector("#object-card"),
-    turnHint: root.querySelector("#turn-hint"),
     cityOverlay: root.querySelector("#city-overlay"),
     journeyControls: root.querySelector("#journey-controls")
   };
@@ -145,24 +144,6 @@ export function positionOfferCard(refs, point) {
   card.style.left = `${x}px`;
   card.style.top = `${y}px`;
   card.classList.toggle("is-below", below);
-}
-
-export function updateTurnHint(refs, turnHint) {
-  if (!refs?.turnHint) return;
-  const left = Boolean(turnHint?.left);
-  const right = Boolean(turnHint?.right);
-  if (!left && !right) {
-    refs.turnHint.hidden = true;
-    refs.turnHint.textContent = "";
-    return;
-  }
-
-  refs.turnHint.textContent = left && right
-    ? "Нажмите A, чтобы повернуть налево; D, чтобы повернуть направо"
-    : left
-      ? "Нажмите A, чтобы повернуть налево"
-      : "Нажмите D, чтобы повернуть направо";
-  refs.turnHint.hidden = false;
 }
 
 function renderJourneyControls({ scenarios, state, professions = [], page }) {
@@ -299,7 +280,6 @@ function renderChapter(state, city, nature, benefits, stats, offer) {
         <div id="object-card" class="object-card" ${offer ? "" : "hidden"}>
           ${offer ? renderOfferBody(offer) : ""}
         </div>
-        <div id="turn-hint" class="turn-hint" hidden></div>
       </div>
       ${renderTimeline(state.selectedYears)}
       ${renderMode(state.selectedMode)}
