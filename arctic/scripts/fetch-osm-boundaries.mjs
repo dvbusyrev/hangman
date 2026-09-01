@@ -28,6 +28,12 @@ const arcticRegions = [
     polygonThreshold: 0.01
   },
   {
+    id: "arkhangelsk",
+    name: "Архангельская область",
+    osmId: 140337,
+    polygonThreshold: 0.015
+  },
+  {
     id: "chukotka",
     name: "Чукотский автономный округ",
     osmId: 151231,

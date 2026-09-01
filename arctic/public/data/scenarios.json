@@ -4,12 +4,12 @@
       "id": "murmansk",
       "name": "Мурманская область",
       "center": {
-        "lon": 34.0,
+        "lon": 34,
         "lat": 68.7,
         "height": 0
       },
       "camera": {
-        "lon": 34.0,
+        "lon": 34,
         "lat": 68.7,
         "height": 900000,
         "heading": 0,
@@ -125,12 +125,12 @@
       "id": "nenets",
       "name": "Ненецкий автономный округ",
       "center": {
-        "lon": 54.0,
+        "lon": 54,
         "lat": 68.8,
         "height": 0
       },
       "camera": {
-        "lon": 54.0,
+        "lon": 54,
         "lat": 68.8,
         "height": 1000000,
         "heading": 0,
@@ -223,6 +223,36 @@
             53.15
           ],
           "contextUrl": "/data/naryan-mar-context.geojson"
+        }
+      ]
+    },
+    {
+      "id": "arkhangelsk",
+      "name": "Архангельская область",
+      "center": {
+        "lon": 43,
+        "lat": 64.4,
+        "height": 0
+      },
+      "camera": {
+        "lon": 43,
+        "lat": 64.4,
+        "height": 1100000,
+        "heading": 0,
+        "pitch": -70
+      },
+      "cities": [
+        {
+          "id": "arkhangelsk-city",
+          "name": "Архангельск",
+          "ready": false,
+          "camera": {
+            "lon": 40.5159,
+            "lat": 64.5393,
+            "height": 1300,
+            "heading": 35,
+            "pitch": -42
+          }
         }
       ]
     },
@@ -351,12 +381,12 @@
       "id": "yakutia",
       "name": "Республика Саха (Якутия)",
       "center": {
-        "lon": 127.0,
+        "lon": 127,
         "lat": 67.5,
         "height": 0
       },
       "camera": {
-        "lon": 127.0,
+        "lon": 127,
         "lat": 67.5,
         "height": 1800000,
         "heading": 0,

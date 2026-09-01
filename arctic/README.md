@@ -134,8 +134,8 @@ m-rent-1;murmansk-city;;просп. Ленина, 64;42;32000;1;
 
 - the app picks a random point near the configured city camera on the largest connected local OSM public-road network;
 - a road walk is generated in both directions from that spawn point;
-- at intersections the next street is chosen by `ArrowLeft` / `ArrowRight`;
 - `ArrowUp` / `ArrowDown` move forward and backward along the road;
+- when a turn is available, the city view shows a hint: press `A` for left or `D` for right;
 - the mouse wheel moves forward/backward along that generated walk;
 - available CSV job/real-estate records are randomly attached to real OSM houses near the walk;
 - only the nearest configured amount of 3D houses is rendered for performance;

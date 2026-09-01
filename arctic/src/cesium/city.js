@@ -109,11 +109,25 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
 
   let selectedBuildingId = null;
   let lastCameraPoint = null;
+  let lastVisibleRefreshPoint = null;
+  let lastVisibleRefreshSelectedId = null;
 
-  const refreshVisibleBuildings = (camera = lastCameraPoint) => {
+  const refreshVisibleBuildings = (camera = lastCameraPoint, { force = false } = {}) => {
     if (!camera) return;
     lastCameraPoint = camera;
+    const visibleUpdateDistance = Math.max(
+      0,
+      Number(runtimeCity.__navigation.visibleBuildingUpdateDistanceMeters ?? config.buildings?.visibleUpdateDistanceMeters ?? 28)
+    );
+    const selectedChanged = selectedBuildingId !== lastVisibleRefreshSelectedId;
+    const moved = lastVisibleRefreshPoint
+      ? haversineMeters([lastVisibleRefreshPoint.lon, lastVisibleRefreshPoint.lat], [camera.lon, camera.lat])
+      : Number.POSITIVE_INFINITY;
+    if (!force && !selectedChanged && moved < visibleUpdateDistance) return;
+
     updateVisibleBuildings(camera, selectedBuildingId);
+    lastVisibleRefreshPoint = { lon: camera.lon, lat: camera.lat };
+    lastVisibleRefreshSelectedId = selectedBuildingId;
     viewer.scene.requestRender();
   };
 
@@ -121,13 +135,13 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
     assignment = assignOffersToRandomBuildings(nextOffers, preparedBuildings.features, randomWalk.route);
     syncFocusBuildings();
     selectedBuildingId = null;
-    refreshVisibleBuildings();
+    refreshVisibleBuildings(undefined, { force: true });
     return assignment.assignedOffers;
   };
 
   const spawnCamera = interpolateRouteIndex(randomWalk.route, randomWalk.spawnIndex);
   applyCameraPoint(viewer, spawnCamera);
-  refreshVisibleBuildings(spawnCamera);
+  refreshVisibleBuildings(spawnCamera, { force: true });
 
   return {
     buildings: summaries,
@@ -161,8 +175,9 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
       return { x: point.x, y: point.y };
     },
     highlight(buildingId) {
+      if (selectedBuildingId === buildingId) return;
       selectedBuildingId = buildingId;
-      refreshVisibleBuildings();
+      refreshVisibleBuildings(undefined, { force: true });
     },
     updateVisibleBuildings(camera) {
       refreshVisibleBuildings(camera);
@@ -512,11 +527,14 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
   const backwardEnd = forwardToB ? spawnEdge.a : spawnEdge.b;
 
   // Important: we do NOT pre-generate random turns anymore. The route only reaches the
-  // next real OSM junction. Left/right arrows choose the branch there; without a choice
+  // next real OSM junction. A/D choose the branch there; without a choice
   // the walk continues only along a sufficiently straight continuation.
   const forwardState = createWalkState(forwardEndKey, spawnEdge.id, [spawn, forwardEnd]);
   const backwardState = createWalkState(backwardEndKey, spawnEdge.id, [spawn, backwardEnd]);
   const stepMeters = Number(city.walkStepMeters ?? 3.5);
+  const segmentMaxEdges = Math.max(1, Number(city.__navigation?.routeSegmentMaxEdges ?? 24));
+  extendWalkStateUntilDecision(graph, forwardState, city, segmentMaxEdges);
+  extendWalkStateUntilDecision(graph, backwardState, city, segmentMaxEdges);
   const route = [];
 
   const backwardReversed = [...backwardState.coordinates].reverse();
@@ -538,10 +556,9 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
   });
 
   const appendForwardEdge = () => {
-    const oldTail = forwardState.coordinates.at(-1);
-    const next = extendWalkStateOneEdge(graph, forwardState, city);
-    if (!next) return 0;
-    const dense = densifyLine(removeConsecutiveDuplicates([oldTail, next]), stepMeters);
+    const segment = extendWalkStateSegment(graph, forwardState, city, segmentMaxEdges);
+    if (segment.length < 2) return 0;
+    const dense = densifyLine(removeConsecutiveDuplicates(segment), stepMeters);
     const cameras = cameraRouteFromCoordinates(dense, city);
     if (cameras.length < 2) return 0;
     const previousLast = route.at(-1);
@@ -554,10 +571,9 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
   };
 
   const prependBackwardEdge = () => {
-    const oldTail = backwardState.coordinates.at(-1);
-    const next = extendWalkStateOneEdge(graph, backwardState, city);
-    if (!next) return 0;
-    const denseOutward = densifyLine(removeConsecutiveDuplicates([oldTail, next]), stepMeters);
+    const segment = extendWalkStateSegment(graph, backwardState, city, segmentMaxEdges);
+    if (segment.length < 2) return 0;
+    const denseOutward = densifyLine(removeConsecutiveDuplicates(segment), stepMeters);
     const denseTowardSpawn = denseOutward.reverse();
     const cameras = cameraRouteFromCoordinates(denseTowardSpawn, city);
     if (cameras.length < 2) return 0;
@@ -584,6 +600,10 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
       const state = movementDirection < 0 ? backwardState : forwardState;
       return Boolean(state.pendingTurn);
     },
+    turnOptions(movementDirection = 1) {
+      const state = movementDirection < 0 ? backwardState : forwardState;
+      return getRoadTurnOptions(graph, state, city);
+    },
     extendForward() {
       return appendForwardEdge();
     },
@@ -603,27 +623,56 @@ function createWalkState(currentKey, previousEdgeId, coordinates) {
   };
 }
 
-/**
- * Extend by exactly ONE OSM edge. This is what makes junctions interactive: the application
- * never decides a chain of future turns for the user. Left/right is consumed at the next
- * junction, otherwise only a straight continuation is accepted. At a dead end we turn back
- * on the same road so the walk can remain endless.
- */
-function extendWalkStateOneEdge(graph, state, city) {
+function extendWalkStateUntilDecision(graph, state, city, maxEdges) {
+  const startIndex = state.coordinates.length - 1;
+  const limit = Math.max(1, Number(maxEdges) || 24);
+
+  for (let guard = 0; guard < limit && !isRoadDecisionNode(graph, state); guard += 1) {
+    if (!extendWalkStateOneEdge(graph, state, city)) break;
+  }
+
+  return state.coordinates.slice(startIndex);
+}
+
+function extendWalkStateSegment(graph, state, city, maxEdges) {
+  const startIndex = state.coordinates.length - 1;
+  const limit = Math.max(1, Number(maxEdges) || 24);
+
+  for (let guard = 0; guard < limit; guard += 1) {
+    if (!extendWalkStateOneEdge(graph, state, city)) break;
+    if (!state.pendingTurn && isRoadDecisionNode(graph, state)) break;
+  }
+
+  return state.coordinates.slice(startIndex);
+}
+
+function isRoadDecisionNode(graph, state) {
+  return getRoadVariants(graph, state).length !== 1;
+}
+
+function getRoadTurnOptions(graph, state, city) {
+  const variants = getRoadVariants(graph, state);
+  if (variants.length <= 1) return { left: false, right: false };
+  const sideThreshold = Number(city.__navigation?.turnDirectionThresholdDegrees ?? 12);
+  return {
+    left: variants.some((item) => item.turn < -sideThreshold),
+    right: variants.some((item) => item.turn > sideThreshold)
+  };
+}
+
+function getRoadVariants(graph, state) {
   const previousEdge = graph.edgeById.get(state.previousEdgeId) ?? graph.edges.find((edge) => edge.id === state.previousEdgeId);
   let candidates = (graph.adjacency.get(state.currentKey) ?? [])
     .filter((edgeId) => graph.allowedEdgeIds.has(edgeId))
     .map((edgeId) => graph.edgeById.get(edgeId) ?? graph.edges.find((edge) => edge.id === edgeId))
     .filter(Boolean);
 
-  if (!candidates.length) return null;
+  if (!candidates.length) return [];
 
-  // Prefer every road except the edge we just came from. If there is no alternative this is
-  // a genuine dead end and a U-turn is the only way to keep the route infinite.
   const nonBacktracking = candidates.filter((edge) => edge.id !== previousEdge?.id);
   if (nonBacktracking.length) candidates = nonBacktracking;
 
-  const variants = candidates.map((edge) => {
+  return candidates.map((edge) => {
     const junction = edge.aKey === state.currentKey ? edge.a : edge.b;
     const out = edge.aKey === state.currentKey ? edge.b : edge.a;
     const previousIn = previousEdge
@@ -638,6 +687,17 @@ function extendWalkStateOneEdge(graph, state, city) {
       turn: shortestAngleDelta(incomingHeading, outgoingHeading)
     };
   });
+}
+
+/**
+ * Extend by exactly ONE OSM edge. This is what makes junctions interactive: the application
+ * never decides a chain of future turns for the user. A/D is consumed at the next
+ * junction, otherwise only a straight continuation is accepted. At a dead end we turn back
+ * on the same road so the walk can remain endless.
+ */
+function extendWalkStateOneEdge(graph, state, city) {
+  const variants = getRoadVariants(graph, state);
+  if (!variants.length) return null;
 
   const preference = state.pendingTurn;
   const straightThreshold = Number(city.__navigation?.straightContinuationDegrees ?? 48);
@@ -647,7 +707,7 @@ function extendWalkStateOneEdge(graph, state, city) {
   let consumePendingTurn = false;
 
   if (variants.length === 1) {
-    // Ordinary OSM ways are split into many small graph edges. A pending Left/Right command
+    // Ordinary OSM ways are split into many small graph edges. A pending turn command
     // must survive those intermediate nodes and be consumed only at a REAL branching junction.
     chosen = variants[0];
   } else if (preference === "left") {
@@ -671,7 +731,7 @@ function extendWalkStateOneEdge(graph, state, city) {
       consumePendingTurn = true;
     }
   } else {
-    // No arrow was pressed: never choose a left/right branch automatically.
+    // No turn was selected: never choose a left/right branch automatically.
     const straight = variants.filter((item) => Math.abs(item.turn) <= straightThreshold);
     if (straight.length) chosen = chooseClosestTurn(straight, 0);
   }
@@ -853,7 +913,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
       while (nextTarget > activeRoute.length - 1 && guard < 8) {
         guard += 1;
         const added = Number(walk.extendForward?.() ?? 0);
-        if (!added) break; // at a junction that needs Left/Right, remain there
+        if (!added) break; // at a junction that needs A/D, remain there
       }
     } else if (direction < 0) {
       while (nextTarget < 0 && guard < 8) {
@@ -880,40 +940,44 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
     applyCursor();
   };
 
-  const selectTurn = (direction) => {
+  const currentTurnDirection = () => {
     const movementDirection = lastMoveDirection >= 0 ? 1 : -1;
-    walk.chooseTurn?.(direction, movementDirection);
-    const snapDistance = Math.max(0, Number(settings.turnSnapDistancePoints ?? 10));
-    const nudgePoints = Math.max(0, Number(settings.turnNudgePoints ?? 2.25));
-    const snapAlways = settings.turnSnapAlways !== false;
-    const searchEdges = Math.max(1, Number(settings.turnSearchEdges ?? 18));
+    const hintDistance = Math.max(0, Number(settings.turnHintDistancePoints ?? 14));
+    const canTurnForward = movementDirection > 0 && cursor >= activeRoute.length - 1 - hintDistance;
+    const canTurnBackward = movementDirection < 0 && cursor <= hintDistance;
+    if (!canTurnForward && !canTurnBackward) return 0;
+    return movementDirection;
+  };
 
-    if (movementDirection > 0 && (snapAlways || cursor >= activeRoute.length - 1 - snapDistance)) {
-      const previous = cursor;
-      const endBefore = activeRoute.length - 1;
-      cursor = endBefore;
-      let addedTotal = 0;
-      for (let guard = 0; guard < searchEdges; guard += 1) {
-        const added = Number(walk.extendForward?.() ?? 0);
-        if (!added) break;
-        addedTotal += added;
-        if (!walk.hasPendingTurn?.(movementDirection)) break;
-      }
-      if (addedTotal) cursor = Math.min(activeRoute.length - 1, cursor + Math.min(nudgePoints, addedTotal));
-      distanceTravelled += Math.abs(cursor - previous) * Number(settings.roadStepMeters ?? 3.5);
-    } else if (movementDirection < 0 && (snapAlways || cursor <= snapDistance)) {
-      const previous = cursor;
-      cursor = 0;
-      let prependedTotal = 0;
-      for (let guard = 0; guard < searchEdges; guard += 1) {
-        const prepended = Number(walk.extendBackward?.() ?? 0);
-        if (!prepended) break;
+  const currentTurnHint = () => {
+    const movementDirection = currentTurnDirection();
+    if (!movementDirection) return { left: false, right: false };
+    return walk.turnOptions?.(movementDirection) ?? { left: false, right: false };
+  };
+
+  const selectTurn = (direction) => {
+    const movementDirection = currentTurnDirection();
+    if (!movementDirection) {
+      applyCursor();
+      return;
+    }
+
+    const options = currentTurnHint();
+    if (!options?.[direction]) {
+      applyCursor();
+      return;
+    }
+
+    walk.chooseTurn?.(direction, movementDirection);
+
+    if (movementDirection > 0) {
+      walk.extendForward?.();
+    } else if (movementDirection < 0) {
+      const prepended = Number(walk.extendBackward?.() ?? 0);
+      if (prepended) {
+        // Keep the same visual camera point after adding older route points before index 0.
         cursor += prepended;
-        prependedTotal += prepended;
-        if (!walk.hasPendingTurn?.(movementDirection)) break;
       }
-      if (prependedTotal) cursor = Math.max(0, cursor - Math.min(nudgePoints, prependedTotal));
-      distanceTravelled += Math.abs(cursor - previous) * Number(settings.roadStepMeters ?? 3.5);
     }
 
     applyCursor();
@@ -935,7 +999,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
 
   const onKeyDown = (event) => {
     if (event.__arcticRouteHandled) return;
-    const key = routeArrowKey(event);
+    const key = routeControlKey(event);
     if (!key) return;
 
     const target = event.target;
@@ -950,9 +1014,9 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
       moveBy(moveSteps);
     } else if (key === "ArrowDown") {
       moveBy(-moveSteps);
-    } else if (key === "ArrowLeft") {
+    } else if (key === "TurnLeft") {
       selectTurn("left");
-    } else if (key === "ArrowRight") {
+    } else if (key === "TurnRight") {
       selectTurn("right");
     }
   };
@@ -986,6 +1050,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
       progress: (distanceTravelled % 1000) / 1000,
       routeIndex: cursor,
       buildingId: focusBuildingId,
+      turnHint: currentTurnHint(),
       camera
     });
   }
@@ -1026,10 +1091,17 @@ function isEditableKeyTarget(target) {
   ].includes(target.type);
 }
 
-function routeArrowKey(event) {
-  const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-  if (keys.includes(event.code)) return event.code;
-  if (keys.includes(event.key)) return event.key;
+function routeControlKey(event) {
+  const movementKeys = ["ArrowUp", "ArrowDown"];
+  if (movementKeys.includes(event.code)) return event.code;
+  if (movementKeys.includes(event.key)) return event.key;
+
+  if (event.code === "KeyA") return "TurnLeft";
+  if (event.code === "KeyD") return "TurnRight";
+
+  const key = String(event.key ?? "").toLowerCase();
+  if (key === "a" || key === "ф") return "TurnLeft";
+  if (key === "d" || key === "в") return "TurnRight";
   return null;
 }
 

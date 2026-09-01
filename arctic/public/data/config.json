@@ -40,6 +40,13 @@
         "heading": 0,
         "pitch": -72
       },
+      "arkhangelsk": {
+        "height": 1100000,
+        "offsetLon": 0.8,
+        "offsetLat": 0.15,
+        "heading": 0,
+        "pitch": -72
+      },
       "chukotka": {
         "height": 1050000,
         "offsetLon": -1.2,
@@ -74,10 +81,9 @@
     "keyboardMoveSteps": 4,
     "turnDirectionThresholdDegrees": 10,
     "straightContinuationDegrees": 35,
-    "turnSnapDistancePoints": 14,
-    "turnNudgePoints": 3,
-    "turnSnapAlways": true,
-    "turnSearchEdges": 22,
+    "turnHintDistancePoints": 16,
+    "routeSegmentMaxEdges": 28,
+    "visibleBuildingUpdateDistanceMeters": 34,
     "spawnFocusRadiusMeters": 1700,
     "spawnBuildingRadiusMeters": 170,
     "spawnBuildingSampleLimit": 900
@@ -85,6 +91,7 @@
   "cityOverrides": {
     "murmansk-city": {},
     "naryan-mar": {},
+    "arkhangelsk-city": {},
     "anadyr": {},
     "tiksi": {}
   },

@@ -12,6 +12,7 @@ import {
   renderCityStory,
   renderRegionScreen,
   renderStartScreen,
+  updateTurnHint,
   updateJourneyControls,
   updateOfferCard
 } from "./ui/screens.js";
@@ -262,6 +263,7 @@ async function renderCurrentStory() {
   if (!refs.cesiumContainer) return;
 
   try {
+    let activeRouteBuildingId = null;
     viewer = createArcticViewer(refs.cesiumContainer, prototypeConfig);
     const availableOffers = getAvailableOffers(allOffers, state);
     const visibleOffers = availableOffers.filter((item) =>
@@ -276,12 +278,18 @@ async function renderCurrentStory() {
     routeController = createRouteController(viewer, cityScene, cityScene.focusBuildings, {
       initialIndex: cityScene.spawnIndex,
       config: prototypeConfig,
-      onProgress: ({ progress, buildingId }) => {
+      onProgress: ({ progress, buildingId, turnHint }) => {
         setState({ routeProgress: progress });
+        updateTurnHint(refs, turnHint);
         if (buildingId) {
-          handleBuildingFocus(refs, buildingId, cityScene?.getOffer(buildingId));
+          const nextOffer = cityScene?.getOffer(buildingId);
+          if (buildingId !== activeRouteBuildingId || state.selectedObject !== nextOffer?.id) {
+            activeRouteBuildingId = buildingId;
+            handleBuildingFocus(refs, buildingId, nextOffer);
+          }
           positionOfferCard(refs, cityScene?.getScreenAnchor(buildingId));
-        } else {
+        } else if (activeRouteBuildingId || state.selectedObject) {
+          activeRouteBuildingId = null;
           setState({ selectedObject: null });
           cityScene?.highlight(null);
           updateOfferCard(refs, null);

@@ -39,6 +39,24 @@
     },
     {
       "type": "Feature",
+      "id": "arkhangelsk-city",
+      "properties": {
+        "cityId": "arkhangelsk-city",
+        "regionId": "arkhangelsk",
+        "name": "Архангельск",
+        "ready": false,
+        "source": "OpenStreetMap place location / project scenario"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          40.5159,
+          64.5393
+        ]
+      }
+    },
+    {
+      "type": "Feature",
       "id": "anadyr",
       "properties": {
         "cityId": "anadyr",
