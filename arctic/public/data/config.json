@@ -203,8 +203,9 @@
     "maxRoads": 1200,
     "clampToGround": true,
     "heightMeters": 0,
+    "width": 18,
     "widthScale": 1,
-    "casingExtraWidth": 4,
+    "casingExtraWidth": 6,
     "casingColor": "#223138",
     "casingAlpha": 0.92,
     "fillColor": "#fff4d6",
@@ -212,21 +213,7 @@
     "majorFillColor": "#f2c14e",
     "majorAlpha": 1,
     "serviceFillColor": "#e8dfcf",
-    "serviceAlpha": 0.78,
-    "widths": {
-      "motorway": 13,
-      "trunk": 12,
-      "primary": 12,
-      "secondary": 10,
-      "tertiary": 8,
-      "unclassified": 7,
-      "residential": 7,
-      "living_street": 6,
-      "service": 5,
-      "pedestrian": 4,
-      "road": 6,
-      "default": 6
-    }
+    "serviceAlpha": 0.78
   },
   "lighting": {
     "enabled": true,

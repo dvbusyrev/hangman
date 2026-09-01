@@ -315,25 +315,9 @@ function lineCenter(coordinates) {
   return count ? [lon / count, lat / count] : null;
 }
 
-function vectorRoadWidth(highway, config = {}) {
-  const defaultWidths = {
-    motorway: 8,
-    trunk: 7,
-    primary: 7,
-    secondary: 6,
-    tertiary: 5,
-    unclassified: 4,
-    residential: 4,
-    living_street: 3,
-    service: 2.4,
-    pedestrian: 2.2,
-    road: 3.2
-  };
-  const widths = config.widths ?? {};
-  const configured = Number(widths[highway] ?? widths.default);
-  const base = Number.isFinite(configured) && configured > 0
-    ? configured
-    : defaultWidths[highway] ?? defaultWidths.road;
+function vectorRoadWidth(_highway, config = {}) {
+  const configured = Number(config.width ?? config.widths?.default ?? 16);
+  const base = Number.isFinite(configured) && configured > 0 ? configured : 16;
   return Math.max(1.5, base * Number(config.widthScale ?? 1));
 }
 
@@ -1281,11 +1265,8 @@ function removeConsecutiveDuplicates(coordinates) {
   return result;
 }
 
-function roadWidth(highway) {
-  if (["motorway", "trunk", "primary"].includes(highway)) return 6;
-  if (["secondary", "tertiary"].includes(highway)) return 5;
-  if (["service", "pedestrian"].includes(highway)) return 2.6;
-  return 3.5;
+function roadWidth(_highway) {
+  return 6;
 }
 
 function polygonCentroid(ring) {
