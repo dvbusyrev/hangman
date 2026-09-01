@@ -60,12 +60,11 @@ npm run offline:sync
 npm run offline:check
 ```
 
-После этого приложение можно запускать через `npm run dev` или собирать через `npm run offline:build`. Сами GeoJSON/CSV читаются локально. В `public/data/config.json` можно отключить онлайн-тайлы OSM, если нужен строго офлайн-показ:
+После этого приложение можно запускать через `npm run dev` или собирать через `npm run offline:build`. Сами GeoJSON/CSV читаются локально. В городе по умолчанию используется кастомная подложка из локальных `*-roads.geojson` и `*-buildings.geojson`; стандартные OSM-тайлы там выключены, чтобы дороги читались в едином стиле. Дороги дополнительно рисуются своим лёгким Cesium-слоем из того же GeoJSON. Для строго офлайн-показа карты регионов можно дополнительно отключить онлайн-тайлы:
 
 ```json
 {
-  "map": { "onlineOsm": false },
-  "basemap": { "preferOnlineOsm": false }
+  "map": { "onlineOsm": false }
 }
 ```
 

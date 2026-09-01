@@ -49,11 +49,14 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
   const graph = cityStageSync(city, "построение графа улиц", () => buildRoadGraph(raw.roads));
   if (!graph.edges.length) throw new Error(`${city.name}: в локальном OSM-файле нет пригодной дорожной сети`);
 
-  // Roads are no longer rendered as Cesium polylines. Instead, a lightweight local OSM-like
-  // raster is generated from the cached roads/buildings and placed on the ground.
+  // The city view uses a custom raster generated from local OSM roads/buildings. It keeps the
+  // road shape visible without the visual noise of standard OSM tiles under the low camera.
   await cityStage(city, "подложка карты", () => installCityBasemap(viewer, raw, config.basemap ?? {}));
 
   const randomWalk = cityStageSync(city, "маршрут по улицам", () => makeRandomRoadWalk(graph, runtimeCity, raw.buildings));
+  const roadLayer = cityStageSync(city, "стилизация дорог", () => createRoadLayerDataSource(raw.roads, randomWalk.route, config.roads ?? {}));
+  await cityStage(city, "добавление дорог в Cesium", () => viewer.dataSources.add(roadLayer));
+
   const preparedBuildings = cityStageSync(city, "подготовка 3D-домов", () => prepareBuildingsForScene(raw.buildings, randomWalk.route, runtimeCity, config.buildings ?? {}));
   let assignment = assignOffersToRandomBuildings(offers, preparedBuildings.features, randomWalk.route);
   verifyRealOsmBuildings(preparedBuildings, city);
@@ -70,8 +73,8 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
 
   if (!summaries.length) throw new Error(`${city.name}: OSM GeoJSON contains no polygon buildings`);
 
-  // Do not draw the whole generated walk. It can grow for a long time and the local OSM roads
-  // already provide the visible street network. Keeping the route invisible also improves FPS.
+  // Do not draw the generated walk itself. It can grow for a long time; the local road raster
+  // already provides the visible street network.
 
   const focusBuildings = [];
   const syncFocusBuildings = () => {
@@ -204,6 +207,120 @@ function cityStageSync(city, label, action) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`${city.name}: этап «${label}»: ${message}`, { cause: error });
   }
+}
+
+function createRoadLayerDataSource(roads, route, config = {}) {
+  const source = new Cesium.CustomDataSource("styled-roads");
+  if (config.enabled === false) return source;
+
+  const features = (roads?.features ?? []).filter((feature) =>
+    feature.geometry?.type === "LineString" && feature.geometry.coordinates?.length >= 2
+  );
+  const maxRoads = Math.max(0, Number(config.maxRoads ?? 1200));
+  const height = Math.max(0, Number(config.heightMeters ?? 0.18));
+  const casingColor = Cesium.Color.fromCssColorString(config.casingColor ?? "#26343a").withAlpha(Number(config.casingAlpha ?? 0.9));
+  const fillColor = Cesium.Color.fromCssColorString(config.fillColor ?? "#fff8e8").withAlpha(Number(config.fillAlpha ?? 0.98));
+  const majorFillColor = Cesium.Color.fromCssColorString(config.majorFillColor ?? "#f0c85c").withAlpha(Number(config.majorAlpha ?? 0.98));
+  const serviceFillColor = Cesium.Color.fromCssColorString(config.serviceFillColor ?? "#ece8de").withAlpha(Number(config.serviceAlpha ?? 0.72));
+
+  rankRoadFeatures(features, route)
+    .slice(0, maxRoads || features.length)
+    .forEach(({ feature }, index) => {
+      const positions = roadPositions(feature.geometry.coordinates, height);
+      if (positions.length < 2) return;
+
+      const highway = feature.properties?.highway ?? "road";
+      const width = vectorRoadWidth(highway, config);
+      const isMajor = ["motorway", "trunk", "primary", "secondary"].includes(highway);
+      const isService = ["service", "pedestrian"].includes(highway);
+      const fill = isMajor ? majorFillColor : isService ? serviceFillColor : fillColor;
+      const id = feature.id ?? `${highway}-${index}`;
+
+      source.entities.add({
+        id: `road-casing-${id}`,
+        polyline: {
+          positions,
+          width: width + Number(config.casingExtraWidth ?? 3),
+          material: casingColor,
+          depthFailMaterial: casingColor
+        }
+      });
+      source.entities.add({
+        id: `road-fill-${id}`,
+        polyline: {
+          positions,
+          width,
+          material: fill,
+          depthFailMaterial: fill
+        }
+      });
+    });
+
+  return source;
+}
+
+function rankRoadFeatures(features, route) {
+  return features
+    .map((feature) => {
+      const coordinates = feature.geometry.coordinates;
+      const center = lineCenter(coordinates);
+      const highway = feature.properties?.highway ?? "road";
+      const routeDistance = Number.isFinite(center?.[0])
+        ? distancePointToRouteMeters(center, route)
+        : Number.POSITIVE_INFINITY;
+      const importance = roadSpawnWeight(highway);
+      const majorBonus = ["motorway", "trunk", "primary", "secondary"].includes(highway) ? 850 : 0;
+      const lengthBonus = Math.min(240, lineLengthMeters(coordinates) * 0.08);
+      return {
+        feature,
+        score: routeDistance - majorBonus - lengthBonus - importance * 35 + stableUnit(feature.id ?? highway, "road-layer") * 8
+      };
+    })
+    .sort((a, b) => a.score - b.score);
+}
+
+function roadPositions(coordinates, height) {
+  const degrees = [];
+  for (const point of coordinates) {
+    const lon = Number(point?.[0]);
+    const lat = Number(point?.[1]);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+    degrees.push(lon, lat, height);
+  }
+  return degrees.length >= 6 ? Cesium.Cartesian3.fromDegreesArrayHeights(degrees) : [];
+}
+
+function lineCenter(coordinates) {
+  if (!Array.isArray(coordinates) || !coordinates.length) return null;
+  let lon = 0;
+  let lat = 0;
+  let count = 0;
+  for (const point of coordinates) {
+    const nextLon = Number(point?.[0]);
+    const nextLat = Number(point?.[1]);
+    if (!Number.isFinite(nextLon) || !Number.isFinite(nextLat)) continue;
+    lon += nextLon;
+    lat += nextLat;
+    count += 1;
+  }
+  return count ? [lon / count, lat / count] : null;
+}
+
+function vectorRoadWidth(highway, config = {}) {
+  const base = {
+    motorway: 8,
+    trunk: 7,
+    primary: 7,
+    secondary: 6,
+    tertiary: 5,
+    unclassified: 4,
+    residential: 4,
+    living_street: 3,
+    service: 2.4,
+    pedestrian: 2.2,
+    road: 3.2
+  }[highway] ?? 3.2;
+  return Math.max(1.5, base * Number(config.widthScale ?? 1));
 }
 
 function createBuildingDataSource(preparedBuildings, getAssignment, buildingConfig, lightingConfig) {
@@ -1412,13 +1529,12 @@ async function installCityBasemap(viewer, raw, config = {}) {
     if (onlineLayer) onlineLayer.show = true;
   }
 
-  // A full-city local raster is expensive to build. When normal OSM tiles are available we do
-  // not render thousands of cached footprints into a 3K canvas on the main UI thread. The local
-  // fallback is generated only offline (or when explicitly forced).
-  const needLocalFallback = config.cityOfflineRaster !== false
+  // Generate one local raster from cached OSM roads/buildings. If online OSM tiles are explicitly
+  // enabled, the raster can still be skipped unless alwaysBuildOfflineRaster is true.
+  const needLocalRaster = config.cityOfflineRaster !== false
     && (!onlineLayer || config.alwaysBuildOfflineRaster === true);
 
-  if (!needLocalFallback) return;
+  if (!needLocalRaster) return;
 
   const rendered = await renderLocalBasemap(raw, config);
   if (!rendered) return;
