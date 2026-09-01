@@ -42,6 +42,7 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
   viewer.scene.maximumRenderTimeChange = Number.POSITIVE_INFINITY;
   viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#dce8ed");
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#d7e1e4");
+  viewer.scene.globe.depthTestAgainstTerrain = true;
   applyCityLighting(viewer, config.lighting ?? {});
   setCameraFrustum(viewer, runtimeCity.__navigation.fieldOfViewDegrees);
 
@@ -217,7 +218,8 @@ function createRoadLayerDataSource(roads, route, config = {}) {
     feature.geometry?.type === "LineString" && feature.geometry.coordinates?.length >= 2
   );
   const maxRoads = Math.max(0, Number(config.maxRoads ?? 1200));
-  const height = Math.max(0, Number(config.heightMeters ?? 0.18));
+  const clampToGround = config.clampToGround !== false;
+  const height = clampToGround ? 0 : Math.max(0, Number(config.heightMeters ?? 0.18));
   const casingColor = Cesium.Color.fromCssColorString(config.casingColor ?? "#26343a").withAlpha(Number(config.casingAlpha ?? 0.9));
   const fillColor = Cesium.Color.fromCssColorString(config.fillColor ?? "#fff8e8").withAlpha(Number(config.fillAlpha ?? 0.98));
   const majorFillColor = Cesium.Color.fromCssColorString(config.majorFillColor ?? "#f0c85c").withAlpha(Number(config.majorAlpha ?? 0.98));
@@ -226,11 +228,12 @@ function createRoadLayerDataSource(roads, route, config = {}) {
   rankRoadFeatures(features, route)
     .slice(0, maxRoads || features.length)
     .forEach(({ feature }, index) => {
-      const positions = roadPositions(feature.geometry.coordinates, height);
+      const positions = roadPositions(feature.geometry.coordinates, height, clampToGround);
       if (positions.length < 2) return;
 
       const highway = feature.properties?.highway ?? "road";
       const width = vectorRoadWidth(highway, config);
+      const casingWidth = width + Number(config.casingExtraWidth ?? 3);
       const isMajor = ["motorway", "trunk", "primary", "secondary"].includes(highway);
       const isService = ["service", "pedestrian"].includes(highway);
       const fill = isMajor ? majorFillColor : isService ? serviceFillColor : fillColor;
@@ -240,9 +243,10 @@ function createRoadLayerDataSource(roads, route, config = {}) {
         id: `road-casing-${id}`,
         polyline: {
           positions,
-          width: width + Number(config.casingExtraWidth ?? 3),
+          width: casingWidth,
           material: casingColor,
-          depthFailMaterial: casingColor
+          clampToGround,
+          zIndex: 0
         }
       });
       source.entities.add({
@@ -251,7 +255,8 @@ function createRoadLayerDataSource(roads, route, config = {}) {
           positions,
           width,
           material: fill,
-          depthFailMaterial: fill
+          clampToGround,
+          zIndex: 1
         }
       });
     });
@@ -279,13 +284,17 @@ function rankRoadFeatures(features, route) {
     .sort((a, b) => a.score - b.score);
 }
 
-function roadPositions(coordinates, height) {
+function roadPositions(coordinates, height, clampToGround) {
   const degrees = [];
   for (const point of coordinates) {
     const lon = Number(point?.[0]);
     const lat = Number(point?.[1]);
     if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
-    degrees.push(lon, lat, height);
+    if (clampToGround) degrees.push(lon, lat);
+    else degrees.push(lon, lat, height);
+  }
+  if (clampToGround) {
+    return degrees.length >= 4 ? Cesium.Cartesian3.fromDegreesArray(degrees) : [];
   }
   return degrees.length >= 6 ? Cesium.Cartesian3.fromDegreesArrayHeights(degrees) : [];
 }
@@ -307,7 +316,7 @@ function lineCenter(coordinates) {
 }
 
 function vectorRoadWidth(highway, config = {}) {
-  const base = {
+  const defaultWidths = {
     motorway: 8,
     trunk: 7,
     primary: 7,
@@ -319,7 +328,12 @@ function vectorRoadWidth(highway, config = {}) {
     service: 2.4,
     pedestrian: 2.2,
     road: 3.2
-  }[highway] ?? 3.2;
+  };
+  const widths = config.widths ?? {};
+  const configured = Number(widths[highway] ?? widths.default);
+  const base = Number.isFinite(configured) && configured > 0
+    ? configured
+    : defaultWidths[highway] ?? defaultWidths.road;
   return Math.max(1.5, base * Number(config.widthScale ?? 1));
 }
 

@@ -70,6 +70,8 @@ npm run offline:check
 
 `offline:sync` копирует Cesium assets, выгружает границы регионов, OSM-дома, OSM-дороги и проверяет наличие файлов для подготовленных городов.
 
+Стиль 3D-дорог настраивается в `public/data/config.json` в блоке `roads`: `casingColor`, `fillColor`, `majorFillColor`, `serviceFillColor`, `casingExtraWidth`, `widthScale` и `widths`. По умолчанию дороги прижаты к земле через `clampToGround`, поэтому 3D-дома должны закрывать дорожный слой, а не наоборот.
+
 ## Сборка для показа
 
 После подготовки данных:
