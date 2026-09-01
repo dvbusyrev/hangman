@@ -219,21 +219,22 @@ function createRoadLayerDataSource(roads, route, config = {}) {
   );
   const maxRoads = Math.max(0, Number(config.maxRoads ?? 1200));
   const clampToGround = config.clampToGround !== false;
-  const height = clampToGround ? 0 : Math.max(0, Number(config.heightMeters ?? 0.18));
+  const height = Math.max(0, Number(config.heightMeters ?? 0));
   const casingColor = Cesium.Color.fromCssColorString(config.casingColor ?? "#26343a").withAlpha(Number(config.casingAlpha ?? 0.9));
   const fillColor = Cesium.Color.fromCssColorString(config.fillColor ?? "#fff8e8").withAlpha(Number(config.fillAlpha ?? 0.98));
   const majorFillColor = Cesium.Color.fromCssColorString(config.majorFillColor ?? "#f0c85c").withAlpha(Number(config.majorAlpha ?? 0.98));
   const serviceFillColor = Cesium.Color.fromCssColorString(config.serviceFillColor ?? "#ece8de").withAlpha(Number(config.serviceAlpha ?? 0.72));
+  const roadMode = { clampToGround, height };
 
   rankRoadFeatures(features, route)
     .slice(0, maxRoads || features.length)
     .forEach(({ feature }, index) => {
-      const positions = roadPositions(feature.geometry.coordinates, height, clampToGround);
+      const positions = roadPositions(feature.geometry.coordinates);
       if (positions.length < 2) return;
 
       const highway = feature.properties?.highway ?? "road";
-      const width = vectorRoadWidth(highway, config);
-      const casingWidth = width + Number(config.casingExtraWidth ?? 3);
+      const width = roadWidthMeters(highway, config);
+      const casingWidth = width + roadCasingExtraWidthMeters(config);
       const isMajor = ["motorway", "trunk", "primary", "secondary"].includes(highway);
       const isService = ["service", "pedestrian"].includes(highway);
       const fill = isMajor ? majorFillColor : isService ? serviceFillColor : fillColor;
@@ -241,27 +242,38 @@ function createRoadLayerDataSource(roads, route, config = {}) {
 
       source.entities.add({
         id: `road-casing-${id}`,
-        polyline: {
-          positions,
-          width: casingWidth,
-          material: casingColor,
-          clampToGround,
-          zIndex: 0
-        }
+        corridor: roadCorridor(positions, casingWidth, casingColor, 0, roadMode)
       });
       source.entities.add({
         id: `road-fill-${id}`,
-        polyline: {
-          positions,
-          width,
-          material: fill,
-          clampToGround,
-          zIndex: 1
-        }
+        corridor: roadCorridor(positions, width, fill, 1, roadMode)
       });
     });
 
   return source;
+}
+
+function roadCorridor(positions, width, material, zIndex, mode) {
+  const corridor = {
+    positions,
+    width,
+    material,
+    fill: true,
+    outline: false,
+    cornerType: Cesium.CornerType.ROUNDED,
+    shadows: Cesium.ShadowMode.DISABLED
+  };
+
+  if (mode.clampToGround) {
+    corridor.zIndex = zIndex;
+    if (Cesium.ClassificationType?.TERRAIN) {
+      corridor.classificationType = Cesium.ClassificationType.TERRAIN;
+    }
+  } else {
+    corridor.height = mode.height;
+  }
+
+  return corridor;
 }
 
 function rankRoadFeatures(features, route) {
@@ -284,19 +296,15 @@ function rankRoadFeatures(features, route) {
     .sort((a, b) => a.score - b.score);
 }
 
-function roadPositions(coordinates, height, clampToGround) {
+function roadPositions(coordinates) {
   const degrees = [];
   for (const point of coordinates) {
     const lon = Number(point?.[0]);
     const lat = Number(point?.[1]);
     if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
-    if (clampToGround) degrees.push(lon, lat);
-    else degrees.push(lon, lat, height);
+    degrees.push(lon, lat);
   }
-  if (clampToGround) {
-    return degrees.length >= 4 ? Cesium.Cartesian3.fromDegreesArray(degrees) : [];
-  }
-  return degrees.length >= 6 ? Cesium.Cartesian3.fromDegreesArrayHeights(degrees) : [];
+  return degrees.length >= 4 ? Cesium.Cartesian3.fromDegreesArray(degrees) : [];
 }
 
 function lineCenter(coordinates) {
@@ -315,10 +323,15 @@ function lineCenter(coordinates) {
   return count ? [lon / count, lat / count] : null;
 }
 
-function vectorRoadWidth(_highway, config = {}) {
-  const configured = Number(config.width ?? config.widths?.default ?? 16);
-  const base = Number.isFinite(configured) && configured > 0 ? configured : 16;
+function roadWidthMeters(_highway, config = {}) {
+  const configured = Number(config.widthMeters ?? config.width ?? config.widths?.default ?? 18);
+  const base = Number.isFinite(configured) && configured > 0 ? configured : 18;
   return Math.max(1.5, base * Number(config.widthScale ?? 1));
+}
+
+function roadCasingExtraWidthMeters(config = {}) {
+  const configured = Number(config.casingExtraWidthMeters ?? config.casingExtraWidth ?? 6);
+  return Number.isFinite(configured) && configured >= 0 ? configured : 6;
 }
 
 function createBuildingDataSource(preparedBuildings, getAssignment, buildingConfig, lightingConfig) {
