@@ -490,9 +490,8 @@ function largestRoadComponent(nodes, edges, adjacency) {
 }
 
 /**
- * Create one random path through the road graph. The spawn point is an interior point of a random
- * real OSM road. From there we pre-generate a random walk in both directions, choosing a new road
- * at intersections. Scrolling then feels stable and can always be reversed.
+ * Create a cursor over the real OSM road graph. The array stores only the already visited and
+ * immediately available camera path; every next branch is chosen from the full graph at runtime.
  */
 function makeRandomRoadWalk(graph, city, buildings = null) {
   const eligible = graph.edges.filter((edge) => edge.length >= 7);
@@ -526,9 +525,8 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
   const forwardEnd = forwardToB ? spawnEdge.b : spawnEdge.a;
   const backwardEnd = forwardToB ? spawnEdge.a : spawnEdge.b;
 
-  // Important: we do NOT pre-generate random turns anymore. The route only reaches the
-  // next real OSM junction. A/D choose the branch there; without a choice
-  // the walk continues only along a sufficiently straight continuation.
+  // Keep only the current segment to the next real OSM junction. A/D chooses the next branch
+  // from the full road graph; without that choice the camera pauses at a branching node.
   const forwardState = createWalkState(forwardEndKey, spawnEdge.id, [spawn, forwardEnd]);
   const backwardState = createWalkState(backwardEndKey, spawnEdge.id, [spawn, backwardEnd]);
   const stepMeters = Number(city.walkStepMeters ?? 3.5);
@@ -905,18 +903,25 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
 
   const settings = { ...(walk.settings ?? {}), ...(config.navigation ?? {}) };
 
+  const hasTurnChoice = (direction) => {
+    const options = walk.turnOptions?.(direction) ?? {};
+    return Boolean(options.left || options.right);
+  };
+
   const ensureTargetExists = (target, direction) => {
     let nextTarget = target;
     let guard = 0;
 
     if (direction > 0) {
       while (nextTarget > activeRoute.length - 1 && guard < 8) {
+        if (hasTurnChoice(1) && !walk.hasPendingTurn?.(1)) break;
         guard += 1;
         const added = Number(walk.extendForward?.() ?? 0);
         if (!added) break; // at a junction that needs A/D, remain there
       }
     } else if (direction < 0) {
       while (nextTarget < 0 && guard < 8) {
+        if (hasTurnChoice(-1) && !walk.hasPendingTurn?.(-1)) break;
         guard += 1;
         const prepended = Number(walk.extendBackward?.() ?? 0);
         if (!prepended) break;
