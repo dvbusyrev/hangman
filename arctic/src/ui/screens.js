@@ -108,8 +108,8 @@ export function renderCityStory(root, {
     button.addEventListener("click", () => onTimeline(Number(button.dataset.years)));
   });
 
-  root.querySelectorAll("[name='mode']").forEach((input) => {
-    input.addEventListener("change", () => onMode(input.value));
+  root.querySelectorAll("[data-mode]").forEach((button) => {
+    button.addEventListener("click", () => onMode(button.dataset.mode));
   });
 
   return {
@@ -296,9 +296,9 @@ function renderTimeline(selectedYears) {
 
 function renderMode(selectedMode) {
   return `
-    <div class="mode-switch" aria-label="Тип предложений">
-      <label><input type="radio" name="mode" value="profession" ${selectedMode === "profession" ? "checked" : ""}><span>Профессия</span></label>
-      <label><input type="radio" name="mode" value="estate" ${selectedMode === "estate" ? "checked" : ""}><span>Недвижимость</span></label>
+    <div class="mode-switch" role="group" aria-label="Тип предложений">
+      <button type="button" class="mode-switch__button ${selectedMode === "profession" ? "is-active" : ""}" data-mode="profession" aria-pressed="${selectedMode === "profession"}">Вакансии</button>
+      <button type="button" class="mode-switch__button ${selectedMode === "estate" ? "is-active" : ""}" data-mode="estate" aria-pressed="${selectedMode === "estate"}">Недвижимость</button>
     </div>
   `;
 }

@@ -529,11 +529,29 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   right: 0;
   bottom: 12px;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 58px;
+  gap: 12px;
 }
-.mode-switch label { display: grid; justify-items: center; gap: 3px; font-size: 13px; }
-.mode-switch input { width: 18px; height: 18px; margin: 0; accent-color: #26333a; }
+.mode-switch__button {
+  min-width: 170px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+  font-size: 13px;
+  font-weight: 650;
+}
+.mode-switch__button:hover,
+.mode-switch__button.is-active {
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+.mode-switch__button:focus-visible {
+  outline: 3px solid #94cbdc;
+  outline-offset: 2px;
+}
 
 .info-chapter {
   position: relative;
@@ -589,7 +607,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .city-headline { align-items: flex-start; flex-direction: column; gap: 2px; }
   .city-headline span { text-align: left; }
   .timeline { padding: 0 18px; }
-  .mode-switch { gap: 22px; }
+  .mode-switch { gap: 8px; }
+  .mode-switch__button { min-width: 140px; padding: 0 12px; }
   .info-card { width: 90%; }
 }
 
