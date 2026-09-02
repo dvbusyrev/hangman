@@ -2776,3 +2776,20 @@ body {
 }
 
 /* /ARCTIC_HERO_BEAR_LIVE_TYPE_V38 */
+
+
+/* ARCTIC_LIFE_SEGMENT_STYLE_V1 */
+.arctic-duo--life {
+  margin-top: 40px;
+  border-radius: 0 36px 0 0;
+  overflow: hidden;
+}
+
+.arctic-duo--life .arctic-duo__copy h2,
+.arctic-duo--life .arctic-duo__copy p,
+.arctic-duo--life .arctic-copy-icon,
+.arctic-duo--life .arctic-arrow-link {
+  color: #23395B;
+}
+
+/* /ARCTIC_LIFE_SEGMENT_STYLE_V1 */
