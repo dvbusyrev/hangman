@@ -203,6 +203,14 @@ async function navigateMapPage(refs, page) {
   }
 
   if (page === "region") {
+    // ARCTIC_RESET_CITY_ON_REGIONS_V1
+    // Returning to the region-selection step invalidates the chosen city and
+    // all city-specific state. The selected region itself is kept visible.
+    setState({
+      selectedCity: null,
+      selectedObject: null,
+      routeProgress: 0
+    });
     showRegions("region");
     return;
   }

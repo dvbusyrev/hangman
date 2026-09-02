@@ -152,7 +152,9 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
   const cities = selectedRegion?.cities?.filter((city) => city.ready) ?? [];
   const enabledPages = {
     region: true,
-    city: Boolean(selectedRegion),
+    // When the user returns to «Области», the next step is intentionally
+    // locked until a region is chosen again from the map/list.
+    city: page !== "region" && Boolean(selectedRegion),
     life: Boolean(state.selectedCity),
     nature: Boolean(state.selectedCity),
     benefits: Boolean(state.selectedCity)

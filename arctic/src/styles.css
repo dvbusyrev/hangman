@@ -1740,3 +1740,39 @@ body {
   }
 }
 /* /ARCTIC_GAME_NAV_DOTS_V3 */
+
+
+/* ARCTIC_GAME_NAV_STATE_V4 */
+
+/* Every navigation circle uses the same dark-blue outline. */
+.journey-step > span,
+.journey-step.is-active > span {
+  border-color: var(--journey-navy, #173b57);
+  background: #fff;
+}
+
+/* The small inner marker of the current page remains turquoise. */
+.journey-step.is-active > span::after {
+  background: var(--journey-turquoise, #63c3cf);
+}
+
+/* Locked/future steps keep the same colors but are visually quieter. */
+.journey-step:has(input:disabled) {
+  opacity: .36;
+  cursor: default;
+}
+
+.journey-step:has(input:disabled) > span {
+  border-color: var(--journey-navy, #173b57);
+  background: #fff;
+}
+
+.journey-step:has(input:disabled):hover > span {
+  transform: none;
+}
+
+/* Rail stays dark blue. */
+.journey-steps::before {
+  background: var(--journey-navy, #173b57);
+}
+/* /ARCTIC_GAME_NAV_STATE_V4 */
