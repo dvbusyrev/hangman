@@ -2635,22 +2635,12 @@ body {
   text-shadow: 0 1px 9px rgba(26, 52, 70, .2);
 }
 
-.arctic-hero__direction {
-  display: block;
-  width: fit-content;
-  margin: 26px 0 28px;
-  color: rgba(255, 255, 255, .92);
-  font-size: 48px;
-  font-weight: 200;
-  line-height: .65;
-}
-
 .arctic-hero__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   width: 100%;
-  margin: 0;
+  margin: 30px 0 0;
 }
 
 .arctic-hero .arctic-outline-button {
@@ -2681,125 +2671,6 @@ body {
   box-shadow: 0 7px 0 rgba(34, 63, 83, .2);
 }
 
-.arctic-hero__location {
-  position: absolute;
-  z-index: 8;
-  left: 6.8%;
-  bottom: 10.2%;
-  display: grid;
-  grid-template-columns: 1px auto;
-  gap: 20px;
-  align-items: start;
-  color: rgba(255, 255, 255, .88);
-  text-shadow: 0 1px 10px rgba(26, 52, 70, .22);
-}
-
-.arctic-hero__location-line {
-  position: relative;
-  display: block;
-  width: 1px;
-  height: 145px;
-  background: rgba(255, 255, 255, .6);
-}
-
-.arctic-hero__location-line i {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  width: 9px;
-  height: 9px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .5);
-}
-
-.arctic-hero__location strong {
-  display: block;
-  margin: 5px 0 12px;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.arctic-hero__location p {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1.65;
-}
-
-.arctic-hero__signature {
-  position: absolute;
-  z-index: 8;
-  left: 3.1%;
-  bottom: 4.5%;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  color: rgba(255, 255, 255, .78);
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0;
-  text-shadow: 0 1px 8px rgba(26, 52, 70, .24);
-}
-
-.arctic-hero__signature-mark {
-  position: relative;
-  display: block;
-  width: 44px;
-  height: 1px;
-  background: rgba(255, 255, 255, .68);
-}
-
-.arctic-hero__signature-mark::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 12px;
-  height: 12px;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(255, 255, 255, .8);
-  border-radius: 50%;
-}
-
-.arctic-hero__signature-mark::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -1px;
-  width: 7px;
-  height: 7px;
-  transform: translateY(-50%) rotate(45deg);
-  border-top: 1px solid rgba(255, 255, 255, .8);
-  border-right: 1px solid rgba(255, 255, 255, .8);
-}
-
-.arctic-hero__scroll {
-  position: absolute;
-  z-index: 8;
-  right: 3.2%;
-  bottom: 4.3%;
-  display: grid;
-  width: 54px;
-  height: 54px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, .8);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .03);
-  color: #fff;
-  font-size: 26px;
-  font-weight: 200;
-  line-height: 1;
-  text-shadow: 0 1px 8px rgba(26, 52, 70, .2);
-}
-
-.arctic-hero__scroll:hover {
-  background: rgba(255, 255, 255, .13);
-}
-
 @media (max-width: 900px) {
   .arctic-hero {
     min-height: 680px;
@@ -2813,7 +2684,7 @@ body {
     top: 17%;
     left: 20px;
     right: 20px;
-    bottom: 38px;
+    bottom: auto;
     width: auto;
   }
 
@@ -2831,14 +2702,10 @@ body {
     font-size: 14px;
   }
 
-  .arctic-hero__direction {
-    margin: 20px 0 22px;
-    font-size: 40px;
-  }
-
   .arctic-hero__actions {
     grid-template-columns: 1fr;
     gap: 10px;
+    margin-top: 24px;
   }
 
   .arctic-hero .arctic-outline-button {
@@ -2851,27 +2718,6 @@ body {
     left: 20px;
   }
 
-  .arctic-hero__location {
-    left: 20px;
-    bottom: 86px;
-  }
-
-  .arctic-hero__location-line {
-    height: 96px;
-  }
-
-  .arctic-hero__signature {
-    left: 20px;
-    bottom: 20px;
-    font-size: 9px;
-  }
-
-  .arctic-hero__scroll {
-    right: 20px;
-    bottom: 18px;
-    width: 46px;
-    height: 46px;
-  }
 }
 
 @media (max-width: 560px) {
@@ -2888,15 +2734,6 @@ body {
     line-height: 1.55;
   }
 
-  .arctic-hero__location {
-    display: none;
-  }
-
-  .arctic-hero__signature {
-    max-width: calc(100% - 90px);
-    white-space: nowrap;
-    overflow: hidden;
-  }
 }
 
 /* /ARCTIC_HERO_BEAR_LIVE_TYPE_V38 */
