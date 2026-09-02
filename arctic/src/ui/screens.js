@@ -177,35 +177,47 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
       </div>
     </div>
 
-    <div class="journey-select-row">
-      <label class="journey-select">
-        <span>Регион</span>
-        <select data-journey-region>
-          <option value="">Выберите регион</option>
-          ${regions.map((region) => `<option value="${escapeHtml(region.id)}" ${state.selectedRegion === region.id ? "selected" : ""}>${escapeHtml(region.name)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="journey-select">
-        <span>Город</span>
-        <select data-journey-city ${selectedRegion ? "" : "disabled"}>
-          <option value="">Выберите город</option>
-          ${cities.map((nextCity) => `<option value="${escapeHtml(nextCity.id)}" ${state.selectedCity === nextCity.id ? "selected" : ""}>${escapeHtml(nextCity.name)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="journey-select">
-        <span>Профессия</span>
-        <input data-profile-profession list="journey-profession-list" autocomplete="off" value="${escapeHtml(state.profession ?? "")}" />
-        <datalist id="journey-profession-list">
-          ${professions.map((profession) => `<option value="${escapeHtml(profession)}"></option>`).join("")}
-        </datalist>
-      </label>
-      <label class="journey-select">
-        <span>Стаж работы</span>
-        <select data-profile-experience>
-          ${experienceOptions.map((option) => `<option value="${option.id}" ${state.experience === option.id ? "selected" : ""}>${option.label}</option>`).join("")}
-        </select>
-      </label>
-    </div>
+    ${page === "region" ? `
+      <div class="journey-select-row is-region-only">
+        <label class="journey-select">
+          <span>Регион</span>
+          <select data-journey-region>
+            <option value="">Выберите регион</option>
+            ${regions.map((region) => `<option value="${escapeHtml(region.id)}" ${state.selectedRegion === region.id ? "selected" : ""}>${escapeHtml(region.name)}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+    ` : `
+      <div class="journey-select-row">
+        <label class="journey-select">
+          <span>Регион</span>
+          <select data-journey-region>
+            <option value="">Выберите регион</option>
+            ${regions.map((region) => `<option value="${escapeHtml(region.id)}" ${state.selectedRegion === region.id ? "selected" : ""}>${escapeHtml(region.name)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="journey-select">
+          <span>Город</span>
+          <select data-journey-city ${selectedRegion ? "" : "disabled"}>
+            <option value="">Выберите город</option>
+            ${cities.map((nextCity) => `<option value="${escapeHtml(nextCity.id)}" ${state.selectedCity === nextCity.id ? "selected" : ""}>${escapeHtml(nextCity.name)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="journey-select">
+          <span>Профессия</span>
+          <input data-profile-profession list="journey-profession-list" autocomplete="off" value="${escapeHtml(state.profession ?? "")}" />
+          <datalist id="journey-profession-list">
+            ${professions.map((profession) => `<option value="${escapeHtml(profession)}"></option>`).join("")}
+          </datalist>
+        </label>
+        <label class="journey-select">
+          <span>Стаж работы</span>
+          <select data-profile-experience>
+            ${experienceOptions.map((option) => `<option value="${option.id}" ${state.experience === option.id ? "selected" : ""}>${option.label}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+    `}
   `;
 }
 

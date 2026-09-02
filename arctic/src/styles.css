@@ -1360,3 +1360,383 @@ body {
   .arctic-duo__copy h2 { letter-spacing: .22em; }
   .arctic-finale h2 { letter-spacing: .18em; }
 }
+
+
+/* ARCTIC_GAME_NAV_VISUAL_V1
+   Navigation spans exactly the same horizontal width as the map frame.
+   First and last point centers sit on the map borders. */
+.journey-step-row {
+  overflow: visible;
+}
+
+.journey-steps {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 60px;
+  --journey-turquoise: #64c3cf;
+  --journey-turquoise-dark: #3d9fac;
+  --journey-navy: #173b57;
+}
+
+.journey-steps::before {
+  left: 0;
+  right: 0;
+  top: 10px;
+  height: 2px;
+  background: var(--journey-navy);
+}
+
+.journey-step {
+  position: absolute;
+  top: 0;
+  width: 112px;
+  padding: 0;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  color: var(--ink);
+}
+
+.journey-step:nth-child(1) { left: 0%; }
+.journey-step:nth-child(2) { left: 25%; }
+.journey-step:nth-child(3) { left: 50%; }
+.journey-step:nth-child(4) { left: 75%; }
+.journey-step:nth-child(5) { left: 100%; }
+
+.journey-step > span {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--journey-turquoise-dark);
+  border-radius: 50%;
+  background: var(--journey-turquoise);
+  box-shadow: 0 0 0 2px #fff;
+  transition:
+    border-color .16s ease,
+    box-shadow .16s ease,
+    transform .16s ease;
+}
+
+.journey-step:hover:not(:has(input:disabled)) > span {
+  transform: scale(1.06);
+}
+
+.journey-step.is-active > span {
+  background: var(--journey-turquoise);
+  border-color: var(--journey-navy);
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px var(--journey-navy);
+}
+
+.journey-step strong {
+  font-size: 16px;
+  line-height: 1.15;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.journey-step.is-active strong {
+  color: var(--journey-navy);
+  font-weight: 750;
+}
+
+/* On the "Области" page there is only one compact Region selector. */
+.journey-select-row.is-region-only {
+  width: min(520px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 760px) {
+  .journey-steps {
+    height: 56px;
+  }
+
+  .journey-steps::before {
+    left: 0;
+    right: 0;
+    top: 9px;
+  }
+
+  .journey-step {
+    width: 76px;
+    gap: 6px;
+  }
+
+  .journey-step > span {
+    width: 20px;
+    height: 20px;
+  }
+
+  .journey-step strong {
+    font-size: 12px;
+  }
+
+  /* Keep endpoint dots on map borders but pull endpoint labels inward. */
+  .journey-step:first-child strong {
+    transform: translateX(22px);
+  }
+
+  .journey-step:last-child strong {
+    transform: translateX(-22px);
+  }
+
+  .journey-select-row.is-region-only {
+    width: 100%;
+  }
+}
+/* /ARCTIC_GAME_NAV_VISUAL_V1 */
+
+
+/* ARCTIC_GAME_NAV_VISUAL_V2 */
+.journey-step-row {
+  overflow: visible;
+}
+
+.journey-steps {
+  position: relative;
+  width: 100%;
+  height: 62px;
+  display: block;
+  --journey-turquoise: #63c3cf;
+  --journey-turquoise-dark: #3d9faa;
+  --journey-navy: #173b57;
+}
+
+.journey-steps::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: 10px;
+  height: 2px;
+  background: var(--journey-navy);
+}
+
+.journey-step {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  width: 120px;
+  padding: 0;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.journey-step:nth-child(1) { left: 0%; }
+.journey-step:nth-child(2) { left: 25%; }
+.journey-step:nth-child(3) { left: 50%; }
+.journey-step:nth-child(4) { left: 75%; }
+.journey-step:nth-child(5) { left: 100%; }
+
+.journey-step > span {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--journey-turquoise-dark);
+  border-radius: 50%;
+  background: var(--journey-turquoise);
+  box-shadow: 0 0 0 2px #fff;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.journey-step:hover > span {
+  transform: scale(1.06);
+}
+
+.journey-step.is-active > span {
+  border-color: var(--journey-navy);
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px var(--journey-navy);
+}
+
+.journey-step strong {
+  font-size: 17px;
+  line-height: 1.15;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.journey-step.is-active strong {
+  color: var(--journey-navy);
+  font-weight: 750;
+}
+
+.journey-select-row.is-region-only {
+  grid-template-columns: minmax(0, 1fr);
+  width: min(520px, 100%);
+}
+
+@media (max-width: 760px) {
+  .journey-steps {
+    height: 58px;
+  }
+
+  .journey-steps::before {
+    top: 9px;
+  }
+
+  .journey-step {
+    width: 78px;
+    gap: 6px;
+  }
+
+  .journey-step > span {
+    width: 20px;
+    height: 20px;
+  }
+
+  .journey-step strong {
+    font-size: 12px;
+  }
+
+  .journey-step:first-child strong {
+    transform: translateX(22px);
+  }
+
+  .journey-step:last-child strong {
+    transform: translateX(-22px);
+  }
+
+  .journey-select-row.is-region-only {
+    width: 100%;
+  }
+}
+/* /ARCTIC_GAME_NAV_VISUAL_V2 */
+
+
+/* ARCTIC_GAME_NAV_DOTS_V3
+   Keep the original navigation marker geometry:
+   20x20 circle, 2px border, white interior.
+   Only outline + active inner dot are colored. */
+.journey-steps {
+  position: relative;
+  width: 100%;
+  height: 60px;
+  display: block;
+  --journey-turquoise: #63c3cf;
+  --journey-navy: #173b57;
+}
+
+/* Dark-blue rail; its endpoints are exactly at the map edges. */
+.journey-steps::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: 9px;
+  height: 2px;
+  background: var(--journey-navy);
+}
+
+/* Restore the old marker/label footprint. */
+.journey-step {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  width: 80px;
+  padding: 0;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.journey-step:nth-child(1) { left: 0%; }
+.journey-step:nth-child(2) { left: 25%; }
+.journey-step:nth-child(3) { left: 50%; }
+.journey-step:nth-child(4) { left: 75%; }
+.journey-step:nth-child(5) { left: 100%; }
+
+/* Original size and form: white inside every circle. */
+.journey-step > span {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--journey-turquoise);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: none;
+  transition: border-color .16s ease, transform .16s ease;
+}
+
+/* Current page: only the outline changes, interior remains white. */
+.journey-step.is-active > span {
+  border-color: var(--journey-navy);
+  background: #fff;
+  box-shadow: none;
+}
+
+/* This replaces the old black centre of the current page marker. */
+.journey-step.is-active > span::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--journey-turquoise);
+  transform: translate(-50%, -50%);
+}
+
+.journey-step:hover:not(:has(input:disabled)) > span {
+  transform: scale(1.06);
+}
+
+.journey-step strong {
+  font-size: 17px;
+  line-height: 1.15;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.journey-step.is-active strong {
+  color: var(--journey-navy);
+  font-weight: 750;
+}
+
+@media (max-width: 760px) {
+  .journey-steps {
+    height: 56px;
+  }
+
+  .journey-steps::before {
+    left: 0;
+    right: 0;
+    top: 9px;
+  }
+
+  .journey-step {
+    width: 56px;
+    gap: 5px;
+  }
+
+  .journey-step > span {
+    width: 20px;
+    height: 20px;
+  }
+
+  .journey-step strong {
+    font-size: 12px;
+  }
+
+  /* Marker centers stay on the frame edges; only endpoint captions move inward. */
+  .journey-step:first-child strong {
+    transform: translateX(20px);
+  }
+
+  .journey-step:last-child strong {
+    transform: translateX(-20px);
+  }
+}
+/* /ARCTIC_GAME_NAV_DOTS_V3 */
