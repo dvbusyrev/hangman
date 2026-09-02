@@ -1776,3 +1776,48 @@ body {
   background: var(--journey-navy, #173b57);
 }
 /* /ARCTIC_GAME_NAV_STATE_V4 */
+
+
+/* ARCTIC_GAME_NAV_LAYOUT_V5 */
+
+/* На странице «Области» поле «Регион» занимает всю ширину карты. */
+.journey-select-row.is-region-only {
+  width: 100%;
+  max-width: none;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.journey-select-row.is-region-only .journey-select,
+.journey-select-row.is-region-only .journey-select select {
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+  Крайние точки навигации остаются точно на границах карты,
+  но подписи больше не выходят наружу:
+  первая подпись сдвигается внутрь вправо ровно на половину своей ширины,
+  последняя — внутрь влево.
+*/
+.journey-step:first-child strong {
+  transform: translateX(50%);
+  text-align: left;
+}
+
+.journey-step:last-child strong {
+  transform: translateX(-50%);
+  text-align: right;
+}
+
+/* На мобильном используем ту же геометрическую логику вместо фиксированных px. */
+@media (max-width: 760px) {
+  .journey-step:first-child strong {
+    transform: translateX(50%);
+  }
+
+  .journey-step:last-child strong {
+    transform: translateX(-50%);
+  }
+}
+
+/* /ARCTIC_GAME_NAV_LAYOUT_V5 */
