@@ -14,6 +14,8 @@ const russiaBoundary = {
   polygonThreshold: 0.04
 };
 
+// Only the regions used by the interactive Arctic scenario.
+// Yamal-Nenets AO: OpenStreetMap relation 191706.
 const arcticRegions = [
   {
     id: "murmansk",
@@ -28,9 +30,9 @@ const arcticRegions = [
     polygonThreshold: 0.01
   },
   {
-    id: "arkhangelsk",
-    name: "Архангельская область",
-    osmId: 140337,
+    id: "yamalo-nenets",
+    name: "Ямало-Ненецкий автономный округ",
+    osmId: 191706,
     polygonThreshold: 0.015
   },
   {
@@ -69,6 +71,7 @@ await writeGeoJson("regions.geojson", {
 
 console.log(`Saved ${path.join(dataDir, "russia-boundary.geojson")}`);
 console.log(`Saved ${path.join(dataDir, "regions.geojson")}`);
+console.log("Regions: Murmansk, Nenets AO, Yamalo-Nenets AO, Chukotka AO, Sakha (Yakutia)");
 
 async function fetchBoundary(config) {
   const url = new URL(nominatimBaseUrl);

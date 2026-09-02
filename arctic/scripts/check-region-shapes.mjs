@@ -6,7 +6,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const file = path.join(rootDir, "public", "data", "regions.geojson");
 const geoJson = JSON.parse(await readFile(file, "utf8"));
 
-const expected = new Set(["murmansk", "nenets", "arkhangelsk", "chukotka", "yakutia"]);
+const expected = new Set(["murmansk", "nenets", "yamalo-nenets", "chukotka", "yakutia"]);
 const result = [];
 
 for (const feature of geoJson.features ?? []) {

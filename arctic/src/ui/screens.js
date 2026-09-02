@@ -1,9 +1,9 @@
 import { experienceOptions } from "../state.js";
 
 const journeyPages = [
-  { id: "region", label: "Область" },
-  { id: "city", label: "Город" },
-  { id: "life", label: "В городе" },
+  { id: "region", label: "Области" },
+  { id: "city", label: "Города" },
+  { id: "life", label: "3D-карта" },
   { id: "nature", label: "Природа" },
   { id: "benefits", label: "Бонусы" }
 ];
@@ -157,13 +157,8 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
     nature: Boolean(state.selectedCity),
     benefits: Boolean(state.selectedCity)
   };
-  const currentIndex = Math.max(0, journeyPages.findIndex((item) => item.id === page));
-  const previousPage = [...journeyPages].slice(0, currentIndex).reverse().find((item) => enabledPages[item.id]);
-  const nextPage = journeyPages.slice(currentIndex + 1).find((item) => enabledPages[item.id]);
-
   return `
     <div class="journey-step-row" aria-label="Этапы выбора">
-      <button type="button" class="journey-page-arrow" data-page-arrow="${previousPage?.id ?? ""}" ${previousPage ? "" : "disabled"} aria-label="Предыдущий экран">←</button>
       <div class="journey-steps" role="radiogroup" aria-label="Страница">
         ${journeyPages.map((item) => `
           <label class="journey-step ${page === item.id ? "is-active" : ""}">
@@ -180,7 +175,6 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
           </label>
         `).join("")}
       </div>
-      <button type="button" class="journey-page-arrow" data-page-arrow="${nextPage?.id ?? ""}" ${nextPage ? "" : "disabled"} aria-label="Следующий экран">→</button>
     </div>
 
     <div class="journey-select-row">
@@ -217,12 +211,6 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
 
 function bindJourneyControls(container, { onPage, onRegionChange, onCityChange, onProfileChange }) {
   if (!container) return;
-  container.querySelectorAll("[data-page-arrow]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const page = button.dataset.pageArrow;
-      if (page) onPage?.(page);
-    });
-  });
   container.querySelectorAll("[data-page-radio]").forEach((input) => {
     input.addEventListener("change", () => {
       if (input.checked) onPage?.(input.value);

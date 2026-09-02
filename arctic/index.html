@@ -3,11 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f7f8" />
+    <meta name="theme-color" content="#edf3f7" />
     <title>Примерь жизнь в Арктике</title>
 
-    <!-- Cesium is loaded explicitly as a browser script. The predev/postinstall
-         scripts copy node_modules/cesium/Build/Cesium to public/cesium. -->
     <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
     <script>
       window.CESIUM_BASE_URL = "/cesium/";
@@ -15,10 +13,134 @@
     <script src="/cesium/Cesium.js"></script>
   </head>
   <body>
-    <header class="landing-header">
-      <h1>Примерь жизнь в Арктике</h1>
-    </header>
-    <div id="app"></div>
+    <div class="arctic-landing" id="top">
+      <section class="arctic-hero" aria-labelledby="hero-title">
+        <div class="arctic-hero__media" aria-hidden="true">
+          <img
+            src="/landing/hero-shore.png"
+            width="1672"
+            height="941"
+            alt=""
+            fetchpriority="high"
+            decoding="async"
+            draggable="false"
+          />
+        </div>
+
+        <a class="arctic-brand" href="#top" aria-label="Арктика — примерь свою жизнь">
+          <img src="/landing/arctic-logo.svg" alt="" width="176" height="46" draggable="false" />
+        </a>
+
+        <button class="arctic-menu-button" type="button" aria-label="Открыть меню" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="arctic-menu" aria-label="Навигация" hidden>
+          <button type="button" data-scroll="#life-experience">Для жизни</button>
+          <button type="button" data-scroll="#work-calculator">Для работы</button>
+          <button type="button" data-scroll="#top">Наверх</button>
+        </nav>
+
+        <div class="arctic-hero__content">
+          <h1 id="hero-title">АРКТИКА</h1>
+          <p>ПРИМЕРЬ СВОЮ ЖИЗНЬ</p>
+          <div class="arctic-hero__actions">
+            <button type="button" class="arctic-outline-button" data-scroll="#life-experience">
+              <span class="arctic-icon arctic-icon--mountain" aria-hidden="true"></span>
+              ДЛЯ ЖИЗНИ
+            </button>
+            <button type="button" class="arctic-outline-button" data-scroll="#work-calculator">
+              <span class="arctic-icon arctic-icon--case" aria-hidden="true"></span>
+              ДЛЯ РАБОТЫ
+            </button>
+          </div>
+        </div>
+
+        <div class="arctic-scroll-mark" aria-hidden="true"><span></span></div>
+      </section>
+
+      <section class="arctic-duo arctic-duo--life" id="life-preview">
+        <div class="arctic-duo__copy">
+          <span class="arctic-copy-icon arctic-copy-icon--mountain" aria-hidden="true"></span>
+          <h2>ДЛЯ ЖИЗНИ</h2>
+          <p>Выбирайте города, изучайте инфраструктуру, природу, отзывы и льготы. Узнайте, каково жить на Крайнем Севере.</p>
+          <button type="button" class="arctic-arrow-link" data-scroll="#life-experience" aria-label="Перейти к интерактиву для жизни">→</button>
+        </div>
+        <figure class="arctic-duo__image arctic-duo__image--city">
+          <img
+            src="/landing/city.png"
+            width="1254"
+            height="1254"
+            alt="Северный город в белую ночь"
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+          />
+        </figure>
+      </section>
+
+      <section class="arctic-experience-section" id="life-experience">
+        <div class="arctic-experience-section__head">
+          <span>ПРИМЕРЬ ЖИЗНЬ</span>
+          <h2>Исследуйте Арктику</h2>
+        </div>
+        <div id="life-app" class="arctic-game-host">
+          <div class="arctic-loader">Загрузка интерактивной карты…</div>
+        </div>
+      </section>
+
+      <section class="arctic-duo arctic-duo--work" id="work-preview">
+        <figure class="arctic-duo__image arctic-duo__image--aurora">
+          <img
+            src="/landing/aurora.png"
+            width="1254"
+            height="1254"
+            alt="Северное сияние над горами"
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+          />
+        </figure>
+        <div class="arctic-duo__copy">
+          <span class="arctic-copy-icon arctic-copy-icon--case" aria-hidden="true"></span>
+          <h2>ДЛЯ РАБОТЫ</h2>
+          <p>Рассчитайте доход, посмотрите вакансии и перспективы. Сделайте первый шаг к новой карьере в Арктике.</p>
+          <button type="button" class="arctic-arrow-link" data-scroll="#work-calculator" aria-label="Перейти к калькулятору для работы">→</button>
+        </div>
+      </section>
+
+      <section class="arctic-work-section" id="work-calculator">
+        <div class="arctic-experience-section__head">
+          <span>ДЛЯ РАБОТЫ</span>
+          <h2>Калькулятор возможностей</h2>
+        </div>
+        <div id="career-calculator" class="arctic-calculator-host">
+          <div class="arctic-loader">Загрузка калькулятора…</div>
+        </div>
+      </section>
+
+      <section class="arctic-finale">
+        <div class="arctic-finale__content">
+          <span class="arctic-finale__line" aria-hidden="true"></span>
+          <h2>АРКТИКА БЛИЖЕ,<br />ЧЕМ КАЖЕТСЯ</h2>
+          <p>Выберите свой путь<br />и начните путешествие</p>
+        </div>
+        <div class="arctic-finale__landscape" aria-hidden="true">
+          <img
+            src="/landing/footer-landscape.png"
+            width="2172"
+            height="724"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+          />
+        </div>
+        <small>© АРКТИКА. ПРИМЕРЬ СВОЮ ЖИЗНЬ</small>
+      </section>
+    </div>
+
+    <button class="arctic-up-button" type="button" data-scroll="#top" aria-label="Наверх">↑</button>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
