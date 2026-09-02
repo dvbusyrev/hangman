@@ -2781,7 +2781,7 @@ body {
 /* ARCTIC_LIFE_SEGMENT_STYLE_V1 */
 .arctic-duo--life {
   margin-top: 40px;
-  border-radius: 0 36px 0 0;
+  border-radius: 36px 36px 0 0;
   overflow: hidden;
 }
 
@@ -2808,6 +2808,10 @@ body {
 @media (max-width: 820px) {
   .arctic-hero {
     border-radius: 0 28px 28px 28px;
+  }
+
+  .arctic-duo--life {
+    border-radius: 28px 28px 0 0;
   }
 
   .arctic-duo--life .arctic-duo__image--city {
