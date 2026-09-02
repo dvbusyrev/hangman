@@ -95,7 +95,13 @@ export async function setupRegionMap2D(container, scenarios, {
       const center = pathCenter(path);
       const offset = LABEL_OFFSETS[region.id] ?? { x: 0, y: 0 };
       const pick = () => {
-        if (!cityMode) onRegionPick?.(region);
+        if (cityMode) return;
+
+        // ARCTIC_CITY_MARKERS_NAV_STYLE_V31
+        // Mouse activation must not leave a browser focus rectangle attached
+        // to the region while the SVG is being transformed.
+        blurMapFocus(svg);
+        onRegionPick?.(region);
       };
 
       const label = addSvgLabel(svg, {
@@ -163,6 +169,18 @@ export async function setupRegionMap2D(container, scenarios, {
     const clearCityMarkers = () => {
       cityNodes.forEach((node) => node.remove());
       cityNodes.clear();
+    };
+
+    const setRegionInteractivity = (enabled) => {
+      pathById.forEach((path) => {
+        path.setAttribute("tabindex", enabled ? "0" : "-1");
+      });
+
+      labelById.forEach((label) => {
+        if (label.hasAttribute("role")) {
+          label.setAttribute("tabindex", enabled ? "0" : "-1");
+        }
+      });
     };
 
     const renderCities = async (regionId, targetViewBox, token) => {
@@ -239,6 +257,10 @@ export async function setupRegionMap2D(container, scenarios, {
         cityMode = true;
         currentCityId = null;
         clearCityMarkers();
+
+        // Remove any browser focus ring BEFORE the GPU upscale begins.
+        blurMapFocus(svg);
+        setRegionInteractivity(false);
         applySelection(regionId);
 
         // This is NOT a new screen/map. We keep the same SVG node and only
@@ -271,6 +293,8 @@ export async function setupRegionMap2D(container, scenarios, {
         const token = ++transitionToken;
         clearCityMarkers();
         cityMode = false;
+        blurMapFocus(svg);
+        setRegionInteractivity(true);
         stage.classList.remove("is-city-mode");
         applySelection(regionId);
 
@@ -366,7 +390,7 @@ function addCityMarker({
 }) {
   const label = addSvgLabel(svg, {
     x: point.x,
-    y: point.y - 22 * markerScale,
+    y: point.y - 26 * markerScale,
     text: city.name,
     className: "city-map-2d-context-marker",
     maxChars: 18,
@@ -377,32 +401,47 @@ function addCityMarker({
   label.classList.toggle("is-selected", selected);
   label.setAttribute(
     "transform",
-    `translate(${point.x.toFixed(2)} ${(point.y - 22 * markerScale).toFixed(2)}) scale(${markerScale.toFixed(4)})`
+    `translate(${point.x.toFixed(2)} ${(point.y - 26 * markerScale).toFixed(2)}) scale(${markerScale.toFixed(4)})`
   );
 
-  const dot = document.createElementNS(SVG_NS, "circle");
-  dot.classList.add("city-map-2d-context-dot");
-  dot.dataset.cityId = city.id;
-  dot.classList.toggle("is-selected", selected);
-  dot.setAttribute("cx", point.x.toFixed(2));
-  dot.setAttribute("cy", point.y.toFixed(2));
-  dot.setAttribute("r", (5.5 * markerScale).toFixed(2));
-  dot.setAttribute("aria-hidden", "true");
+  // ARCTIC_CITY_MARKERS_NAV_STYLE_V31
+  // Same visual language as the journey navigation:
+  // white disk, dark 2px outline, small turquoise centre point.
+  const outer = document.createElementNS(SVG_NS, "circle");
+  outer.classList.add("city-map-nav-dot");
+  outer.dataset.cityId = city.id;
+  outer.classList.toggle("is-selected", selected);
+  outer.setAttribute("cx", point.x.toFixed(2));
+  outer.setAttribute("cy", point.y.toFixed(2));
+  outer.setAttribute("r", (10 * markerScale).toFixed(2));
+  outer.setAttribute("aria-hidden", "true");
 
+  const core = document.createElementNS(SVG_NS, "circle");
+  core.classList.add("city-map-nav-dot-core");
+  core.dataset.cityId = city.id;
+  core.classList.toggle("is-selected", selected);
+  core.setAttribute("cx", point.x.toFixed(2));
+  core.setAttribute("cy", point.y.toFixed(2));
+  core.setAttribute("r", (3 * markerScale).toFixed(2));
+  core.setAttribute("aria-hidden", "true");
+
+  // Large invisible click target. It is explicitly transparent and has no
+  // focus stroke/outline, so it can never become the blue rectangle.
   const hit = document.createElementNS(SVG_NS, "circle");
-  hit.classList.add("city-map-2d-context-hit");
+  hit.classList.add("city-map-nav-hit");
   hit.dataset.cityId = city.id;
   hit.classList.toggle("is-selected", selected);
   hit.setAttribute("cx", point.x.toFixed(2));
   hit.setAttribute("cy", point.y.toFixed(2));
-  hit.setAttribute("r", (15 * markerScale).toFixed(2));
+  hit.setAttribute("r", (17 * markerScale).toFixed(2));
   hit.setAttribute("tabindex", "0");
   hit.setAttribute("role", "button");
   hit.setAttribute("aria-label", `Открыть город ${city.name}`);
 
   const setHover = (hovered) => {
     hit.classList.toggle("is-hovered", hovered);
-    dot.classList.toggle("is-hovered", hovered);
+    outer.classList.toggle("is-hovered", hovered);
+    core.classList.toggle("is-hovered", hovered);
     label.classList.toggle("is-hovered", hovered);
   };
 
@@ -410,7 +449,11 @@ function addCityMarker({
   hit.addEventListener("pointerleave", () => setHover(false));
   hit.addEventListener("focus", () => setHover(true));
   hit.addEventListener("blur", () => setHover(false));
-  hit.addEventListener("click", onActivate);
+  hit.addEventListener("click", (event) => {
+    event.preventDefault();
+    blurMapFocus(svg);
+    onActivate();
+  });
   hit.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -420,11 +463,25 @@ function addCityMarker({
 
   label.addEventListener("pointerenter", () => setHover(true));
   label.addEventListener("pointerleave", () => setHover(false));
+  label.addEventListener("click", () => blurMapFocus(svg));
 
+  // Hit target goes underneath visual circles; label stays on top.
   svg.insertBefore(hit, label);
-  svg.insertBefore(dot, label);
+  svg.insertBefore(outer, label);
+  svg.insertBefore(core, label);
 
-  return [hit, dot, label];
+  return [hit, outer, core, label];
+}
+
+function blurMapFocus(svg) {
+  const active = document.activeElement;
+  if (active && (active === svg || svg.contains(active))) {
+    try {
+      active.blur?.();
+    } catch {
+      // Best-effort only.
+    }
+  }
 }
 
 async function loadRegionFeatureMap() {

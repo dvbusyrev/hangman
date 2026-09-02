@@ -166,25 +166,8 @@ function setupLandingNavigation() {
     control.addEventListener("click", () => {
       const target = document.querySelector(control.dataset.scroll);
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
-      closeMenu();
     });
   });
-
-  const menuButton = document.querySelector(".arctic-menu-button");
-  const menu = document.querySelector(".arctic-menu");
-  menuButton?.addEventListener("click", () => {
-    const opening = menu?.hasAttribute("hidden");
-    if (!menu) return;
-    if (opening) menu.removeAttribute("hidden");
-    else menu.setAttribute("hidden", "");
-    menuButton.setAttribute("aria-expanded", String(Boolean(opening)));
-  });
-
-  function closeMenu() {
-    if (!menu || !menuButton) return;
-    menu.setAttribute("hidden", "");
-    menuButton.setAttribute("aria-expanded", "false");
-  }
 
   const upButton = document.querySelector(".arctic-up-button");
   const syncUpButton = () => {

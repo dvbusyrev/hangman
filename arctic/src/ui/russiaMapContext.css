@@ -382,3 +382,55 @@
 /* /ARCTIC_CONTEXT_OUTLINE_V6 */
 
 
+
+
+/* ARCTIC_CITY_MARKERS_NAV_STYLE_V31 */
+
+/*
+  Unified «Области / Города» map:
+  never show browser focus rectangles around transformed SVG regions/groups.
+*/
+.region-map-2d-stage .russia-context-map__region:focus,
+.region-map-2d-stage .russia-context-map__region:focus-visible,
+.region-map-2d-stage .russia-context-map__label:focus,
+.region-map-2d-stage .russia-context-map__label:focus-visible,
+.region-map-2d-stage .city-map-nav-hit:focus,
+.region-map-2d-stage .city-map-nav-hit:focus-visible {
+  outline: none !important;
+}
+
+/* City point = the same geometry as a journey navigation circle. */
+.region-map-2d-stage .city-map-nav-dot {
+  fill: #ffffff;
+  stroke: var(--arctic-outline, #183b57d9);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.region-map-2d-stage .city-map-nav-dot-core {
+  fill: var(--arctic-turquoise, #CBF7ED);
+  stroke: none;
+  pointer-events: none;
+}
+
+.region-map-2d-stage .city-map-nav-hit {
+  fill: transparent !important;
+  stroke: none !important;
+  outline: none !important;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+/*
+  Do not draw any focus stroke on city hit-target geometry.
+  Keyboard focus remains functional through the text label/ARIA.
+*/
+.region-map-2d-stage .city-map-nav-hit:focus,
+.region-map-2d-stage .city-map-nav-hit:focus-visible {
+  fill: transparent !important;
+  stroke: none !important;
+  outline: none !important;
+}
+
+/* /ARCTIC_CITY_MARKERS_NAV_STYLE_V31 */

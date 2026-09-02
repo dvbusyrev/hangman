@@ -2326,3 +2326,221 @@ body {
 }
 
 /* /ARCTIC_SINGLE_2D_MAP_V28 */
+
+
+/* ARCTIC_SITE_BUTTONS_MAP_STYLE_V34 */
+
+/*
+  Public-site controls now deliberately reuse the visual system of the map:
+  - Inter/system font already used by the prototype;
+  - 2px dark-blue geometry;
+  - opaque white surfaces;
+  - 10px corner radius;
+  - Arctic turquoise only as the interaction accent.
+*/
+.arctic-landing {
+  --site-control-ink: var(--arctic-outline, var(--ink, #183b57d9));
+  --site-control-accent: var(--arctic-turquoise, #CBF7ED);
+  --site-control-bg: #ffffff;
+}
+
+/* Hero primary buttons */
+.arctic-outline-button {
+  min-height: 50px;
+  padding: 0 18px;
+  border: 2px solid var(--site-control-ink);
+  border-radius: 10px;
+  background: var(--site-control-bg);
+  color: var(--site-control-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.arctic-outline-button:hover {
+  background: var(--site-control-accent);
+  border-color: var(--site-control-ink);
+  color: var(--site-control-ink);
+  transform: translateY(-1px);
+}
+
+.arctic-outline-button:active {
+  transform: translateY(0);
+}
+
+/* Icons use the same 2px drawing weight as map/control outlines. */
+.arctic-outline-button .arctic-icon--mountain::before {
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+
+.arctic-outline-button .arctic-icon--case {
+  border-width: 2px;
+}
+
+.arctic-outline-button .arctic-icon--case::before {
+  border-width: 2px;
+  border-bottom: 0;
+}
+
+/* Section arrow buttons: same control, compact square form. */
+.arctic-arrow-link {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  margin-top: 34px;
+  padding: 0;
+  place-items: center;
+  border: 2px solid var(--site-control-ink);
+  border-radius: 10px;
+  background: var(--site-control-bg);
+  color: var(--site-control-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+  box-shadow: none;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.arctic-arrow-link:hover {
+  background: var(--site-control-accent);
+  transform: translateX(2px);
+}
+
+/* Work calculator CTA */
+.arctic-calculator__cta {
+  min-height: 50px;
+  border: 2px solid var(--site-control-ink);
+  border-radius: 10px;
+  background: var(--site-control-bg);
+  color: var(--site-control-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  box-shadow: none;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.arctic-calculator__cta:hover {
+  background: var(--site-control-accent);
+  transform: translateY(-1px);
+}
+
+/* Calculator choice buttons use the same map-control outline too. */
+.arctic-calculator__years span {
+  min-height: 44px;
+  border: 2px solid var(--site-control-ink);
+  border-radius: 10px;
+  background: var(--site-control-bg);
+  color: var(--site-control-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 600;
+}
+
+.arctic-calculator__years input:checked + span {
+  border-color: var(--site-control-ink);
+  background: var(--site-control-accent);
+  color: var(--site-control-ink);
+}
+
+/* Floating up button remains circular, but uses the map dot language. */
+.arctic-up-button {
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--site-control-ink);
+  border-radius: 50%;
+  background: var(--site-control-bg);
+  color: var(--site-control-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.arctic-up-button:hover {
+  background: var(--site-control-accent);
+}
+
+/* Same focus language as the map — no unrelated blue browser ring. */
+.arctic-outline-button:focus-visible,
+.arctic-arrow-link:focus-visible,
+.arctic-calculator__cta:focus-visible,
+.arctic-up-button:focus-visible,
+.arctic-calculator__years input:focus-visible + span {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.96), 0 0 0 5px var(--site-control-ink);
+}
+
+/* The removed menu stays impossible to surface even from stale markup/cache. */
+.arctic-menu-button,
+.arctic-menu {
+  display: none !important;
+}
+
+/* /ARCTIC_SITE_BUTTONS_MAP_STYLE_V34 */
+
+
+
+
+/* ARCTIC_CLEAN_OUTLINE_ICONS_V36 */
+
+/*
+  Real SVG icons — no CSS geometry tricks.
+  One contour language: 1.9px, rounded caps/joins, no fill.
+*/
+.arctic-icon--outline,
+.arctic-copy-icon--outline {
+  display: block;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+  color: currentColor;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.arctic-icon--outline path,
+.arctic-icon--outline rect,
+.arctic-copy-icon--outline path,
+.arctic-copy-icon--outline rect {
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Hero: icon and text should read as one calm control. */
+.arctic-outline-button .arctic-icon--outline {
+  width: 25px;
+  height: 25px;
+}
+
+.arctic-outline-button {
+  gap: 13px;
+}
+
+/* Smaller copy icons in the two explanatory sections. */
+.arctic-copy-icon--outline {
+  width: 28px;
+  height: 28px;
+}
+
+/* /ARCTIC_CLEAN_OUTLINE_ICONS_V36 */
