@@ -22,12 +22,13 @@ const CITY_POINT_ZOOM_DURATION_MS = 520;
 
 // Служебные значения — обычно их менять не нужно.
 const CITY_MAP_BASE_PADDING = 0.34;
-const CITY_MAP_ZOOM_DURATION_MS = 420;
+const CITY_MAP_ZOOM_DURATION_MS = 620;
 
 export async function setupCityMap2D(container, scenarios, {
   selectedRegionId,
   selectedCityId = null,
-  onCityPick
+  onCityPick,
+  onTransitionReady = null
 } = {}) {
   const regionsResponse = await fetch("/data/regions.geojson", { cache: "no-store" });
   if (!regionsResponse.ok) {
@@ -108,6 +109,10 @@ export async function setupCityMap2D(container, scenarios, {
         { padding: 0.045, fallback: viewBox }
       );
       setViewBox(svg, centeredRussiaViewBox);
+
+      // The new page is now visually aligned with the previous overview.
+      // Let the old screen fade away exactly as the region zoom begins.
+      onTransitionReady?.();
 
       const targetViewBox = calculateCenteredRegionViewBox(
         selectedPath,

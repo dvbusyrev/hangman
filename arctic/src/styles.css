@@ -2305,3 +2305,24 @@ body {
   }
 }
 /* /ARCTIC_MAP_VIEWPORT_GEOMETRY_V26 */
+
+
+
+
+/* ARCTIC_SINGLE_2D_MAP_V28 */
+
+/*
+  «Города» is not a new map anymore.
+  These labels belong to the SAME SVG and simply step out while its viewBox
+  approaches the selected region.
+*/
+.region-map-2d-stage .region-map-2d-context-label {
+  transition: opacity 240ms ease;
+}
+
+.region-map-2d-stage.is-city-mode .region-map-2d-context-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* /ARCTIC_SINGLE_2D_MAP_V28 */

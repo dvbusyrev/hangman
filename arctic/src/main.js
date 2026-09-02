@@ -1,7 +1,6 @@
 import "./styles.css";
 import { createArcticViewer, setupRegionMap } from "./cesium/map.js";
 import { setupRegionMap2D } from "./ui/regionMap2d.js";
-import { setupCityMap2D } from "./ui/cityMap2d.js";
 import { createRouteController, enterCityScene, preloadCityScene } from "./cesium/city.js";
 import { loadCsvPrototypeData, loadJson } from "./data.js";
 import { experienceOptions, setState, state } from "./state.js";
@@ -212,6 +211,7 @@ function startLifeExperience() {
 
 async function showRegions(page = "region") {
   destroyCesium();
+
   const effectivePage = page === "city" && !state.selectedRegion ? "region" : page;
   const refs = renderRegionScreen(root, {
     scenarios,
@@ -226,20 +226,19 @@ async function showRegions(page = "region") {
   });
 
   try {
-    if (effectivePage === "region") {
+    if (effectivePage === "region" || effectivePage === "city") {
+      // ARCTIC_SINGLE_2D_MAP_V28
+      // Both steps use the exact same region-map controller and SVG.
       regionMap = await setupRegionMap2D(refs.cesiumContainer, scenarios, {
         selectedRegionId: state.selectedRegion,
-        onRegionPick: (region) => handleRegionPick(refs, region)
-      });
-      return;
-    }
-
-    if (effectivePage === "city") {
-      regionMap = await setupCityMap2D(refs.cesiumContainer, scenarios, {
-        selectedRegionId: state.selectedRegion,
         selectedCityId: state.selectedCity,
+        onRegionPick: (region) => handleRegionPick(refs, region),
         onCityPick: (city) => handleCityPick(city)
       });
+
+      if (effectivePage === "city" && state.selectedRegion) {
+        await regionMap.enterCities?.(state.selectedRegion, { animate: true });
+      }
       return;
     }
 
@@ -261,9 +260,7 @@ async function showRegions(page = "region") {
     refs.cesiumContainer.innerHTML = `<div class="cesium-error">Не удалось загрузить карту.<br><small>${escapeHtml(error.message)}</small></div>`;
     console.error(error);
   }
-}
-
-async function navigateMapPage(refs, page) {
+}async function navigateMapPage(refs, page) {
   if (isTransitioning) return;
 
   if (["life", "nature", "benefits"].includes(page)) {
@@ -278,19 +275,32 @@ async function navigateMapPage(refs, page) {
   }
 
   if (page === "region") {
-    // ARCTIC_RESET_CITY_ON_REGIONS_V1
-    // Returning to the region-selection step invalidates the chosen city and
-    // all city-specific state. The selected region itself is kept visible.
     setState({
       selectedCity: null,
       selectedObject: null,
       routeProgress: 0
     });
+
+    // If the current controller is our unified 2D map, do NOT rebuild it.
+    // Simply zoom the very same SVG back to the Russia overview.
+    if (regionMap?.kind === "regions-2d") {
+      await regionMap.exitCities?.(state.selectedRegion);
+      refreshMapJourneyControls(refs, "region");
+      return;
+    }
+
     showRegions("region");
     return;
   }
 
   if (page === "city" && state.selectedRegion) {
+    // Same SVG, same DOM node, only viewBox changes.
+    if (regionMap?.kind === "regions-2d") {
+      await regionMap.enterCities?.(state.selectedRegion, { animate: true });
+      refreshMapJourneyControls(refs, "city");
+      return;
+    }
+
     showRegions("city");
     return;
   }
@@ -301,15 +311,16 @@ async function navigateMapPage(refs, page) {
   }
 
   refreshMapJourneyControls(refs, page);
-}
-
-async function handleRegionSelect(refs, regionId) {
+}async function handleRegionSelect(refs, regionId) {
   if (!regionId) {
     setState({ selectedRegion: null, selectedCity: null, selectedObject: null });
-    if (regionMap?.kind === "cities-2d") {
-      showRegions("region");
+
+    if (regionMap?.kind === "regions-2d") {
+      await regionMap.exitCities?.(null);
+      refreshMapJourneyControls(refs, "region");
       return;
     }
+
     await regionMap?.showOverview?.();
     refreshMapJourneyControls(refs, "region");
     return;
@@ -317,24 +328,20 @@ async function handleRegionSelect(refs, regionId) {
 
   const region = scenarios.regions.find((item) => item.id === regionId);
   if (region) await handleRegionPick(refs, region);
-}
-
-async function handleRegionPick(refs, region) {
+}async function handleRegionPick(refs, region) {
   if (isTransitioning || !regionMap) return;
   isTransitioning = true;
+
   try {
     setState({ selectedRegion: region.id, selectedCity: null, selectedObject: null });
     region.cities.filter((city) => city.ready).forEach((city) => preloadCityScene(city));
 
     if (regionMap.kind === "regions-2d") {
-      await regionMap.selectRegion?.(region.id);
-      isTransitioning = false;
-      showRegions("city");
-      return;
-    }
-
-    if (regionMap.kind === "cities-2d") {
-      await regionMap.selectRegion?.(region.id);
+      // ARCTIC_SINGLE_MAP_SMOOTH_V29
+      // First let the SAME SVG complete its smooth geographic approach.
+      // Only then replace the filter controls above it, so layout work never
+      // interrupts the map animation.
+      await regionMap.enterCities?.(region.id, { animate: true });
       refreshMapJourneyControls(refs, "city");
       return;
     }
@@ -345,7 +352,6 @@ async function handleRegionPick(refs, region) {
     isTransitioning = false;
   }
 }
-
 function refreshMapJourneyControls(refs, page) {
   updateJourneyControls(refs, {
     scenarios,
