@@ -109,14 +109,12 @@ export async function loadRussiaContextSvg({
 }
 
 
-// ARCTIC_MAP_TRUE_CENTER_V24
-// Build a viewBox around the ACTUAL Russia shapes, not around the SVG canvas.
-// The original SVG canvas contains unequal empty margins, which makes the
-// whole country look shifted inside a wide game viewport.
+// ARCTIC_MAP_CONTENT_CENTER_REPAIR_V26
+// Fit the ACTUAL map geometry into the actual inner 2D viewport.
 export function calculateCenteredContentViewBox(
   paths,
   svg,
-  { padding = 0.035, fallback = null } = {}
+  { padding = 0.045, fallback = null } = {}
 ) {
   const boxes = Array.from(paths ?? [])
     .map((path) => {
@@ -131,9 +129,7 @@ export function calculateCenteredContentViewBox(
       Number.isFinite(box.x) &&
       Number.isFinite(box.y) &&
       Number.isFinite(box.width) &&
-      Number.isFinite(box.height) &&
-      box.width >= 0 &&
-      box.height >= 0
+      Number.isFinite(box.height)
     );
 
   if (!boxes.length) {
@@ -152,17 +148,7 @@ export function calculateCenteredContentViewBox(
 
   let width = contentWidth * (1 + padding * 2);
   let height = contentHeight * (1 + padding * 2);
-
-  const viewport = svg?.getBoundingClientRect?.();
-  const fallbackAspect =
-    fallback?.width > 0 && fallback?.height > 0
-      ? fallback.width / fallback.height
-      : width / height;
-
-  const aspect =
-    viewport?.width > 0 && viewport?.height > 0
-      ? viewport.width / viewport.height
-      : fallbackAspect;
+  const aspect = getInnerViewportAspect(svg, fallback);
 
   if (width / height < aspect) {
     width = height * aspect;
@@ -176,6 +162,32 @@ export function calculateCenteredContentViewBox(
     width,
     height
   };
+}
+
+export function getInnerViewportAspect(svg, fallback = null) {
+  const viewport = svg?.parentElement ?? svg;
+  const rect = viewport?.getBoundingClientRect?.();
+
+  if (rect?.width > 0 && rect?.height > 0) {
+    let width = rect.width;
+    let height = rect.height;
+
+    if (viewport && typeof getComputedStyle === "function") {
+      const style = getComputedStyle(viewport);
+      width -= parseFloat(style.paddingLeft || "0") + parseFloat(style.paddingRight || "0");
+      height -= parseFloat(style.paddingTop || "0") + parseFloat(style.paddingBottom || "0");
+    }
+
+    if (width > 0 && height > 0) {
+      return width / height;
+    }
+  }
+
+  if (fallback?.width > 0 && fallback?.height > 0) {
+    return fallback.width / fallback.height;
+  }
+
+  return 1002 / 568;
 }
 
 export function addSvgLabel(svg, {

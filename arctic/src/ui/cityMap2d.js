@@ -3,6 +3,7 @@ import {
   addSvgLabel,
   approximatePointInRegion,
   calculateCenteredContentViewBox,
+  getInnerViewportAspect,
   loadRussiaContextSvg
 } from "./russiaMapContext.js";
 
@@ -73,7 +74,7 @@ export async function setupCityMap2D(container, scenarios, {
 
       const {
         svg,
-        regions: contextRegionPaths,
+        regions: allRegionPaths,
         getProjectRegionPath,
         viewBox
       } = await loadRussiaContextSvg({
@@ -96,15 +97,15 @@ export async function setupCityMap2D(container, scenarios, {
         throw new Error(`На карте России не найден контур: ${region.name}.`);
       }
 
-      // Make sure getBBox() and the real SVG viewport are available.
+      // Make sure layout and getBBox() are ready.
       await nextFrame();
       if (token !== renderToken) return;
 
-      // ARCTIC_CITY_TRUE_CENTER_V24
+      // ARCTIC_CITY_TRUE_CENTER_SAFE_REPAIR_V26
       const centeredRussiaViewBox = calculateCenteredContentViewBox(
-        contextRegionPaths,
+        allRegionPaths,
         svg,
-        { padding: 0.035, fallback: viewBox }
+        { padding: 0.045, fallback: viewBox }
       );
       setViewBox(svg, centeredRussiaViewBox);
 
@@ -113,6 +114,7 @@ export async function setupCityMap2D(container, scenarios, {
         centeredRussiaViewBox,
         svg
       );
+
       await animateSvgViewBox(
         svg,
         centeredRussiaViewBox,
@@ -300,17 +302,11 @@ function calculateCityPointViewBox(point, sourceViewBox, zoomFactor) {
 
 function calculateCenteredRegionViewBox(path, fullViewBox, svg) {
   const box = path.getBBox();
+  const targetAspect = getInnerViewportAspect(svg, fullViewBox);
 
-  // Сначала строим базовый кадр, в который область помещается целиком
-  // с небольшим полем вокруг.
+  // Base framing remains compatible with the existing CITY_MAP_ZOOM setting.
   let width = box.width * (1 + CITY_MAP_BASE_PADDING * 2);
   let height = box.height * (1 + CITY_MAP_BASE_PADDING * 2);
-
-  const svgRect = svg.getBoundingClientRect();
-  const targetAspect =
-    svgRect.width > 0 && svgRect.height > 0
-      ? svgRect.width / svgRect.height
-      : fullViewBox.width / fullViewBox.height;
 
   if (width / height < targetAspect) {
     width = height * targetAspect;
@@ -318,28 +314,25 @@ function calculateCenteredRegionViewBox(path, fullViewBox, svg) {
     height = width / targetAspect;
   }
 
-  // А теперь применяем настоящий множитель масштаба.
-  // Уменьшение viewBox в N раз визуально приближает карту в N раз.
   const zoom = clamp(Number(CITY_MAP_ZOOM) || 1, 0.25, 50);
   width /= zoom;
   height /= zoom;
 
-  // ARCTIC_CITY_REGION_SAFE_FIT_V21
-  // CITY_MAP_ZOOM must never make the selected region itself leave the frame.
-  // Keep a small margin around the geographic contour, then restore the
-  // current stage aspect ratio. This fixes clipping on wide layouts.
-  const safePadding = 0.08;
+  // The region itself must ALWAYS fit fully inside the visible frame.
+  // Keep a real margin on every side, then preserve the viewport aspect ratio.
+  const safePadding = 0.12;
   const minWidth = box.width * (1 + safePadding * 2);
   const minHeight = box.height * (1 + safePadding * 2);
 
-  width = Math.max(width, minWidth);
-  height = Math.max(height, minHeight);
+  const safeScale = Math.max(
+    minWidth / Math.max(width, 1e-9),
+    minHeight / Math.max(height, 1e-9),
+    1
+  );
 
-  if (width / height < targetAspect) {
-    width = height * targetAspect;
-  } else {
-    height = width / targetAspect;
-  }
+  width *= safeScale;
+  height *= safeScale;
+
   const centerX = box.x + box.width / 2;
   const centerY = box.y + box.height / 2;
 
@@ -350,8 +343,6 @@ function calculateCenteredRegionViewBox(path, fullViewBox, svg) {
     height
   };
 }
-
-
 
 async function animateSvgViewBox(svg, from, to, durationMs) {
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;

@@ -2290,3 +2290,18 @@ body {
 }
 
 /* /ARCTIC_GAME_STABLE_WIDE_V22 */
+
+
+/* ARCTIC_MAP_VIEWPORT_GEOMETRY_V26 */
+/*
+  V22 fixes the OUTER game frame. These rules only remove redundant inner
+  padding from the 2D map viewport, so 100% SVG height cannot be clipped by
+  the padded stage. Geographic margins are now controlled by the SVG viewBox.
+*/
+@media (min-width: 761px) {
+  .arctic-game-host .region-map-2d-stage,
+  .arctic-game-host .city-map-2d-stage {
+    padding: 0 !important;
+  }
+}
+/* /ARCTIC_MAP_VIEWPORT_GEOMETRY_V26 */

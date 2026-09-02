@@ -28,21 +28,23 @@ export async function setupRegionMap2D(container, scenarios, { selectedRegionId 
 
   try {
     const regions = scenarios?.regions ?? [];
-    const { svg, regions: contextRegionPaths, viewBox, getProjectRegionPath } = await loadRussiaContextSvg({
+    const {
+      svg,
+      regions: allRegionPaths,
+      viewBox,
+      getProjectRegionPath
+    } = await loadRussiaContextSvg({
       className: "region-map-2d",
       ariaLabel: "Карта России с арктическими регионами проекта"
     });
     stage.append(svg);
 
-    // ARCTIC_REGION_OVERVIEW_TRUE_CENTER_V24
-    // Wait until the SVG has a real viewport, then center the ACTUAL Russia
-    // geometry inside it. This removes the unequal empty margins of the
-    // source SVG canvas.
+    // ARCTIC_REGION_TRUE_CENTER_REPAIR_V26
     await nextFrame();
     const centeredRussiaViewBox = calculateCenteredContentViewBox(
-      contextRegionPaths,
+      allRegionPaths,
       svg,
-      { padding: 0.035, fallback: viewBox }
+      { padding: 0.045, fallback: viewBox }
     );
     setViewBox(svg, centeredRussiaViewBox);
 
