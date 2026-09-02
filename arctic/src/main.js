@@ -74,17 +74,92 @@ async function boot() {
 }
 
 function ensureRequiredRegions(source) {
-  const next = { ...(source ?? {}), regions: [...(source?.regions ?? [])] };
-  if (!next.regions.some((region) => region.id === "yamalo-nenets")) {
-    next.regions.splice(2, 0, {
+  // Canonical Arctic-zone set used by the 2D map: exactly 9 regions.
+  // Existing scenario data wins, so ready cities/offers already configured
+  // in scenarios.json are preserved.
+  const requiredRegions = [
+    {
+      id: "karelia",
+      name: "Республика Карелия",
+      center: { lon: 32.5, lat: 63.5, height: 0 },
+      camera: { lon: 32.5, lat: 63.5, height: 1150000, heading: 0, pitch: -70 },
+      cities: []
+    },
+    {
+      id: "murmansk",
+      name: "Мурманская область",
+      center: { lon: 34.7, lat: 68.0, height: 0 },
+      camera: { lon: 34.7, lat: 68.0, height: 1050000, heading: 0, pitch: -70 },
+      cities: []
+    },
+    {
+      id: "arkhangelsk",
+      name: "Архангельская область",
+      center: { lon: 43.5, lat: 64.2, height: 0 },
+      camera: { lon: 43.5, lat: 64.2, height: 1250000, heading: 0, pitch: -70 },
+      cities: []
+    },
+    {
+      id: "nenets",
+      name: "Ненецкий автономный округ",
+      center: { lon: 54.8, lat: 68.8, height: 0 },
+      camera: { lon: 54.8, lat: 68.8, height: 1050000, heading: 0, pitch: -70 },
+      cities: []
+    },
+    {
+      id: "komi",
+      name: "Республика Коми",
+      center: { lon: 54.0, lat: 64.3, height: 0 },
+      camera: { lon: 54.0, lat: 64.3, height: 1250000, heading: 0, pitch: -70 },
+      cities: []
+    },
+    {
       id: "yamalo-nenets",
       name: "Ямало-Ненецкий автономный округ",
       center: { lon: 74, lat: 68.5, height: 0 },
       camera: { lon: 74, lat: 68.5, height: 1350000, heading: 0, pitch: -70 },
       cities: []
-    });
-  }
-  return next;
+    },
+    {
+      id: "krasnoyarsk",
+      name: "Красноярский край",
+      center: { lon: 92.5, lat: 64.0, height: 0 },
+      camera: { lon: 92.5, lat: 64.0, height: 1700000, heading: 0, pitch: -70 },
+      cities: []
+    },
+    {
+      id: "yakutia",
+      name: "Республика Саха (Якутия)",
+      center: { lon: 128.0, lat: 66.0, height: 0 },
+      camera: { lon: 128.0, lat: 66.0, height: 1850000, heading: 0, pitch: -70 },
+      cities: []
+    },
+    {
+      id: "chukotka",
+      name: "Чукотский автономный округ",
+      center: { lon: 170.0, lat: 66.5, height: 0 },
+      camera: { lon: 170.0, lat: 66.5, height: 1250000, heading: 0, pitch: -70 },
+      cities: []
+    }
+  ];
+
+  const sourceById = new Map((source?.regions ?? []).map((region) => [region.id, region]));
+
+  return {
+    ...(source ?? {}),
+    regions: requiredRegions.map((fallback) => {
+      const existing = sourceById.get(fallback.id);
+      if (!existing) return fallback;
+
+      return {
+        ...fallback,
+        ...existing,
+        center: existing.center ?? fallback.center,
+        camera: existing.camera ?? fallback.camera,
+        cities: existing.cities ?? fallback.cities
+      };
+    })
+  };
 }
 
 function setupLandingNavigation() {
