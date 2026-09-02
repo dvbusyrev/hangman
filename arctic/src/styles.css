@@ -2292,6 +2292,25 @@ body {
 /* /ARCTIC_GAME_STABLE_WIDE_V22 */
 
 
+/* ARCTIC_CITY_SELECT_COMPACT_V1 */
+/* Region and city stay near the navigation edge instead of filling the map width. */
+@media (min-width: 761px) {
+  .arctic-game-host .journey-select-row:not(.is-region-only) .journey-select:nth-child(1),
+  .arctic-game-host .journey-select-row:not(.is-region-only) .journey-select:nth-child(2) {
+    width: min(100%, 300px);
+    justify-self: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .arctic-game-host .journey-select-row:not(.is-region-only) .journey-select:nth-child(1),
+  .arctic-game-host .journey-select-row:not(.is-region-only) .journey-select:nth-child(2) {
+    width: 100%;
+  }
+}
+/* /ARCTIC_CITY_SELECT_COMPACT_V1 */
+
+
 /* ARCTIC_MAP_VIEWPORT_GEOMETRY_V26 */
 /*
   V22 fixes the OUTER game frame. These rules only remove redundant inner
