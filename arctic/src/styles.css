@@ -2544,3 +2544,129 @@ body {
 }
 
 /* /ARCTIC_CLEAN_OUTLINE_ICONS_V36 */
+
+
+/* ARCTIC_HERO_BEAR_REFERENCE_V37 */
+
+/*
+  The supplied slide is the new hero composition.
+  Its typography/logo/location panel stay part of the visual reference image.
+  Only the two product-path buttons remain live HTML controls.
+*/
+.arctic-hero {
+  height: 100svh;
+  min-height: 620px;
+  max-height: none;
+  background: #7891a8;
+}
+
+.arctic-hero__media::after {
+  display: none;
+}
+
+.arctic-hero__media img {
+  object-position: center center;
+}
+
+/* The reference already contains these visual elements. */
+.arctic-hero .arctic-brand,
+.arctic-hero .arctic-scroll-mark {
+  display: none;
+}
+
+/*
+  Keep semantic hero text in the DOM for accessibility/SEO,
+  but don't draw a second copy over the supplied composition.
+*/
+.arctic-hero__content > h1,
+.arctic-hero__content > p {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/*
+  Reference button boxes are around:
+  x=124..648, y=572..639 in a 1672×941 source.
+  This places the real project buttons directly over them.
+*/
+.arctic-hero__content {
+  position: absolute;
+  z-index: 8;
+  top: 60.55%;
+  left: 7.30%;
+  width: 31.65%;
+  transform: none;
+  text-align: left;
+  pointer-events: none;
+}
+
+.arctic-hero__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+  margin: 0;
+  pointer-events: auto;
+}
+
+.arctic-hero .arctic-outline-button {
+  min-height: 68px;
+  padding: 0 20px;
+  border-width: 2px;
+  border-radius: 10px;
+  justify-content: center;
+  background: #ffffff;
+  color: var(--site-control-ink, #183b57d9);
+  font-size: clamp(12px, .92vw, 15px);
+  font-weight: 650;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+.arctic-hero .arctic-outline-button .arctic-icon--outline {
+  width: 24px;
+  height: 24px;
+}
+
+/* Slightly expand the live controls so the baked reference outlines never peek out. */
+.arctic-hero .arctic-outline-button {
+  margin: -2px;
+}
+
+/* On narrower screens, preserve usable live buttons rather than tiny reference positioning. */
+@media (max-width: 900px) {
+  .arctic-hero {
+    min-height: 680px;
+  }
+
+  .arctic-hero__media img {
+    object-position: 58% center;
+  }
+
+  .arctic-hero__content {
+    top: auto;
+    left: 20px;
+    right: 20px;
+    bottom: 38px;
+    width: auto;
+  }
+
+  .arctic-hero__actions {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .arctic-hero .arctic-outline-button {
+    min-height: 54px;
+    margin: 0;
+  }
+}
+
+/* /ARCTIC_HERO_BEAR_REFERENCE_V37 */
