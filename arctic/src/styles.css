@@ -2617,26 +2617,13 @@ body {
 }
 
 .arctic-hero .arctic-brand {
-  top: 36px;
-  left: 5.8%;
-  display: grid;
-  width: auto;
-  height: auto;
-  gap: 4px;
+  top: 27px;
+  left: 34px;
+  display: block;
+  width: 176px;
+  height: 46px;
   color: rgba(255, 255, 255, .94);
   text-shadow: 0 1px 10px rgba(26, 52, 70, .18);
-}
-
-.arctic-brand__name {
-  font-size: 18px;
-  font-weight: 400;
-  line-height: 1;
-}
-
-.arctic-brand__tagline {
-  font-size: 8px;
-  font-weight: 500;
-  line-height: 1.2;
 }
 
 .arctic-hero .arctic-brand:hover {
