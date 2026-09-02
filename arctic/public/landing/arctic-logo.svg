@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="176" height="46" viewBox="0 0 176 46" fill="none" role="img" aria-label="Арктика — примерь свою жизнь">
+  <g stroke="white" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2.5 27.5 15.7 8.3 26.1 22.2"/>
+    <path d="M13.4 24.2 22.2 15.1 36.8 31.2 27.9 27.2 22.7 32.2 17.8 23.1"/>
+  </g>
+  <g fill="white" font-family="Arial, Helvetica, sans-serif">
+    <text x="48" y="18.2" font-size="13" font-weight="500" letter-spacing="4.6">АРКТИКА</text>
+    <text x="48" y="31.5" font-size="5.1" font-weight="400" letter-spacing="1.35">ПРИМЕРЬ СВОЮ ЖИЗНЬ</text>
+  </g>
+</svg>

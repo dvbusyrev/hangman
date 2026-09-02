@@ -1,0 +1,384 @@
+/* Russia-wide context for the flat 2D region/city screens. */
+.russia-context-map-host {
+  background: #eef4f6;
+}
+
+.russia-context-map-stage {
+  display: grid;
+  place-items: center;
+  min-height: 540px;
+  padding: 16px 18px 10px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(255,255,255,.98) 0, rgba(255,255,255,.82) 42%, rgba(232,241,244,.82) 100%);
+}
+
+.russia-context-map__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 540px;
+  overflow: visible;
+}
+
+.russia-context-map__svg .russia-context-map__region {
+  fill: #e7ecee;
+  stroke: #ffffff;
+  stroke-width: 1.2;
+  opacity: 1;
+  pointer-events: none;
+  transition: fill .16s ease, stroke .16s ease, opacity .16s ease;
+}
+
+.russia-context-map__svg .russia-context-map__region.is-project-region {
+  fill: #c7dde4;
+  stroke: #789eac;
+  stroke-width: 1.35;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.russia-context-map__svg .russia-context-map__region.is-project-region:hover,
+.russia-context-map__svg .russia-context-map__region.is-project-region.is-hovered {
+  fill: #9fcbd5;
+  stroke: #426d7d;
+  stroke-width: 1.8;
+}
+
+.russia-context-map__svg .russia-context-map__region.is-project-region.is-selected {
+  fill: #72bac8;
+  stroke: #234d5d;
+  stroke-width: 2.15;
+}
+
+.russia-context-map__svg .russia-context-map__region:focus-visible {
+  outline: none;
+  stroke: #1e4655;
+  stroke-width: 2.6;
+}
+
+/* On the city screen the four non-selected project regions are only context. */
+.city-map-2d.russia-context-map__svg .russia-context-map__region.is-city-context-region {
+  fill: #d6e5e9;
+  stroke: #8eabb6;
+  pointer-events: none;
+}
+.city-map-2d.russia-context-map__svg .russia-context-map__region.is-city-context-region.is-selected {
+  fill: #83c4d0;
+  stroke: #2e6071;
+  stroke-width: 2.2;
+}
+
+.russia-context-map__label {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.russia-context-map__label rect {
+  fill: rgba(255,255,255,.94);
+  stroke: rgba(69,96,107,.18);
+  stroke-width: .9;
+  vector-effect: non-scaling-stroke;
+}
+.russia-context-map__label text {
+  fill: #40525c;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+  pointer-events: none;
+}
+.russia-context-map__label:hover rect,
+.russia-context-map__label.is-hovered rect,
+.russia-context-map__label.is-selected rect {
+  fill: #ffffff;
+  stroke: #5f8796;
+}
+.russia-context-map__label.is-selected text {
+  fill: #173f4f;
+}
+.russia-context-map__label:focus-visible {
+  outline: none;
+}
+.russia-context-map__label:focus-visible rect {
+  stroke: #234d5d;
+  stroke-width: 2;
+}
+
+.city-map-2d-context-marker rect {
+  fill: rgba(255,255,255,.97);
+  stroke: #477788;
+  stroke-width: 1.15;
+}
+.city-map-2d-context-marker text {
+  fill: #284d5b;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.city-map-2d-context-marker:hover rect,
+.city-map-2d-context-marker.is-selected rect {
+  fill: #f8ffff;
+  stroke: #1f596c;
+  stroke-width: 1.8;
+}
+.city-map-2d-context-dot {
+  fill: #ffffff;
+  stroke: #285e70;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.city-map-2d-context-dot.is-hovered {
+  fill: #7cc2cf;
+}
+
+.russia-context-map-note {
+  position: absolute;
+  z-index: 4;
+  left: 18px;
+  bottom: 14px;
+  max-width: calc(100% - 36px);
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: rgba(255,255,255,.9);
+  color: #6b7c84;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.russia-context-map-error {
+  line-height: 1.6;
+}
+
+@media (max-width: 760px) {
+  .russia-context-map-stage {
+    min-height: 440px;
+    padding: 10px 8px;
+  }
+  .russia-context-map__svg {
+    max-height: 440px;
+  }
+  .russia-context-map__label text,
+  .city-map-2d-context-marker text {
+    font-size: 10.5px;
+  }
+}
+
+
+/* === Arctic city screen: zoom selected region === */
+.city-map-2d-zoom-stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.city-map-2d-zoom-stage .city-map-2d.russia-context-map__svg {
+  width: 100%;
+  height: 100%;
+  max-height: 540px;
+}
+
+.city-map-2d-region-caption {
+  position: absolute;
+  z-index: 5;
+  top: 18px;
+  left: 22px;
+  max-width: calc(100% - 44px);
+  padding: 8px 12px;
+  border: 1px solid rgba(71, 103, 114, .12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .88);
+  color: #526a75;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .02em;
+  pointer-events: none;
+  backdrop-filter: blur(7px);
+}
+
+.city-map-2d-zoom-stage .russia-context-map__region {
+  fill: #e8edef;
+  stroke: #ffffff;
+  stroke-width: 1.1;
+}
+
+.city-map-2d-zoom-stage .russia-context-map__region.is-city-context-region {
+  fill: #dce8eb;
+  stroke: #a1b7bf;
+  stroke-width: 1.1;
+}
+
+.city-map-2d-zoom-stage .russia-context-map__region.is-city-context-region.is-selected {
+  fill: #87c5d1;
+  stroke: #2b5d6d;
+  stroke-width: 2.2;
+}
+
+.city-map-2d-zoom-stage .city-map-2d-context-marker rect {
+  fill: rgba(255, 255, 255, .97);
+  stroke: #3b7082;
+  stroke-width: 1.2;
+}
+
+.city-map-2d-zoom-stage .city-map-2d-context-marker text {
+  fill: #244d5c;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.city-map-2d-zoom-stage .city-map-2d-context-dot {
+  fill: #ffffff;
+  stroke: #225a6d;
+  stroke-width: 2.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.city-map-2d-zoom-stage .city-map-2d-context-dot.is-hovered,
+.city-map-2d-zoom-stage .city-map-2d-context-dot.is-selected {
+  fill: #72bdca;
+}
+
+.city-map-2d-zoom-stage .city-map-2d-context-marker.is-hovered rect,
+.city-map-2d-zoom-stage .city-map-2d-context-marker.is-selected rect {
+  fill: #ffffff;
+  stroke: #184f62;
+  stroke-width: 1.7;
+}
+
+@media (max-width: 760px) {
+  .city-map-2d-region-caption {
+    top: 12px;
+    left: 12px;
+    max-width: calc(100% - 24px);
+    font-size: 11px;
+  }
+
+  .city-map-2d-zoom-stage .city-map-2d-context-marker text {
+    font-size: 11px;
+  }
+}
+/* === /Arctic city screen: zoom selected region === */
+
+
+/* === Arctic city screen: centered region + compact city markers === */
+.city-map-2d-centered-stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-marker {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-marker rect {
+  fill: rgba(255,255,255,.96);
+  stroke: #4b7a89;
+  stroke-width: 1.15;
+  vector-effect: non-scaling-stroke;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-marker text {
+  fill: #244d5c;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-marker.is-hovered rect,
+.city-map-2d-centered-stage .city-map-2d-context-marker.is-selected rect {
+  fill: #fff;
+  stroke: #174f61;
+  stroke-width: 1.7;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-marker.is-hovered text,
+.city-map-2d-centered-stage .city-map-2d-context-marker.is-selected text {
+  fill: #123f4e;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-dot {
+  fill: #ffffff;
+  stroke: #225a6d;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+  transition: fill .16s ease, stroke .16s ease;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-dot.is-hovered,
+.city-map-2d-centered-stage .city-map-2d-context-dot.is-selected {
+  fill: #63b7c6;
+  stroke: #123f4e;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-hit {
+  fill: transparent;
+  stroke: transparent;
+  cursor: pointer;
+  pointer-events: all;
+  outline: none;
+}
+
+.city-map-2d-centered-stage .city-map-2d-context-hit:focus {
+  stroke: rgba(34, 90, 109, .30);
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
+}
+
+@media (max-width: 760px) {
+  .city-map-2d-centered-stage .city-map-2d-context-marker text {
+    font-size: 11px;
+  }
+}
+/* === /Arctic city screen: centered region + compact city markers === */
+
+
+/* ARCTIC_CITY_POINT_LAUNCH_CSS_V1 */
+.city-map-2d-centered-stage [data-city-id] {
+  transition: opacity 180ms ease, filter 180ms ease;
+}
+
+.city-map-2d-centered-stage.is-city-launching [data-city-id]:not(.is-launch-target) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.city-map-2d-centered-stage.is-city-launching .city-map-2d-context-marker.is-launch-target {
+  filter: drop-shadow(0 4px 10px rgba(24, 79, 98, .18));
+}
+
+.city-map-2d-centered-stage.is-city-launching .city-map-2d-context-dot.is-launch-target {
+  animation: arctic-city-point-pulse 520ms ease-out both;
+}
+
+@keyframes arctic-city-point-pulse {
+  0% {
+    stroke-width: 2.4;
+  }
+  45% {
+    stroke-width: 5;
+  }
+  100% {
+    stroke-width: 2.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-map-2d-centered-stage.is-city-launching .city-map-2d-context-dot.is-launch-target {
+    animation: none;
+  }
+}
+/* /ARCTIC_CITY_POINT_LAUNCH_CSS_V1 */
+
+/* ARCTIC_CONTEXT_OUTLINE_V6 */
+.russia-context-map__svg .russia-context-map__region.is-project-region,
+.city-map-2d.russia-context-map__svg .russia-context-map__region.is-city-context-region,
+.russia-context-map__svg .russia-context-map__region.is-project-region:hover,
+.russia-context-map__svg .russia-context-map__region.is-project-region.is-hovered,
+.russia-context-map__svg .russia-context-map__region.is-project-region.is-selected,
+.city-map-2d.russia-context-map__svg .russia-context-map__region.is-city-context-region.is-selected {
+  stroke: #173b57;
+}
+/* /ARCTIC_CONTEXT_OUTLINE_V6 */
+
+
