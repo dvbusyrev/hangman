@@ -1438,7 +1438,7 @@ body {
 }
 
 .journey-step.is-active strong {
-  color: var(--journey-navy);
+
   font-weight: 750;
 }
 
@@ -1499,7 +1499,7 @@ body {
   width: 100%;
   height: 62px;
   display: block;
-  --journey-turquoise: #63c3cf;
+  --journey-turquoise: #CBF7ED;
   --journey-turquoise-dark: #3d9faa;
   --journey-navy: #173b57;
 }
@@ -1564,7 +1564,7 @@ body {
 }
 
 .journey-step.is-active strong {
-  color: var(--journey-navy);
+
   font-weight: 750;
 }
 
@@ -1620,7 +1620,7 @@ body {
   width: 100%;
   height: 60px;
   display: block;
-  --journey-turquoise: #63c3cf;
+  --journey-turquoise: #CBF7ED;
   --journey-navy: #173b57;
 }
 
@@ -1685,7 +1685,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--journey-turquoise);
+
   transform: translate(-50%, -50%);
 }
 
@@ -1701,7 +1701,7 @@ body {
 }
 
 .journey-step.is-active strong {
-  color: var(--journey-navy);
+
   font-weight: 750;
 }
 
@@ -1753,7 +1753,7 @@ body {
 
 /* The small inner marker of the current page remains turquoise. */
 .journey-step.is-active > span::after {
-  background: var(--journey-turquoise, #63c3cf);
+
 }
 
 /* Locked/future steps keep the same colors but are visually quieter. */
@@ -1828,7 +1828,7 @@ body {
 :root {
   /* One dark-blue outline color for the game UI. */
   --arctic-outline: #173b57;
-  --arctic-turquoise: #63c3cf;
+  --arctic-turquoise: #CBF7ED;
   --arctic-placeholder: #8b979d;
 
   /* Existing components already use --line for their main 2px outlines. */
@@ -1915,7 +1915,7 @@ body {
 
 /* Current-page inner point stays turquoise; the rest of the circle is white. */
 .journey-step.is-active > span::after {
-  background: var(--arctic-turquoise);
+
 }
 
 /* Unavailable steps remain the same colors but are faded as a whole. */
@@ -1925,7 +1925,7 @@ body {
 
 /* Active page title is turquoise. */
 .journey-step.is-active strong {
-  color: var(--arctic-turquoise);
+
   font-weight: 750;
 }
 
@@ -2122,3 +2122,97 @@ body {
   background-color: #8EA8C3 !important;
 }
 /* /ARCTIC_STORY_SCREEN_BG_V1 */
+
+
+/* ARCTIC_UI_REFINE_V11 */
+
+/* «Регион» field background. */
+.journey-select-row.is-region-only .journey-select select {
+  background-color: #f9fbfc;
+}
+
+/*
+  Navigation:
+  - original circle size is 20px;
+  - the full circle, not only its center, must stay inside the map frame;
+  - therefore the first/last circle centers are inset by 10px.
+*/
+.journey-steps {
+  width: calc(100% - 20px);
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+/* Page titles remain centered directly under their own circles. */
+.journey-step strong,
+.journey-step:first-child strong,
+.journey-step:last-child strong {
+  transform: none !important;
+  justify-self: center;
+  text-align: center;
+}
+
+/* Remove every previously added white halo around the circles. */
+.journey-step > span,
+.journey-step.is-active > span,
+.journey-step:has(input:disabled) > span {
+  box-shadow: none !important;
+  background: #ffffff !important;
+}
+
+/* Same geometry on mobile: the circle itself remains fully inside the map. */
+@media (max-width: 760px) {
+  .journey-steps {
+    width: calc(100% - 20px);
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .journey-step strong,
+  .journey-step:first-child strong,
+  .journey-step:last-child strong {
+    transform: none !important;
+  }
+}
+
+/* /ARCTIC_UI_REFINE_V11 */
+
+
+/* ARCTIC_ACTIVE_TURQUOISE_V12 */
+/*
+  One source of truth for the active-page turquoise.
+  Explicit opacity/filter values prevent the color from looking blended
+  by an older navigation state rule.
+*/
+.journey-step.is-active > span::after {
+  background: #CBF7ED !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.journey-step.is-active strong {
+  color: #CBF7ED !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+/* /ARCTIC_ACTIVE_TURQUOISE_V12 */
+
+
+/* ARCTIC_REGION_SELECT_BG_V13 */
+.journey-select-row.is-region-only .journey-select select {
+  background-color: #f0f5f7 !important;
+}
+/* /ARCTIC_REGION_SELECT_BG_V13 */
+
+
+/* ARCTIC_INK_DISABLED_BORDER_V15 */
+
+:root {
+  --ink: #183b57d9;
+}
+
+.journey-step:has(input:disabled) > span {
+  border-color: #183b57d9;
+}
+
+/* /ARCTIC_INK_DISABLED_BORDER_V15 */
