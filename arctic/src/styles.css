@@ -537,16 +537,19 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   min-width: 170px;
   min-height: 42px;
   padding: 0 20px;
-  border: 2px solid var(--arctic-outline, #173b57);
+  border: 2px solid #1d4564;
   border-radius: 10px;
-  background: #fff;
-  color: var(--arctic-outline, #173b57);
+  background: #1d4564;
+  color: #fff;
   font-size: 13px;
   font-weight: 650;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 .mode-switch__button:hover,
 .mode-switch__button.is-active {
-  background: var(--arctic-turquoise, #CBF7ED);
+  border-color: #8fa8c0;
+  background: #8fa8c0;
+  color: #173b57;
 }
 .mode-switch__button:focus-visible {
   outline: 3px solid #94cbdc;
@@ -2695,12 +2698,13 @@ body {
   border-width: 2px;
   border-radius: 10px;
   justify-content: center;
-  background: rgba(255, 255, 255, .97);
-  color: #183b57;
+  border-color: #1d4564;
+  background: #1d4564;
+  color: #fff;
   font-size: 15px;
   font-weight: 650;
   letter-spacing: 0;
-  box-shadow: 0 5px 0 rgba(34, 63, 83, .2);
+  box-shadow: none;
 }
 
 .arctic-hero .arctic-outline-button .arctic-icon--outline {
@@ -2713,8 +2717,10 @@ body {
 }
 
 .arctic-hero .arctic-outline-button:hover {
-  background: #fff;
-  box-shadow: 0 7px 0 rgba(34, 63, 83, .2);
+  border-color: #8fa8c0;
+  background: #8fa8c0;
+  color: #173b57;
+  box-shadow: none;
 }
 
 @media (max-width: 900px) {
