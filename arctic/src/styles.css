@@ -2285,20 +2285,20 @@ body {
 */
 @media (min-width: 1100px) {
   .arctic-game-host .journey-select-row:not(.is-region-only) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 /* /ARCTIC_GAME_STABLE_WIDE_V22 */
 
 
-/* ARCTIC_CITY_SELECT_COMPACT_V1 */
-/* Region and city stay near the navigation edge instead of filling the map width. */
+/* ARCTIC_CITY_SELECT_FULL_WIDTH_V2 */
+/* The two city selectors align with the full map width. */
 @media (min-width: 761px) {
   .arctic-game-host .journey-select-row:not(.is-region-only) .journey-select:nth-child(1),
   .arctic-game-host .journey-select-row:not(.is-region-only) .journey-select:nth-child(2) {
-    width: min(100%, 300px);
-    justify-self: start;
+    width: 100%;
+    max-width: none;
   }
 }
 
@@ -2308,7 +2308,7 @@ body {
     width: 100%;
   }
 }
-/* /ARCTIC_CITY_SELECT_COMPACT_V1 */
+/* /ARCTIC_CITY_SELECT_FULL_WIDTH_V2 */
 
 
 /* ARCTIC_MAP_VIEWPORT_GEOMETRY_V26 */
