@@ -2793,3 +2793,23 @@ body {
 }
 
 /* /ARCTIC_LIFE_SEGMENT_STYLE_V1 */
+
+
+/* ARCTIC_SEGMENT_ROUNDING_V1 */
+.arctic-hero {
+  border-radius: 0 36px 0 0;
+}
+
+.arctic-duo--life .arctic-duo__image--city {
+  margin-right: 40px;
+  border-radius: 0 36px 0 0;
+}
+
+@media (max-width: 820px) {
+  .arctic-duo--life .arctic-duo__image--city {
+    margin-right: 0;
+    border-radius: 0 28px 0 0;
+  }
+}
+
+/* /ARCTIC_SEGMENT_ROUNDING_V1 */
