@@ -1992,3 +1992,79 @@ body {
 }
 
 /* /ARCTIC_UI_REFINE_V7 */
+
+
+/* ARCTIC_UI_REFINE_V8 */
+
+/* ===== Region field label ===== */
+.journey-select-row.is-region-only .journey-select > span {
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 750;
+}
+
+/* ===== Navigation circles ===== */
+
+/*
+  IMPORTANT:
+  Do not fade the whole disabled .journey-step.
+  Parent opacity makes the dark-blue rail visible THROUGH the white circle.
+*/
+.journey-step:has(input:disabled) {
+  opacity: 1 !important;
+}
+
+/*
+  Every circle is a truly opaque white disk.
+  The white outer halo masks the 2px navigation rail around/behind the circle.
+*/
+.journey-step > span,
+.journey-step.is-active > span,
+.journey-step:has(input:disabled) > span {
+  position: relative;
+  z-index: 2;
+  background: #ffffff !important;
+  opacity: 1 !important;
+  border: 2px solid var(--arctic-outline, #173b57);
+  box-shadow: 0 0 0 3px #ffffff !important;
+  isolation: isolate;
+}
+
+/*
+  Additional solid white layer inside the circle.
+  It sits above the rail and below the active turquoise centre dot.
+*/
+.journey-step > span::before,
+.journey-step.is-active > span::before,
+.journey-step:has(input:disabled) > span::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 1;
+}
+
+/* Active dot remains turquoise and sits above the white mask. */
+.journey-step.is-active > span::after {
+  z-index: 3;
+}
+
+/*
+  Fade unavailable items component-by-component instead of fading the parent.
+  This keeps the white circle interior 100% opaque.
+*/
+.journey-step:has(input:disabled) > span {
+  border-color: rgba(23, 59, 87, .34);
+}
+
+.journey-step:has(input:disabled) strong {
+  opacity: .34;
+}
+
+.journey-step:has(input:disabled):hover > span {
+  transform: none;
+}
+
+/* /ARCTIC_UI_REFINE_V8 */
