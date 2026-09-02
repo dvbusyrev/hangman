@@ -205,7 +205,8 @@ async function showRegions(page = "region") {
     onPage: (nextPage) => navigateMapPage(refs, nextPage),
     onRegionChange: (regionId) => handleRegionSelect(refs, regionId),
     onCityChange: (cityId) => handleCitySelect(cityId),
-    onProfileChange: (patch) => handleMapProfileChange(refs, effectivePage, patch)
+    onProfileChange: (patch) => handleMapProfileChange(refs, effectivePage, patch),
+    onMode: (mode) => handleMapModeChange(mode)
   });
 
   try {
@@ -351,6 +352,16 @@ function refreshMapJourneyControls(refs, page) {
 function handleMapProfileChange(refs, page, patch) {
   setState({ ...patch, selectedObject: null });
   refreshMapJourneyControls(refs, page);
+}
+
+function handleMapModeChange(mode) {
+  if (!mode) return;
+  setState({ selectedMode: mode });
+  root?.querySelectorAll("[data-mode]").forEach((button) => {
+    const active = button.dataset.mode === mode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 }
 
 function handleCitySelect(cityId) {

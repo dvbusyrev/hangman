@@ -553,6 +553,14 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   outline-offset: 2px;
 }
 
+/* On the city-picker screen the mode buttons belong to the normal flow below the map. */
+.region-story > .mode-switch {
+  position: static;
+  flex: 0 0 auto;
+  width: fit-content;
+  margin: 14px auto 0;
+}
+
 .info-chapter {
   position: relative;
   min-height: 555px;

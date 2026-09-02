@@ -35,7 +35,8 @@ export function renderRegionScreen(root, {
   onPage,
   onRegionChange,
   onCityChange,
-  onProfileChange
+  onProfileChange,
+  onMode
 }) {
   root.innerHTML = shell(`
     <section class="story-screen region-story">
@@ -45,6 +46,7 @@ export function renderRegionScreen(root, {
       <div class="region-frame">
         <div id="cesium-container" class="cesium-region"></div>
       </div>
+      ${page === "city" ? renderMode(state.selectedMode) : ""}
     </section>
   `);
 
@@ -53,6 +55,9 @@ export function renderRegionScreen(root, {
     journeyControls: root.querySelector("#journey-controls")
   };
   bindJourneyControls(refs.journeyControls, { onPage, onRegionChange, onCityChange, onProfileChange });
+  root.querySelectorAll("[data-mode]").forEach((button) => {
+    button.addEventListener("click", () => onMode?.(button.dataset.mode));
+  });
   return refs;
 }
 
