@@ -1821,3 +1821,174 @@ body {
 }
 
 /* /ARCTIC_GAME_NAV_LAYOUT_V5 */
+
+
+/* ARCTIC_UI_COLORS_REGION_SELECT_V6 */
+
+:root {
+  /* One dark-blue outline color for the game UI. */
+  --arctic-outline: #173b57;
+  --arctic-turquoise: #63c3cf;
+  --arctic-placeholder: #8b979d;
+
+  /* Existing components already use --line for their main 2px outlines. */
+  --line: var(--arctic-outline);
+}
+
+/* ===== Region select on «Области» ===== */
+
+.journey-select-row.is-region-only .journey-select {
+  position: relative;
+  font-weight: 750;
+}
+
+.journey-select-row.is-region-only .journey-select > span {
+  color: var(--arctic-outline);
+  font-weight: 750;
+}
+
+.journey-select-row.is-region-only .journey-select select {
+  width: 100%;
+  height: 40px;
+
+  /* Same 2px visual weight as the map frame and the other main controls. */
+  border: 2px solid var(--arctic-outline);
+  border-radius: 10px;
+
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+
+  /* Hide the thin browser arrow; a matching 2px arrow is drawn below. */
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+}
+
+/* Placeholder-like state while no region is selected. */
+.journey-select-row.is-region-only
+  .journey-select
+  select:has(option[value=""]:checked) {
+  color: var(--arctic-placeholder);
+}
+
+.journey-select-row.is-region-only .journey-select select option {
+  color: var(--ink);
+}
+
+/* Custom 2px down arrow. */
+.journey-select-row.is-region-only .journey-select::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  right: 17px;
+  bottom: 15px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--arctic-outline);
+  border-bottom: 2px solid var(--arctic-outline);
+  transform: rotate(45deg);
+  transform-origin: 60% 60%;
+  pointer-events: none;
+}
+
+/* ===== Navigation ===== */
+
+/* Rail is exactly the same dark blue as all other main outlines. */
+.journey-steps::before {
+  background: var(--arctic-outline);
+}
+
+/*
+  All circles:
+  - same dark-blue outline;
+  - white interior;
+  - a small white halo masks the rail behind the circle completely.
+*/
+.journey-step > span,
+.journey-step.is-active > span,
+.journey-step:has(input:disabled) > span {
+  border: 2px solid var(--arctic-outline);
+  background: #fff;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+/* Current-page inner point stays turquoise; the rest of the circle is white. */
+.journey-step.is-active > span::after {
+  background: var(--arctic-turquoise);
+}
+
+/* Unavailable steps remain the same colors but are faded as a whole. */
+.journey-step:has(input:disabled) {
+  opacity: .34;
+}
+
+/* Active page title is turquoise. */
+.journey-step.is-active strong {
+  color: var(--arctic-turquoise);
+  font-weight: 750;
+}
+
+/* ===== Map / frame outlines ===== */
+
+/* Main map frame uses the exact same dark blue. */
+.region-frame {
+  border-color: var(--arctic-outline);
+}
+
+/* Keep the interactive Arctic-region outlines in the same palette. */
+.russia-context-map__svg .russia-context-map__region.is-project-region,
+.city-map-2d.russia-context-map__svg
+  .russia-context-map__region.is-city-context-region {
+  stroke: var(--arctic-outline);
+}
+
+.russia-context-map__svg .russia-context-map__region.is-project-region:hover,
+.russia-context-map__svg .russia-context-map__region.is-project-region.is-hovered,
+.russia-context-map__svg .russia-context-map__region.is-project-region.is-selected,
+.city-map-2d.russia-context-map__svg
+  .russia-context-map__region.is-city-context-region.is-selected {
+  stroke: var(--arctic-outline);
+}
+
+/* Legacy 2D fallback maps, if shown, use the same outline color too. */
+.region-map-2d-shape,
+.region-map-2d-shape:hover,
+.region-map-2d-shape.is-hovered,
+.region-map-2d-shape.is-selected,
+.city-map-2d-shape {
+  stroke: var(--arctic-outline);
+}
+
+/* /ARCTIC_UI_COLORS_REGION_SELECT_V6 */
+
+
+/* ARCTIC_UI_REFINE_V7 */
+
+/* Navigation circles: fully opaque white interior. */
+.journey-step > span,
+.journey-step.is-active > span,
+.journey-step:has(input:disabled) > span {
+  background: #ffffff !important;
+  opacity: 1;
+}
+
+/* Keep the whole unavailable step faded, but not via the circle's own fill. */
+.journey-step:has(input:disabled) {
+  opacity: .34;
+}
+
+/* Region select value: lighter weight than the field label. */
+.journey-select-row.is-region-only .journey-select select {
+  font-weight: 400;
+}
+
+/* Placeholder remains gray and normal weight. */
+.journey-select-row.is-region-only
+  .journey-select
+  select:has(option[value=""]:checked) {
+  color: var(--arctic-placeholder, #8b979d);
+  font-weight: 400;
+}
+
+/* /ARCTIC_UI_REFINE_V7 */
