@@ -2546,13 +2546,9 @@ body {
 /* /ARCTIC_CLEAN_OUTLINE_ICONS_V36 */
 
 
-/* ARCTIC_HERO_BEAR_REFERENCE_V37 */
+/* ARCTIC_HERO_BEAR_LIVE_TYPE_V38 */
 
-/*
-  The supplied slide is the new hero composition.
-  Its typography/logo/location panel stay part of the visual reference image.
-  Only the two product-path buttons remain live HTML controls.
-*/
+/* The hero image is a clean backdrop; all copy and controls stay selectable HTML. */
 .arctic-hero {
   height: 100svh;
   min-height: 620px;
@@ -2561,73 +2557,114 @@ body {
 }
 
 .arctic-hero__media::after {
-  display: none;
+  display: block;
+  background:
+    linear-gradient(90deg, rgba(31, 59, 80, .18) 0%, rgba(31, 59, 80, .05) 42%, transparent 68%),
+    linear-gradient(180deg, transparent 64%, rgba(17, 39, 53, .18) 100%);
 }
 
 .arctic-hero__media img {
   object-position: center center;
 }
 
-/* The reference already contains these visual elements. */
-.arctic-hero .arctic-brand,
-.arctic-hero .arctic-scroll-mark {
-  display: none;
+.arctic-hero .arctic-brand {
+  top: 36px;
+  left: 5.8%;
+  display: grid;
+  width: auto;
+  height: auto;
+  gap: 4px;
+  color: rgba(255, 255, 255, .94);
+  text-shadow: 0 1px 10px rgba(26, 52, 70, .18);
 }
 
-/*
-  Keep semantic hero text in the DOM for accessibility/SEO,
-  but don't draw a second copy over the supplied composition.
-*/
-.arctic-hero__content > h1,
-.arctic-hero__content > p {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  margin: -1px !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+.arctic-brand__name {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
 }
 
-/*
-  Reference button boxes are around:
-  x=124..648, y=572..639 in a 1672×941 source.
-  This places the real project buttons directly over them.
-*/
+.arctic-brand__tagline {
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.arctic-hero .arctic-brand:hover {
+  color: #fff;
+}
+
 .arctic-hero__content {
   position: absolute;
   z-index: 8;
-  top: 60.55%;
-  left: 7.30%;
-  width: 31.65%;
+  top: 21.5%;
+  left: 6.8%;
+  width: min(660px, 44%);
   transform: none;
   text-align: left;
-  pointer-events: none;
+  pointer-events: auto;
+}
+
+.arctic-hero__content h1 {
+  margin: 0;
+  color: rgba(255, 255, 255, .97);
+  font-size: 86px;
+  font-weight: 300;
+  line-height: .98;
+  letter-spacing: 0;
+  text-shadow: 0 2px 16px rgba(31, 59, 80, .12);
+}
+
+.arctic-hero__content > p:not(.arctic-hero__lede) {
+  margin: 18px 0 34px;
+  color: rgba(255, 255, 255, .9);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.arctic-hero__lede {
+  max-width: 390px;
+  margin: 0;
+  color: rgba(255, 255, 255, .9);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.75;
+  letter-spacing: 0;
+  text-shadow: 0 1px 9px rgba(26, 52, 70, .2);
+}
+
+.arctic-hero__direction {
+  display: block;
+  width: fit-content;
+  margin: 26px 0 28px;
+  color: rgba(255, 255, 255, .92);
+  font-size: 48px;
+  font-weight: 200;
+  line-height: .65;
 }
 
 .arctic-hero__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px;
   width: 100%;
   margin: 0;
-  pointer-events: auto;
 }
 
 .arctic-hero .arctic-outline-button {
   min-height: 68px;
-  padding: 0 20px;
+  padding: 0 18px;
   border-width: 2px;
   border-radius: 10px;
   justify-content: center;
-  background: #ffffff;
-  color: var(--site-control-ink, #183b57d9);
-  font-size: clamp(12px, .92vw, 15px);
+  background: rgba(255, 255, 255, .97);
+  color: #183b57;
+  font-size: 15px;
   font-weight: 650;
   letter-spacing: 0;
-  box-shadow: none;
+  box-shadow: 0 5px 0 rgba(34, 63, 83, .2);
 }
 
 .arctic-hero .arctic-outline-button .arctic-icon--outline {
@@ -2635,12 +2672,134 @@ body {
   height: 24px;
 }
 
-/* Slightly expand the live controls so the baked reference outlines never peek out. */
 .arctic-hero .arctic-outline-button {
-  margin: -2px;
+  margin: 0;
 }
 
-/* On narrower screens, preserve usable live buttons rather than tiny reference positioning. */
+.arctic-hero .arctic-outline-button:hover {
+  background: #fff;
+  box-shadow: 0 7px 0 rgba(34, 63, 83, .2);
+}
+
+.arctic-hero__location {
+  position: absolute;
+  z-index: 8;
+  left: 6.8%;
+  bottom: 10.2%;
+  display: grid;
+  grid-template-columns: 1px auto;
+  gap: 20px;
+  align-items: start;
+  color: rgba(255, 255, 255, .88);
+  text-shadow: 0 1px 10px rgba(26, 52, 70, .22);
+}
+
+.arctic-hero__location-line {
+  position: relative;
+  display: block;
+  width: 1px;
+  height: 145px;
+  background: rgba(255, 255, 255, .6);
+}
+
+.arctic-hero__location-line i {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .5);
+}
+
+.arctic-hero__location strong {
+  display: block;
+  margin: 5px 0 12px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.arctic-hero__location p {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.arctic-hero__signature {
+  position: absolute;
+  z-index: 8;
+  left: 3.1%;
+  bottom: 4.5%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: rgba(255, 255, 255, .78);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  text-shadow: 0 1px 8px rgba(26, 52, 70, .24);
+}
+
+.arctic-hero__signature-mark {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 1px;
+  background: rgba(255, 255, 255, .68);
+}
+
+.arctic-hero__signature-mark::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, .8);
+  border-radius: 50%;
+}
+
+.arctic-hero__signature-mark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -1px;
+  width: 7px;
+  height: 7px;
+  transform: translateY(-50%) rotate(45deg);
+  border-top: 1px solid rgba(255, 255, 255, .8);
+  border-right: 1px solid rgba(255, 255, 255, .8);
+}
+
+.arctic-hero__scroll {
+  position: absolute;
+  z-index: 8;
+  right: 3.2%;
+  bottom: 4.3%;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .8);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .03);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 200;
+  line-height: 1;
+  text-shadow: 0 1px 8px rgba(26, 52, 70, .2);
+}
+
+.arctic-hero__scroll:hover {
+  background: rgba(255, 255, 255, .13);
+}
+
 @media (max-width: 900px) {
   .arctic-hero {
     min-height: 680px;
@@ -2651,11 +2810,30 @@ body {
   }
 
   .arctic-hero__content {
-    top: auto;
+    top: 17%;
     left: 20px;
     right: 20px;
     bottom: 38px;
     width: auto;
+  }
+
+  .arctic-hero__content h1 {
+    font-size: 58px;
+  }
+
+  .arctic-hero__content > p:not(.arctic-hero__lede) {
+    margin-bottom: 26px;
+    font-size: 15px;
+  }
+
+  .arctic-hero__lede {
+    max-width: 310px;
+    font-size: 14px;
+  }
+
+  .arctic-hero__direction {
+    margin: 20px 0 22px;
+    font-size: 40px;
   }
 
   .arctic-hero__actions {
@@ -2667,6 +2845,58 @@ body {
     min-height: 54px;
     margin: 0;
   }
+
+  .arctic-hero .arctic-brand {
+    top: 24px;
+    left: 20px;
+  }
+
+  .arctic-hero__location {
+    left: 20px;
+    bottom: 86px;
+  }
+
+  .arctic-hero__location-line {
+    height: 96px;
+  }
+
+  .arctic-hero__signature {
+    left: 20px;
+    bottom: 20px;
+    font-size: 9px;
+  }
+
+  .arctic-hero__scroll {
+    right: 20px;
+    bottom: 18px;
+    width: 46px;
+    height: 46px;
+  }
 }
 
-/* /ARCTIC_HERO_BEAR_REFERENCE_V37 */
+@media (max-width: 560px) {
+  .arctic-hero__media img {
+    object-position: 62% center;
+  }
+
+  .arctic-hero__content h1 {
+    font-size: 50px;
+  }
+
+  .arctic-hero__lede {
+    max-width: 270px;
+    line-height: 1.55;
+  }
+
+  .arctic-hero__location {
+    display: none;
+  }
+
+  .arctic-hero__signature {
+    max-width: calc(100% - 90px);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
+/* /ARCTIC_HERO_BEAR_LIVE_TYPE_V38 */
