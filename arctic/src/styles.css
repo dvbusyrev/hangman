@@ -2803,9 +2803,9 @@ body {
 }
 
 .arctic-duo--life .arctic-duo__image--city {
-  margin-right: 40px;
-  border-radius: 36px;
-  transform: translate(var(--landing-city-offset-x), var(--landing-city-offset-y)) scale(.95);
+  margin-right: 0;
+  border-radius: 36px 0 0 36px;
+  transform: translate(var(--landing-city-offset-x), var(--landing-city-offset-y));
   transform-origin: right center;
 }
 
@@ -2820,7 +2820,7 @@ body {
 
   .arctic-duo--life .arctic-duo__image--city {
     margin-right: 0;
-    border-radius: 28px;
+    border-radius: 28px 0 0 28px;
   }
 }
 
