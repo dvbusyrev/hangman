@@ -2068,3 +2068,57 @@ body {
 }
 
 /* /ARCTIC_UI_REFINE_V8 */
+
+
+/* ARCTIC_NAVIGATION_FIT_MAP_V10 */
+
+/*
+  Keep every navigation caption fully inside the map width while preserving
+  caption centering under its own circle.
+
+  Desktop label width is 120px, so the navigation rail is inset by 60px
+  from each map edge. The first/last circle centers are therefore 60px
+  inside the frame and their centered captions end exactly at the map edge.
+*/
+.journey-steps {
+  width: calc(100% - 120px);
+  margin-left: 60px;
+  margin-right: 60px;
+}
+
+/* Labels remain centered directly under their circles. */
+.journey-step strong,
+.journey-step:first-child strong,
+.journey-step:last-child strong {
+  transform: none !important;
+  justify-self: center;
+  text-align: center;
+  max-width: 120px;
+}
+
+/*
+  Mobile navigation uses 76px labels, therefore a 38px inset keeps
+  endpoint labels inside the map in the same way.
+*/
+@media (max-width: 760px) {
+  .journey-steps {
+    width: calc(100% - 76px);
+    margin-left: 38px;
+    margin-right: 38px;
+  }
+
+  .journey-step strong,
+  .journey-step:first-child strong,
+  .journey-step:last-child strong {
+    max-width: 76px;
+  }
+}
+
+/* /ARCTIC_NAVIGATION_FIT_MAP_V10 */
+
+
+/* ARCTIC_STORY_SCREEN_BG_V1 */
+.story-screen {
+  background-color: #8EA8C3 !important;
+}
+/* /ARCTIC_STORY_SCREEN_BG_V1 */
