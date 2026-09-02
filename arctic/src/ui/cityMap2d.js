@@ -2,6 +2,7 @@ import "./russiaMapContext.css";
 import {
   addSvgLabel,
   approximatePointInRegion,
+  calculateCenteredContentViewBox,
   loadRussiaContextSvg
 } from "./russiaMapContext.js";
 
@@ -70,7 +71,12 @@ export async function setupCityMap2D(container, scenarios, {
       regionCaption.textContent = region.name;
       stage.append(regionCaption);
 
-      const { svg, getProjectRegionPath, viewBox } = await loadRussiaContextSvg({
+      const {
+        svg,
+        regions: contextRegionPaths,
+        getProjectRegionPath,
+        viewBox
+      } = await loadRussiaContextSvg({
         className: "city-map-2d",
         ariaLabel: `Карта России. Города региона: ${region.name}`
       });
@@ -90,12 +96,29 @@ export async function setupCityMap2D(container, scenarios, {
         throw new Error(`На карте России не найден контур: ${region.name}.`);
       }
 
-      // Make sure getBBox() is calculated after SVG is attached.
+      // Make sure getBBox() and the real SVG viewport are available.
       await nextFrame();
       if (token !== renderToken) return;
 
-      const targetViewBox = calculateCenteredRegionViewBox(selectedPath, viewBox, stage);
-      await animateSvgViewBox(svg, viewBox, targetViewBox, CITY_MAP_ZOOM_DURATION_MS);
+      // ARCTIC_CITY_TRUE_CENTER_V24
+      const centeredRussiaViewBox = calculateCenteredContentViewBox(
+        contextRegionPaths,
+        svg,
+        { padding: 0.035, fallback: viewBox }
+      );
+      setViewBox(svg, centeredRussiaViewBox);
+
+      const targetViewBox = calculateCenteredRegionViewBox(
+        selectedPath,
+        centeredRussiaViewBox,
+        svg
+      );
+      await animateSvgViewBox(
+        svg,
+        centeredRussiaViewBox,
+        targetViewBox,
+        CITY_MAP_ZOOM_DURATION_MS
+      );
       if (token !== renderToken) return;
 
       const feature = featureById.get(currentRegionId);
@@ -103,7 +126,7 @@ export async function setupCityMap2D(container, scenarios, {
 
       // Counter-scale markers so their visual size stays normal after map zoom.
       const markerScale = clamp(
-        targetViewBox.width / Math.max(1, viewBox.width),
+        targetViewBox.width / Math.max(1, centeredRussiaViewBox.width),
         0.015,
         0.80
       );
@@ -275,7 +298,7 @@ function calculateCityPointViewBox(point, sourceViewBox, zoomFactor) {
   };
 }
 
-function calculateCenteredRegionViewBox(path, fullViewBox, stage) {
+function calculateCenteredRegionViewBox(path, fullViewBox, svg) {
   const box = path.getBBox();
 
   // Сначала строим базовый кадр, в который область помещается целиком
@@ -283,10 +306,10 @@ function calculateCenteredRegionViewBox(path, fullViewBox, stage) {
   let width = box.width * (1 + CITY_MAP_BASE_PADDING * 2);
   let height = box.height * (1 + CITY_MAP_BASE_PADDING * 2);
 
-  const stageRect = stage.getBoundingClientRect();
+  const svgRect = svg.getBoundingClientRect();
   const targetAspect =
-    stageRect.width > 0 && stageRect.height > 0
-      ? stageRect.width / stageRect.height
+    svgRect.width > 0 && svgRect.height > 0
+      ? svgRect.width / svgRect.height
       : fullViewBox.width / fullViewBox.height;
 
   if (width / height < targetAspect) {
@@ -301,6 +324,22 @@ function calculateCenteredRegionViewBox(path, fullViewBox, stage) {
   width /= zoom;
   height /= zoom;
 
+  // ARCTIC_CITY_REGION_SAFE_FIT_V21
+  // CITY_MAP_ZOOM must never make the selected region itself leave the frame.
+  // Keep a small margin around the geographic contour, then restore the
+  // current stage aspect ratio. This fixes clipping on wide layouts.
+  const safePadding = 0.08;
+  const minWidth = box.width * (1 + safePadding * 2);
+  const minHeight = box.height * (1 + safePadding * 2);
+
+  width = Math.max(width, minWidth);
+  height = Math.max(height, minHeight);
+
+  if (width / height < targetAspect) {
+    width = height * targetAspect;
+  } else {
+    height = width / targetAspect;
+  }
   const centerX = box.x + box.width / 2;
   const centerY = box.y + box.height / 2;
 
@@ -311,6 +350,8 @@ function calculateCenteredRegionViewBox(path, fullViewBox, stage) {
     height
   };
 }
+
+
 
 async function animateSvgViewBox(svg, from, to, durationMs) {
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;

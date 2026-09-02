@@ -1,5 +1,10 @@
 import "./russiaMapContext.css";
-import { addSvgLabel, loadRussiaContextSvg, pathCenter } from "./russiaMapContext.js";
+import {
+  addSvgLabel,
+  calculateCenteredContentViewBox,
+  loadRussiaContextSvg,
+  pathCenter
+} from "./russiaMapContext.js";
 
 const LABEL_OFFSETS = {
   karelia: { x: -28, y: 18 },
@@ -23,11 +28,23 @@ export async function setupRegionMap2D(container, scenarios, { selectedRegionId 
 
   try {
     const regions = scenarios?.regions ?? [];
-    const { svg, getProjectRegionPath } = await loadRussiaContextSvg({
+    const { svg, regions: contextRegionPaths, viewBox, getProjectRegionPath } = await loadRussiaContextSvg({
       className: "region-map-2d",
       ariaLabel: "Карта России с арктическими регионами проекта"
     });
     stage.append(svg);
+
+    // ARCTIC_REGION_OVERVIEW_TRUE_CENTER_V24
+    // Wait until the SVG has a real viewport, then center the ACTUAL Russia
+    // geometry inside it. This removes the unequal empty margins of the
+    // source SVG canvas.
+    await nextFrame();
+    const centeredRussiaViewBox = calculateCenteredContentViewBox(
+      contextRegionPaths,
+      svg,
+      { padding: 0.035, fallback: viewBox }
+    );
+    setViewBox(svg, centeredRussiaViewBox);
 
     const pathById = new Map();
     const labelById = new Map();
@@ -107,6 +124,18 @@ export async function setupRegionMap2D(container, scenarios, { selectedRegionId 
     renderLoadError(container, error);
     throw error;
   }
+}
+
+
+function setViewBox(svg, box) {
+  svg.setAttribute(
+    "viewBox",
+    `${box.x.toFixed(3)} ${box.y.toFixed(3)} ${box.width.toFixed(3)} ${box.height.toFixed(3)}`
+  );
+}
+
+function nextFrame() {
+  return new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
 function renderLoadError(container, error) {

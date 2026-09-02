@@ -108,6 +108,76 @@ export async function loadRussiaContextSvg({
   };
 }
 
+
+// ARCTIC_MAP_TRUE_CENTER_V24
+// Build a viewBox around the ACTUAL Russia shapes, not around the SVG canvas.
+// The original SVG canvas contains unequal empty margins, which makes the
+// whole country look shifted inside a wide game viewport.
+export function calculateCenteredContentViewBox(
+  paths,
+  svg,
+  { padding = 0.035, fallback = null } = {}
+) {
+  const boxes = Array.from(paths ?? [])
+    .map((path) => {
+      try {
+        return path?.getBBox?.();
+      } catch {
+        return null;
+      }
+    })
+    .filter((box) =>
+      box &&
+      Number.isFinite(box.x) &&
+      Number.isFinite(box.y) &&
+      Number.isFinite(box.width) &&
+      Number.isFinite(box.height) &&
+      box.width >= 0 &&
+      box.height >= 0
+    );
+
+  if (!boxes.length) {
+    return fallback ?? readViewBox(svg);
+  }
+
+  const minX = Math.min(...boxes.map((box) => box.x));
+  const minY = Math.min(...boxes.map((box) => box.y));
+  const maxX = Math.max(...boxes.map((box) => box.x + box.width));
+  const maxY = Math.max(...boxes.map((box) => box.y + box.height));
+
+  const contentWidth = Math.max(1, maxX - minX);
+  const contentHeight = Math.max(1, maxY - minY);
+  const centerX = minX + contentWidth / 2;
+  const centerY = minY + contentHeight / 2;
+
+  let width = contentWidth * (1 + padding * 2);
+  let height = contentHeight * (1 + padding * 2);
+
+  const viewport = svg?.getBoundingClientRect?.();
+  const fallbackAspect =
+    fallback?.width > 0 && fallback?.height > 0
+      ? fallback.width / fallback.height
+      : width / height;
+
+  const aspect =
+    viewport?.width > 0 && viewport?.height > 0
+      ? viewport.width / viewport.height
+      : fallbackAspect;
+
+  if (width / height < aspect) {
+    width = height * aspect;
+  } else {
+    height = width / aspect;
+  }
+
+  return {
+    x: centerX - width / 2,
+    y: centerY - height / 2,
+    width,
+    height
+  };
+}
+
 export function addSvgLabel(svg, {
   x,
   y,
