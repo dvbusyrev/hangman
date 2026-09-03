@@ -225,6 +225,8 @@ async function showRegions(page = "region") {
       regionMap = await setupRegionMap2D(refs.cesiumContainer, scenarios, {
         selectedRegionId: state.selectedRegion,
         selectedCityId: state.selectedCity,
+        selectedMode: state.selectedMode,
+        cityOfferCounts: getCityOfferCounts(),
         onRegionPick: (region) => handleRegionPick(refs, region),
         onCityPick: (city) => handleCityPick(city)
       });
@@ -378,6 +380,23 @@ function handleMapModeChange(mode) {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
+  regionMap?.setOfferMode?.(mode);
+}
+
+function getCityOfferCounts() {
+  const counts = {};
+
+  scenarios?.regions.forEach((region) => {
+    region.cities.filter((city) => city.ready).forEach((city) => {
+      const cityOffers = allOffers.filter((offer) => offer.cityId === city.id);
+      counts[city.id] = {
+        profession: cityOffers.filter((offer) => offer.kind === "work").length,
+        estate: cityOffers.filter((offer) => offer.kind === "rent" || offer.kind === "sale").length
+      };
+    });
+  });
+
+  return counts;
 }
 
 function handleCitySelect(cityId, options = {}) {

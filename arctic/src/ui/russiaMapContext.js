@@ -196,7 +196,9 @@ export function addSvgLabel(svg, {
   text,
   className,
   maxChars = 22,
-  onActivate
+  onActivate,
+  minWidth = 84,
+  maxWidth = 190
 }) {
   const group = document.createElementNS(SVG_NS, "g");
   group.classList.add("russia-context-map__label");
@@ -218,7 +220,7 @@ export function addSvgLabel(svg, {
 
   const lines = wrapWords(text, maxChars);
   const longest = Math.max(...lines.map((line) => line.length), 8);
-  const width = Math.min(190, Math.max(84, longest * 7.0 + 22));
+  const width = Math.min(maxWidth, Math.max(minWidth, longest * 7.0 + 22));
   const lineHeight = 15;
   const height = lines.length * lineHeight + 12;
 

@@ -87,6 +87,7 @@ export function updateRegionMode(root, selectedMode, page) {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
+
 }
 
 export function renderCityStory(root, {

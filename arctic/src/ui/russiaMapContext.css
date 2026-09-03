@@ -435,6 +435,26 @@
 
 /* /ARCTIC_CITY_MARKERS_NAV_STYLE_V31 */
 
+/* The selected offer mode is shown as one compact count below each city dot. */
+.region-map-2d-stage .city-map-2d-offer-count {
+  pointer-events: none;
+  cursor: default;
+}
+
+.region-map-2d-stage .city-map-2d-offer-count rect {
+  fill: #ffffff;
+  stroke: var(--arctic-outline, #23395b);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.region-map-2d-stage .city-map-2d-offer-count text {
+  fill: var(--arctic-outline, #23395b);
+  font-size: 12px;
+  font-weight: 750;
+  pointer-events: none;
+}
+
 /* ARCTIC_MAP_LABELS_PLAIN_WHITE_V1
    Keep the label hit area, but remove its visible rectangular plate. */
 .city-map-2d-context-marker rect,
@@ -459,3 +479,45 @@
 }
 
 /* /ARCTIC_MAP_LABELS_PLAIN_WHITE_V1 */
+
+/* ARCTIC_TOUCH_MAP_MOBILE_V1 */
+.russia-context-map-stage {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: contain;
+  cursor: grab;
+}
+
+.russia-context-map-stage:active {
+  cursor: grabbing;
+}
+
+.russia-context-map-stage .russia-context-map__svg {
+  touch-action: none;
+}
+
+@media (hover: none) {
+  .russia-context-map__svg .russia-context-map__region.is-project-region:hover:not(.is-selected) {
+    fill: #c7dde4;
+    stroke: #173b57;
+    stroke-width: 1.35;
+  }
+
+  .russia-context-map__label:hover rect {
+    fill: rgba(255, 255, 255, .94);
+    stroke: rgba(69, 96, 107, .18);
+  }
+}
+
+@media (max-width: 760px) {
+  .russia-context-map-stage {
+    min-height: 440px;
+    padding: 6px 4px;
+  }
+
+  .russia-context-map__svg {
+    max-height: none;
+  }
+}
+/* /ARCTIC_TOUCH_MAP_MOBILE_V1 */

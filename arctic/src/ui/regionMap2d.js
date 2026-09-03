@@ -26,6 +26,7 @@ const LABEL_OFFSETS = {
 // Same zoom settings that were previously used by the separate city map.
 // They now operate on the original «Области» SVG itself.
 const CITY_MAP_ZOOM = 1.75;
+const MOBILE_CITY_MAP_ZOOM = 2.2;
 const CITY_MAP_BASE_PADDING = 0.34;
 const REGION_TO_CITY_ZOOM_DURATION_MS = 860;
 const CITY_POINT_ZOOM = 2.8;
@@ -34,6 +35,8 @@ const CITY_POINT_ZOOM_DURATION_MS = 520;
 export async function setupRegionMap2D(container, scenarios, {
   selectedRegionId = null,
   selectedCityId = null,
+  selectedMode = "profession",
+  cityOfferCounts = {},
   onRegionPick,
   onCityPick
 } = {}) {
@@ -75,9 +78,12 @@ export async function setupRegionMap2D(container, scenarios, {
     let currentViewBox = { ...centeredRussiaViewBox };
     let currentRegionId = selectedRegionId ?? null;
     let currentCityId = selectedCityId ?? null;
+    let currentOfferMode = selectedMode === "estate" ? "estate" : "profession";
     let cityMode = false;
+    let cityModeViewBox = { ...centeredRussiaViewBox };
     let transitionToken = 0;
     const cityNodes = new Set();
+    const isCompactViewport = window.matchMedia?.("(max-width: 760px)")?.matches ?? false;
 
     const pathById = new Map();
     const labelById = new Map();
@@ -144,6 +150,20 @@ export async function setupRegionMap2D(container, scenarios, {
     });
 
     resolveSvgLabelCollisions(regionLabels);
+
+    // The map is intentionally a touch surface on mobile. One finger pans
+    // the current geographic view, while two fingers zoom around their
+    // midpoint. Tap/click selection remains available when there is no drag.
+    const mapGestures = setupMapGestures(stage, svg, {
+      isEnabled: () => true,
+      getViewBox: () => currentViewBox,
+      getBaseViewBox: () => cityMode ? cityModeViewBox : centeredRussiaViewBox,
+      onViewBoxChange: (nextViewBox) => {
+        currentViewBox = nextViewBox;
+        setViewBox(svg, nextViewBox);
+      },
+      compact: isCompactViewport
+    });
 
     const missing = regions.filter((region) => !pathById.has(region.id));
     if (missing.length) {
@@ -225,6 +245,8 @@ export async function setupRegionMap2D(container, scenarios, {
           city,
           selected: city.id === currentCityId,
           markerScale,
+          offerCounts: cityOfferCounts[city.id],
+          offerMode: currentOfferMode,
           onActivate: async () => {
             if (!cityMode) return;
 
@@ -273,6 +295,7 @@ export async function setupRegionMap2D(container, scenarios, {
         if (!path) return;
 
         const token = ++transitionToken;
+        mapGestures.cancel();
         cityMode = true;
         currentCityId = null;
         clearCityMarkers();
@@ -289,8 +312,10 @@ export async function setupRegionMap2D(container, scenarios, {
         const targetViewBox = calculateCenteredRegionViewBox(
           path,
           centeredRussiaViewBox,
-          svg
+          svg,
+          isCompactViewport ? MOBILE_CITY_MAP_ZOOM : CITY_MAP_ZOOM
         );
+        cityModeViewBox = { ...targetViewBox };
 
         if (animate) {
           await animateSvgViewportTransform(
@@ -310,6 +335,7 @@ export async function setupRegionMap2D(container, scenarios, {
 
       async exitCities(regionId = currentRegionId) {
         const token = ++transitionToken;
+        mapGestures.cancel();
         clearCityMarkers();
         cityMode = false;
         blurMapFocus(svg);
@@ -326,6 +352,7 @@ export async function setupRegionMap2D(container, scenarios, {
 
         if (token !== transitionToken) return;
         currentViewBox = { ...centeredRussiaViewBox };
+        cityModeViewBox = { ...centeredRussiaViewBox };
       },
 
       async selectCity(cityId) {
@@ -338,12 +365,20 @@ export async function setupRegionMap2D(container, scenarios, {
         });
       },
 
+      setOfferMode(mode) {
+        currentOfferMode = mode === "estate" ? "estate" : "profession";
+        stage.querySelectorAll("[data-city-offer-count]").forEach((label) => {
+          updateCityOfferCountLabel(label, currentOfferMode);
+        });
+      },
+
       async showOverview(regionId = null) {
         await controller.exitCities(regionId);
       },
 
       destroy() {
         transitionToken += 1;
+        mapGestures.destroy();
         clearCityMarkers();
         container.classList.remove("region-map-2d-host", "russia-context-map-host");
         container.innerHTML = "";
@@ -358,7 +393,237 @@ export async function setupRegionMap2D(container, scenarios, {
   }
 }
 
-function calculateCenteredRegionViewBox(path, fullViewBox, svg) {
+function setupMapGestures(stage, svg, {
+  isEnabled = () => true,
+  getViewBox,
+  getBaseViewBox,
+  onViewBoxChange,
+  compact = false
+} = {}) {
+  const pointers = new Map();
+  const capturedPointers = new Set();
+  let gesture = null;
+  let suppressClickUntil = 0;
+
+  const getViewportRect = () => svg.getBoundingClientRect();
+  const getViewAspect = (fallback) => getInnerViewportAspect(svg, fallback);
+
+  const constrainViewBox = (source) => {
+    const base = getBaseViewBox?.() ?? source;
+    const aspect = getViewAspect(base);
+    const minZoom = compact ? 0.18 : 0.28;
+    const width = clamp(source.width, base.width * minZoom, base.width);
+    const height = width / Math.max(aspect, 1e-9);
+    const horizontalSlack = Math.min(width * 0.18, base.width * 0.12);
+    const verticalSlack = Math.min(height * 0.18, base.height * 0.12);
+
+    return {
+      x: clamp(
+        source.x,
+        base.x - horizontalSlack,
+        base.x + base.width - width + horizontalSlack
+      ),
+      y: clamp(
+        source.y,
+        base.y - verticalSlack,
+        base.y + base.height - height + verticalSlack
+      ),
+      width,
+      height
+    };
+  };
+
+  const setGestureViewBox = (next) => {
+    onViewBoxChange?.(constrainViewBox(next));
+  };
+
+  const getPointerPair = () => Array.from(pointers.values()).slice(0, 2);
+
+  const capturePointer = (pointerId) => {
+    if (capturedPointers.has(pointerId)) return;
+    try {
+      stage.setPointerCapture?.(pointerId);
+      capturedPointers.add(pointerId);
+    } catch {
+      // Pointer capture is not available in a few older mobile browsers.
+    }
+  };
+
+  const startPan = (point, sourceViewBox = getViewBox?.()) => {
+    gesture = {
+      type: "pan",
+      startX: point.x,
+      startY: point.y,
+      startViewBox: { ...sourceViewBox },
+      moved: false
+    };
+  };
+
+  const startPinch = () => {
+    const [first, second] = getPointerPair();
+    if (!first || !second) return;
+
+    const center = midpoint(first, second);
+    gesture = {
+      type: "pinch",
+      startCenter: center,
+      startDistance: Math.max(1, distance(first, second)),
+      startViewBox: { ...getViewBox?.() },
+      moved: false
+    };
+  };
+
+  const onPointerDown = (event) => {
+    if (!isEnabled() || (event.pointerType === "mouse" && event.button !== 0)) return;
+
+    pointers.set(event.pointerId, {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
+
+    if (pointers.size === 1) {
+      startPan({ x: event.clientX, y: event.clientY });
+    } else if (pointers.size === 2) {
+      startPinch();
+    }
+  };
+
+  const onPointerMove = (event) => {
+    if (!pointers.has(event.pointerId) || !gesture || !isEnabled()) return;
+
+    pointers.set(event.pointerId, {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
+
+    if (pointers.size >= 2 && gesture.type === "pinch") {
+      const [first, second] = getPointerPair();
+      const center = midpoint(first, second);
+      const currentDistance = Math.max(1, distance(first, second));
+      const scale = currentDistance / gesture.startDistance;
+      const rect = getViewportRect();
+      if (!(rect.width > 0) || !(rect.height > 0)) return;
+
+      const startViewBox = gesture.startViewBox;
+      const ratioX = (gesture.startCenter.x - rect.left) / rect.width;
+      const ratioY = (gesture.startCenter.y - rect.top) / rect.height;
+      const anchorX = startViewBox.x + ratioX * startViewBox.width;
+      const anchorY = startViewBox.y + ratioY * startViewBox.height;
+      const width = startViewBox.width / scale;
+      const height = startViewBox.height / scale;
+
+      gesture.moved = gesture.moved ||
+        Math.abs(scale - 1) > 0.025 ||
+        distance(center, gesture.startCenter) > 4;
+      if (!gesture.moved) return;
+
+      event.preventDefault();
+      capturePointer(first.pointerId);
+      capturePointer(second.pointerId);
+      setGestureViewBox({
+        x: anchorX - ((center.x - rect.left) / rect.width) * width,
+        y: anchorY - ((center.y - rect.top) / rect.height) * height,
+        width,
+        height
+      });
+      return;
+    }
+
+    if (pointers.size !== 1 || gesture.type !== "pan") return;
+
+    const rect = getViewportRect();
+    if (!(rect.width > 0) || !(rect.height > 0)) return;
+
+    const point = pointers.get(event.pointerId);
+    const dx = point.x - gesture.startX;
+    const dy = point.y - gesture.startY;
+    gesture.moved = gesture.moved || Math.hypot(dx, dy) > 6;
+    if (!gesture.moved) return;
+
+    event.preventDefault();
+    capturePointer(event.pointerId);
+    const startViewBox = gesture.startViewBox;
+    setGestureViewBox({
+      x: startViewBox.x - (dx / rect.width) * startViewBox.width,
+      y: startViewBox.y - (dy / rect.height) * startViewBox.height,
+      width: startViewBox.width,
+      height: startViewBox.height
+    });
+  };
+
+  const onPointerEnd = (event) => {
+    const wasDragged = gesture?.moved;
+    pointers.delete(event.pointerId);
+    if (capturedPointers.has(event.pointerId)) {
+      try {
+        stage.releasePointerCapture?.(event.pointerId);
+      } catch {
+        // Best-effort cleanup only.
+      }
+      capturedPointers.delete(event.pointerId);
+    }
+
+    if (!pointers.size) {
+      if (wasDragged) suppressClickUntil = performance.now() + 360;
+      gesture = null;
+      capturedPointers.clear();
+      return;
+    }
+
+    if (pointers.size === 1) {
+      const remaining = pointers.values().next().value;
+      startPan(remaining, getViewBox?.());
+      gesture.moved = Boolean(wasDragged);
+    }
+  };
+
+  const onClickCapture = (event) => {
+    if (performance.now() >= suppressClickUntil) return;
+    suppressClickUntil = 0;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  stage.addEventListener("pointerdown", onPointerDown);
+  stage.addEventListener("pointermove", onPointerMove, { passive: false });
+  stage.addEventListener("pointerup", onPointerEnd);
+  stage.addEventListener("pointercancel", onPointerEnd);
+  stage.addEventListener("click", onClickCapture, true);
+
+  return {
+    cancel() {
+      pointers.clear();
+      capturedPointers.clear();
+      gesture = null;
+      suppressClickUntil = 0;
+    },
+    destroy() {
+      stage.removeEventListener("pointerdown", onPointerDown);
+      stage.removeEventListener("pointermove", onPointerMove);
+      stage.removeEventListener("pointerup", onPointerEnd);
+      stage.removeEventListener("pointercancel", onPointerEnd);
+      stage.removeEventListener("click", onClickCapture, true);
+      pointers.clear();
+      capturedPointers.clear();
+      gesture = null;
+    }
+  };
+}
+
+function midpoint(first, second) {
+  return {
+    x: (first.x + second.x) / 2,
+    y: (first.y + second.y) / 2
+  };
+}
+
+function distance(first, second) {
+  return Math.hypot(first.x - second.x, first.y - second.y);
+}
+
+function calculateCenteredRegionViewBox(path, fullViewBox, svg, zoomFactor = CITY_MAP_ZOOM) {
   const box = path.getBBox();
   const targetAspect = getInnerViewportAspect(svg, fullViewBox);
 
@@ -371,7 +636,7 @@ function calculateCenteredRegionViewBox(path, fullViewBox, svg) {
     height = width / targetAspect;
   }
 
-  const zoom = clamp(Number(CITY_MAP_ZOOM) || 1, 0.25, 50);
+  const zoom = clamp(Number(zoomFactor) || 1, 0.25, 50);
   width /= zoom;
   height /= zoom;
 
@@ -405,6 +670,8 @@ function addCityMarker({
   city,
   selected,
   markerScale,
+  offerCounts = {},
+  offerMode = "profession",
   onActivate
 }) {
   const label = addSvgLabel(svg, {
@@ -421,6 +688,24 @@ function addCityMarker({
   label.setAttribute(
     "transform",
     `translate(${point.x.toFixed(2)} ${(point.y - 26 * markerScale).toFixed(2)}) scale(${markerScale.toFixed(4)})`
+  );
+
+  const offerCount = addSvgLabel(svg, {
+    x: point.x,
+    y: point.y + 25 * markerScale,
+    text: String(offerCounts?.[offerMode] ?? 0),
+    className: "city-map-2d-offer-count",
+    maxChars: 6,
+    minWidth: 48,
+    maxWidth: 90
+  });
+  offerCount.dataset.cityId = city.id;
+  offerCount.dataset.cityOfferCount = "true";
+  offerCount.dataset.professionCount = String(offerCounts?.profession ?? 0);
+  offerCount.dataset.estateCount = String(offerCounts?.estate ?? 0);
+  offerCount.setAttribute(
+    "transform",
+    `translate(${point.x.toFixed(2)} ${(point.y + 25 * markerScale).toFixed(2)}) scale(${markerScale.toFixed(4)})`
   );
 
   // ARCTIC_CITY_MARKERS_NAV_STYLE_V31
@@ -489,7 +774,14 @@ function addCityMarker({
   svg.insertBefore(outer, label);
   svg.insertBefore(core, label);
 
-  return [hit, outer, core, label];
+  return [hit, outer, core, offerCount, label];
+}
+
+function updateCityOfferCountLabel(label, mode) {
+  const text = label?.querySelector("text");
+  if (!text) return;
+
+  text.textContent = label.dataset[mode === "estate" ? "estateCount" : "professionCount"] ?? "0";
 }
 
 function blurMapFocus(svg) {
