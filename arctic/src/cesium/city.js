@@ -68,7 +68,14 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
   // road shape visible without the visual noise of standard OSM tiles under the low camera.
   await cityStage(city, "подложка карты", () => installCityBasemap(viewer, raw, config.basemap ?? {}));
 
-  const randomWalk = cityStageSync(city, "маршрут по улицам", () => makeRandomRoadWalk(graph, runtimeCity, raw.buildings));
+  // Keep one stable route per city so returning from another game page does not rearrange the scene.
+  const routeRandom = createSeededRandom(city.id);
+  const randomWalk = cityStageSync(city, "маршрут по улицам", () => makeRandomRoadWalk(
+    graph,
+    runtimeCity,
+    raw.buildings,
+    routeRandom
+  ));
   const roadLayer = cityStageSync(city, "стилизация дорог", () => createRoadLayerDataSource(raw.roads, randomWalk.route, config.roads ?? {}));
   await cityStage(city, "добавление дорог в Cesium", () => viewer.dataSources.add(roadLayer));
 
@@ -658,9 +665,9 @@ function largestRoadComponent(nodes, edges, adjacency) {
 
 /**
  * Create a cursor over the real OSM road graph. The array stores only the already visited and
- * immediately available camera path; every next branch is picked randomly from the full graph.
+ * immediately available camera path; every next branch is picked from the city's stable sequence.
  */
-function makeRandomRoadWalk(graph, city, buildings = null) {
+function makeRandomRoadWalk(graph, city, buildings = null, random = Math.random) {
   const eligible = graph.edges.filter((edge) => edge.length >= 7);
   if (!eligible.length) throw new Error("No sufficiently long road edges for random spawn");
 
@@ -683,10 +690,10 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
       : 1;
     const buildingWeight = 1 + nearbyBuildingRoadScore(edge, buildingCenters, buildingRadius);
     return base * focusWeight * buildingWeight;
-  });
-  const spawnT = 0.18 + Math.random() * 0.64;
+  }, random);
+  const spawnT = 0.18 + random() * 0.64;
   const spawn = lerpCoordinate(spawnEdge.a, spawnEdge.b, spawnT);
-  const forwardToB = Math.random() >= 0.5;
+  const forwardToB = random() >= 0.5;
   const forwardEndKey = forwardToB ? spawnEdge.bKey : spawnEdge.aKey;
   const backwardEndKey = forwardToB ? spawnEdge.aKey : spawnEdge.bKey;
   const forwardEnd = forwardToB ? spawnEdge.b : spawnEdge.a;
@@ -698,8 +705,8 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
   const backwardState = createWalkState(backwardEndKey, spawnEdge.id, [spawn, backwardEnd]);
   const stepMeters = Number(city.walkStepMeters ?? 3.5);
   const segmentMaxEdges = Math.max(1, Number(city.__navigation?.routeSegmentMaxEdges ?? 24));
-  extendWalkStateUntilDecision(graph, forwardState, segmentMaxEdges);
-  extendWalkStateUntilDecision(graph, backwardState, segmentMaxEdges);
+  extendWalkStateUntilDecision(graph, forwardState, segmentMaxEdges, random);
+  extendWalkStateUntilDecision(graph, backwardState, segmentMaxEdges, random);
   const route = [];
 
   const backwardReversed = [...backwardState.coordinates].reverse();
@@ -721,7 +728,7 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
   });
 
   const appendForwardEdge = () => {
-    const segment = extendWalkStateSegment(graph, forwardState, segmentMaxEdges);
+    const segment = extendWalkStateSegment(graph, forwardState, segmentMaxEdges, random);
     if (segment.length < 2) return 0;
     const dense = densifyLine(removeConsecutiveDuplicates(segment), stepMeters);
     const cameras = cameraRouteFromCoordinates(dense, city);
@@ -736,7 +743,7 @@ function makeRandomRoadWalk(graph, city, buildings = null) {
   };
 
   const prependBackwardEdge = () => {
-    const segment = extendWalkStateSegment(graph, backwardState, segmentMaxEdges);
+    const segment = extendWalkStateSegment(graph, backwardState, segmentMaxEdges, random);
     if (segment.length < 2) return 0;
     const denseOutward = densifyLine(removeConsecutiveDuplicates(segment), stepMeters);
     const denseTowardSpawn = denseOutward.reverse();
@@ -775,23 +782,23 @@ function createWalkState(currentKey, previousEdgeId, coordinates) {
   };
 }
 
-function extendWalkStateUntilDecision(graph, state, maxEdges) {
+function extendWalkStateUntilDecision(graph, state, maxEdges, random = Math.random) {
   const startIndex = state.coordinates.length - 1;
   const limit = Math.max(1, Number(maxEdges) || 24);
 
   for (let guard = 0; guard < limit && !isRoadDecisionNode(graph, state); guard += 1) {
-    if (!extendWalkStateOneEdge(graph, state)) break;
+    if (!extendWalkStateOneEdge(graph, state, random)) break;
   }
 
   return state.coordinates.slice(startIndex);
 }
 
-function extendWalkStateSegment(graph, state, maxEdges) {
+function extendWalkStateSegment(graph, state, maxEdges, random = Math.random) {
   const startIndex = state.coordinates.length - 1;
   const limit = Math.max(1, Number(maxEdges) || 24);
 
   for (let guard = 0; guard < limit; guard += 1) {
-    if (!extendWalkStateOneEdge(graph, state)) break;
+    if (!extendWalkStateOneEdge(graph, state, random)) break;
     if (isRoadDecisionNode(graph, state)) break;
   }
 
@@ -833,9 +840,9 @@ function getRoadVariants(graph, state) {
 
 /**
  * Extend by exactly ONE OSM edge. OSM ways are often split into small graph edges, so route
- * segments keep moving through ordinary vertices and randomly choose at real branching nodes.
+ * segments keep moving through ordinary vertices and choose a stable branch at real junctions.
  */
-function extendWalkStateOneEdge(graph, state) {
+function extendWalkStateOneEdge(graph, state, random = Math.random) {
   const variants = getRoadVariants(graph, state);
   if (!variants.length) return null;
 
@@ -844,7 +851,7 @@ function extendWalkStateOneEdge(graph, state) {
   if (variants.length === 1) {
     chosen = variants[0];
   } else {
-    chosen = chooseRandomRoadVariant(variants, state);
+    chosen = chooseRandomRoadVariant(variants, state, random);
   }
 
   if (!chosen) return null;
@@ -856,13 +863,13 @@ function extendWalkStateOneEdge(graph, state) {
   return chosen.nextCoord;
 }
 
-function chooseRandomRoadVariant(variants, state) {
+function chooseRandomRoadVariant(variants, state, random = Math.random) {
   if (!variants.length) return null;
   const recentEdges = new Set(state.recentEdges.slice(-8));
   return weightedRandom(variants, (item) => {
     const recentPenalty = recentEdges.has(item.edge.id) ? 0.25 : 1;
     return roadSpawnWeight(item.edge.highway) * recentPenalty;
-  });
+  }, random);
 }
 
 function roadSpawnWeight(highway) {
@@ -1289,11 +1296,11 @@ function nearbyBuildingRoadScore(edge, buildingCenters, radiusMeters) {
   return score;
 }
 
-function weightedRandom(items, weightFn) {
+function weightedRandom(items, weightFn, random = Math.random) {
   if (!items.length) return null;
   const weights = items.map((item) => Math.max(0.001, Number(weightFn(item)) || 0.001));
   const total = weights.reduce((sum, value) => sum + value, 0);
-  let value = Math.random() * total;
+  let value = random() * total;
   for (let index = 0; index < items.length; index += 1) {
     value -= weights[index];
     if (value <= 0) return items[index];
@@ -1307,6 +1314,16 @@ function shuffle(items) {
     [items[index], items[swap]] = [items[swap], items[index]];
   }
   return items;
+}
+
+function createSeededRandom(seed) {
+  let value = Math.floor(stableUnit(seed, "city-route") * 4294967296) >>> 0;
+  return () => {
+    value = (value + 0x6D2B79F5) | 0;
+    let next = Math.imul(value ^ (value >>> 15), 1 | value);
+    next ^= next + Math.imul(next ^ (next >>> 7), 61 | next);
+    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 function removeConsecutiveDuplicates(coordinates) {
