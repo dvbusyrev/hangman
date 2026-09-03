@@ -46,6 +46,20 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
   applyCityLighting(viewer, config.lighting ?? {});
   setCameraFrustum(viewer, runtimeCity.__navigation.fieldOfViewDegrees);
 
+  // The city page is mounted into a responsive flex window. Keep Cesium's
+  // drawing buffer synchronized with the final container size after a page
+  // transition, otherwise the previous viewport can make the scene look
+  // horizontally stretched.
+  const resizeObserver = typeof ResizeObserver === "function"
+    ? new ResizeObserver(() => {
+      if (viewer.isDestroyed()) return;
+      viewer.resize();
+      viewer.scene.requestRender();
+    })
+    : null;
+  resizeObserver?.observe(viewer.container);
+  viewer.resize();
+
   const raw = await cityStage(city, "чтение локальных OSM GeoJSON", () => loadCitySceneData(city));
   const graph = cityStageSync(city, "построение графа улиц", () => buildRoadGraph(raw.roads));
   if (!graph.edges.length) throw new Error(`${city.name}: в локальном OSM-файле нет пригодной дорожной сети`);
@@ -187,6 +201,7 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
       refreshVisibleBuildings(camera);
     },
     destroy() {
+      resizeObserver?.disconnect();
       if (!pickHandler.isDestroyed()) pickHandler.destroy();
     }
   };
@@ -1457,14 +1472,19 @@ function classifyBuilding(value) {
 
 function configuredBuildingHeight(properties, buildingClass, config) {
   const floorHeight = Number(config.floorHeightMeters ?? 3.05);
+  const heightScale = Number.isFinite(Number(config.heightScale)) && Number(config.heightScale) > 0
+    ? Number(config.heightScale)
+    : 1;
+  const maxHeight = Number(config.maxHeightMeters ?? 48);
+  const scaleHeight = (height) => clamp(height * heightScale, 3, maxHeight);
   const levels = Number(properties.levels);
   if (Number.isFinite(levels) && levels > 0) {
-    return clamp(levels * floorHeight, 3, Number(config.maxHeightMeters ?? 48));
+    return scaleHeight(levels * floorHeight);
   }
 
   if (config.useCachedHeightWithoutLevels === true) {
     const cached = Number(properties.height);
-    if (Number.isFinite(cached) && cached > 0) return clamp(cached, 3, Number(config.maxHeightMeters ?? 48));
+    if (Number.isFinite(cached) && cached > 0) return scaleHeight(cached);
   }
 
   const seed = stableUnit(properties.osmBuildingId ?? properties.osmId ?? properties.buildingId, buildingClass);
@@ -1475,13 +1495,13 @@ function configuredBuildingHeight(properties, buildingClass, config) {
       : [Number(band.minFloors ?? 2), Number(band.maxFloors ?? 6)];
     const index = Math.min(fallback.length - 1, Math.floor(seed * fallback.length));
     const floors = Number(fallback[index] ?? band.minFloors ?? 2);
-    return clamp(floors * floorHeight, 3, Number(config.maxHeightMeters ?? 48));
+    return scaleHeight(floors * floorHeight);
   }
 
   const band = config[buildingClass] ?? config.unknown ?? {};
   const min = Number(band.minHeightMeters ?? 7);
   const max = Number(band.maxHeightMeters ?? 18);
-  return clamp(min + (max - min) * seed, 3, Number(config.maxHeightMeters ?? 48));
+  return scaleHeight(min + (max - min) * seed);
 }
 
 function chooseBuildingTexture(id, buildingClass, config) {

@@ -325,10 +325,12 @@ function renderChapter(state, city, nature, naturePhotos, benefits, reviews, rev
       <div class="city-headline">
         <strong>${escapeHtml(city.name)}</strong>
       </div>
-      <div id="cesium-container" class="cesium-city"></div>
-      <div id="city-overlay" class="city-overlay ${forcedCardKind ? "is-forced" : ""}">
-        <div id="object-card" class="object-card" ${offer ? "" : "hidden"}>
-          ${offer ? renderOfferBody(offer) : ""}
+      <div class="city-3d-viewport">
+        <div id="cesium-container" class="cesium-city"></div>
+        <div id="city-overlay" class="city-overlay ${forcedCardKind ? "is-forced" : ""}">
+          <div id="object-card" class="object-card" ${offer ? "" : "hidden"}>
+            ${offer ? renderOfferBody(offer) : ""}
+          </div>
         </div>
       </div>
     </section>

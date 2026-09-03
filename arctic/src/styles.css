@@ -3344,6 +3344,15 @@ body {
   min-height: 555px;
 }
 
+.city-story .city-3d-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #e8edef;
+}
+
 .city-story .city-chapter .cesium-city {
   position: absolute;
   inset: 0;

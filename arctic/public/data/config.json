@@ -96,7 +96,8 @@
     "maxVisibleBuildings": 240,
     "visibleRadiusMeters": 520,
     "floorHeightMeters": 3.05,
-    "maxHeightMeters": 65,
+    "heightScale": 1.7,
+    "maxHeightMeters": 100,
     "useCachedHeightWithoutLevels": true,
     "residential": {
       "minFloors": 4,
