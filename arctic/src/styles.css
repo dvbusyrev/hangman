@@ -537,19 +537,16 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   min-width: 170px;
   min-height: 42px;
   padding: 0 20px;
-  border: 2px solid #1d4564;
+  border: 2px solid var(--arctic-outline, #173b57);
   border-radius: 10px;
-  background: #1d4564;
-  color: #fff;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
   font-size: 13px;
   font-weight: 650;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 .mode-switch__button:hover,
 .mode-switch__button.is-active {
-  border-color: #8fa8c0;
-  background: #8fa8c0;
-  color: #173b57;
+  background: var(--arctic-turquoise, #CBF7ED);
 }
 .mode-switch__button:focus-visible {
   outline: 3px solid #94cbdc;
@@ -563,6 +560,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   width: fit-content;
   margin: 14px auto 0;
 }
+.region-story > .mode-switch[hidden] { display: none; }
 
 .info-chapter {
   position: relative;
@@ -906,15 +904,13 @@ body {
   font-size: clamp(54px, 7vw, 82px);
   font-weight: 300;
   letter-spacing: .29em;
-  text-indent: .29em;
 }
 
-.arctic-hero__content > p {
-  margin: 14px 0 34px;
+.arctic-hero__content > p:not(.arctic-hero__lede) {
+  margin: 14px 0 40px;
   color: rgba(255,255,255,.89);
   font-size: clamp(12px, 1.6vw, 16px);
-  letter-spacing: .32em;
-  text-indent: .32em;
+  letter-spacing: .2em;
 }
 
 .arctic-hero__actions {
@@ -1014,7 +1010,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 420px;
-  background: #fff;
+  background: #cbf7ed;
 }
 
 .arctic-duo__copy {
@@ -1024,7 +1020,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   padding: 60px clamp(42px, 8vw, 94px);
-  background: #fff;
+  background: #cbf7ed;
 }
 
 .arctic-duo__copy h2 {
@@ -1058,6 +1054,9 @@ body {
 
 .arctic-arrow-link:hover { transform: translateX(4px); }
 
+.arctic-duo--life .arctic-arrow-link:hover { transform: translateY(4px); }
+.arctic-duo--work .arctic-arrow-link:hover { transform: translateY(4px); }
+
 .arctic-duo__image {
   position: relative;
   min-height: 420px;
@@ -1082,11 +1081,10 @@ body {
 .arctic-experience-section,
 .arctic-work-section {
   scroll-margin-top: 18px;
-  padding: 56px clamp(16px, 7vw, 86px) 68px;
+  padding: 40px;
   background: #f6f9fa;
 }
 
-.arctic-work-section { background: #f8faf9; }
 
 .arctic-experience-section__head {
   width: min(1180px, 100%);
@@ -1095,14 +1093,14 @@ body {
 }
 
 .arctic-experience-section__head > span {
-  color: #9aa4ac;
+  color: #23395B;
   font-size: 10px;
   letter-spacing: .3em;
 }
 
 .arctic-experience-section__head h2 {
   margin: 10px 0 0;
-  color: #687783;
+  color: #23395B;
   font-size: clamp(26px, 3vw, 38px);
   font-weight: 300;
   letter-spacing: .16em;
@@ -1282,7 +1280,6 @@ body {
   z-index: 3;
   display: grid;
   justify-items: center;
-  padding-top: 56px;
   text-align: center;
 }
 
@@ -1295,7 +1292,7 @@ body {
 
 .arctic-finale h2 {
   margin: 0;
-  color: #77838e;
+  color: #23395B;
   font-size: clamp(28px, 4vw, 42px);
   font-weight: 300;
   letter-spacing: .30em;
@@ -1304,7 +1301,7 @@ body {
 
 .arctic-finale p {
   margin: 16px 0 0;
-  color: #9ba5ad;
+  color: #23395B;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -2343,6 +2340,17 @@ body {
 /* /ARCTIC_CITY_SELECT_FULL_WIDTH_V2 */
 
 
+/* ARCTIC_GAME_NAV_MATCH_CITY_V1 */
+/* Keep the 3D chapter navigation aligned with the «Города» screen. */
+@media (min-width: 761px) {
+  .city-story .journey-step-row {
+    width: calc(100% + 44px);
+    margin-left: -22px;
+  }
+}
+/* /ARCTIC_GAME_NAV_MATCH_CITY_V1 */
+
+
 /* ARCTIC_MAP_VIEWPORT_GEOMETRY_V26 */
 /*
   V22 fixes the OUTER game frame. These rules only remove redundant inner
@@ -2443,31 +2451,29 @@ body {
   border-bottom: 0;
 }
 
-/* Section arrow buttons: same control, compact square form. */
+/* Section arrows stay transparent; only the arrow itself is visible. */
 .arctic-arrow-link {
   display: grid;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 54px;
   margin-top: 34px;
   padding: 0;
   place-items: center;
-  border: 2px solid var(--site-control-ink);
-  border-radius: 10px;
-  background: var(--site-control-bg);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--site-control-ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 24px;
-  font-weight: 500;
-  line-height: 1;
+  font-size: 42px;
+  font-weight: 200;
+  line-height: .85;
   box-shadow: none;
-  transition:
-    background-color 160ms ease,
-    transform 160ms ease;
+  transition: transform 160ms ease;
 }
 
 .arctic-arrow-link:hover {
-  background: var(--site-control-accent);
-  transform: translateX(2px);
+  background: transparent;
+  transform: translateY(5px);
 }
 
 /* Work calculator CTA */
@@ -2558,8 +2564,8 @@ body {
 .arctic-copy-icon--outline {
   display: block;
   flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: 40px;
   overflow: visible;
   color: currentColor;
   fill: none;
@@ -2590,8 +2596,8 @@ body {
 
 /* Smaller copy icons in the two explanatory sections. */
 .arctic-copy-icon--outline {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
 }
 
 /* /ARCTIC_CLEAN_OUTLINE_ICONS_V36 */
@@ -2654,7 +2660,7 @@ body {
 }
 
 .arctic-hero__content > p:not(.arctic-hero__lede) {
-  margin: 18px 0 34px;
+  margin: 40px 0 8px;
   color: rgba(255, 255, 255, .9);
   font-size: 18px;
   font-weight: 400;
@@ -2666,11 +2672,11 @@ body {
   max-width: 310px;
   margin: 0;
   color: rgba(255, 255, 255, .9);
+  font-family: inherit;
   font-size: 14px;
   font-weight: 400;
   line-height: 1.85;
   letter-spacing: 0;
-  text-shadow: 0 1px 9px rgba(26, 52, 70, .2);
 }
 
 .arctic-hero__actions {
@@ -2780,6 +2786,24 @@ body {
 /* /ARCTIC_HERO_BEAR_LIVE_TYPE_V38 */
 
 
+/* ARCTIC_LEGACY_MAP_LABELS_PLAIN_WHITE_V1 */
+.city-map-2d-marker,
+.city-map-2d-marker:hover,
+.city-map-2d-marker:focus-visible,
+.city-map-2d-marker.is-selected {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+.city-map-2d-marker strong {
+  text-shadow: 0 1px 2px rgba(35, 57, 75, .34);
+}
+
+/* /ARCTIC_LEGACY_MAP_LABELS_PLAIN_WHITE_V1 */
+
+
 /* ARCTIC_LIFE_SEGMENT_STYLE_V1 */
 .arctic-duo--life {
   margin-top: 40px;
@@ -2794,6 +2818,34 @@ body {
   color: #23395B;
 }
 
+.arctic-duo--life .arctic-copy-icon--outline .arctic-house-body {
+  fill: #fff;
+  stroke: #23395B;
+}
+
+.arctic-duo--life .arctic-copy-icon--outline .arctic-house-door {
+  fill: #cbf7ed;
+  stroke: #23395B;
+}
+
+.arctic-duo--work .arctic-duo__copy h2,
+.arctic-duo--work .arctic-duo__copy p,
+.arctic-duo--work .arctic-copy-icon,
+.arctic-duo--work .arctic-arrow-link {
+  color: #23395B;
+}
+
+.arctic-duo--work .arctic-copy-icon--outline .arctic-briefcase-body,
+.arctic-duo--work .arctic-copy-icon--outline .arctic-briefcase-handle {
+  fill: #fff;
+  stroke: #23395B;
+}
+
+.arctic-duo--work .arctic-copy-icon--outline .arctic-briefcase-divider {
+  fill: none;
+  stroke: #23395B;
+}
+
 /* /ARCTIC_LIFE_SEGMENT_STYLE_V1 */
 
 
@@ -2804,7 +2856,7 @@ body {
 
 .arctic-duo--life .arctic-duo__image--city {
   margin-right: 0;
-  border-radius: 36px 0 0 36px;
+  border-radius: 0;
   transform: translate(var(--landing-city-offset-x), var(--landing-city-offset-y));
   transform-origin: right center;
 }
@@ -2820,8 +2872,1508 @@ body {
 
   .arctic-duo--life .arctic-duo__image--city {
     margin-right: 0;
-    border-radius: 28px 0 0 28px;
+    border-radius: 0;
   }
 }
 
 /* /ARCTIC_SEGMENT_ROUNDING_V1 */
+
+
+/* ARCTIC_CALCULATOR_GAME_STYLE_V1 */
+.arctic-work-section {
+  padding-left: clamp(20px, 3vw, 48px);
+  padding-right: clamp(20px, 3vw, 48px);
+}
+
+.arctic-work-section .arctic-experience-section__head,
+.arctic-work-section .arctic-calculator-host {
+  width: 100%;
+  max-width: none;
+}
+
+.arctic-work-section .arctic-calculator-host {
+  padding: 22px 28px 28px;
+  border-radius: 20px;
+  background: #8fa8c0;
+}
+
+.arctic-work-section .arctic-calculator {
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr);
+  grid-template-rows: auto minmax(540px, 1fr);
+  width: 100%;
+  min-height: 700px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.arctic-work-section .arctic-calculator__form {
+  display: contents;
+}
+
+.arctic-work-section .arctic-calculator__filters {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  padding: 26px 34px 24px;
+  border-bottom: 2px solid var(--arctic-outline, #173b57);
+  background: #fff;
+}
+
+.arctic-work-section .arctic-calculator__filters > label {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.arctic-work-section .arctic-calculator__filters input,
+.arctic-work-section .arctic-calculator__filters select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+  font: inherit;
+}
+
+.arctic-work-section .arctic-calculator__filters select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+}
+
+.arctic-work-section .arctic-calculator__filters > label:has(select)::after {
+  content: "";
+  position: absolute;
+  right: 17px;
+  bottom: 17px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--arctic-outline, #173b57);
+  border-bottom: 2px solid var(--arctic-outline, #173b57);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.arctic-work-section .arctic-calculator__filters input:focus-visible,
+.arctic-work-section .arctic-calculator__filters select:focus-visible {
+  outline: 3px solid rgba(203, 247, 237, .95);
+  outline-offset: 2px;
+}
+
+.arctic-work-section .arctic-calculator__controls {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 540px;
+  padding: 42px 38px;
+  border-right: 2px solid var(--arctic-outline, #173b57);
+  background: #fff;
+}
+
+.arctic-work-section .arctic-calculator__years {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 0 0 18px;
+  border: 0;
+}
+
+.arctic-work-section .arctic-calculator__years::before {
+  display: none;
+}
+
+.arctic-work-section .arctic-calculator__years legend {
+  width: auto;
+  margin: 0 0 24px;
+  color: var(--arctic-outline, #173b57);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.arctic-work-section .arctic-calculator__range {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.arctic-work-section .arctic-calculator__years input[type="range"] {
+  position: static;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  opacity: 1;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.arctic-work-section .arctic-calculator__range-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.arctic-work-section .arctic-calculator__range-value {
+  display: grid;
+  width: 190px;
+  min-width: 190px;
+  min-height: 44px;
+  box-sizing: border-box;
+  place-items: center;
+  padding: 0 14px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.arctic-work-section .arctic-calculator__years input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--arctic-outline, #173b57);
+}
+
+.arctic-work-section .arctic-calculator__years input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--arctic-outline, #173b57);
+}
+
+.arctic-work-section .arctic-calculator__years input[type="range"]::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -8px;
+  appearance: none;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 50%;
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.arctic-work-section .arctic-calculator__years input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 50%;
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.arctic-work-section .arctic-calculator__range-scale {
+  display: none;
+}
+
+.arctic-work-section .arctic-calculator__years input[type="range"]:focus-visible,
+.arctic-work-section .arctic-calculator__savings input[type="range"]:focus-visible {
+  outline: 2px solid var(--arctic-outline, #173b57);
+  outline-offset: 5px;
+}
+
+.arctic-work-section .arctic-calculator__savings {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  margin-top: 58px;
+  color: var(--arctic-outline, #173b57);
+}
+
+.arctic-work-section .arctic-calculator__range-label {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-size: 18px;
+}
+
+.arctic-work-section .arctic-calculator__range-label strong {
+  font-weight: 700;
+}
+
+.arctic-work-section .arctic-calculator__savings input[type="range"] {
+  position: static;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  opacity: 1;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.arctic-work-section .arctic-calculator__savings input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--arctic-outline, #173b57);
+}
+
+.arctic-work-section .arctic-calculator__savings input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--arctic-outline, #173b57);
+}
+
+.arctic-work-section .arctic-calculator__savings input[type="range"]::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -8px;
+  appearance: none;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 50%;
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.arctic-work-section .arctic-calculator__savings input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 50%;
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.arctic-work-section .arctic-calculator__result {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  min-width: 0;
+  padding: 34px 38px;
+  background: #fff;
+}
+
+.arctic-work-section .arctic-calculator__result-summary,
+.arctic-work-section .arctic-calculator__result-details {
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.arctic-work-section .arctic-calculator__result-summary {
+  display: grid;
+  align-content: center;
+  min-height: 126px;
+  padding: 20px 24px;
+}
+
+.arctic-work-section .arctic-calculator__kicker {
+  color: var(--arctic-outline, #173b57);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.arctic-work-section .arctic-calculator__city {
+  margin-top: 5px;
+  color: var(--arctic-outline, #173b57);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.arctic-work-section .arctic-calculator__result h3 {
+  margin: 8px 0 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.arctic-work-section .arctic-calculator__result-summary > p {
+  margin: 8px 0 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.arctic-work-section .arctic-calculator__result-details {
+  min-height: 0;
+  padding: 22px 24px;
+}
+
+.arctic-work-section .arctic-calculator__result-details h4 {
+  margin: 0 0 14px;
+  color: var(--arctic-outline, #173b57);
+  font-size: 17px;
+}
+
+.arctic-work-section .arctic-calculator__result dl {
+  margin: 0;
+}
+
+.arctic-work-section .arctic-calculator__result dl > div {
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(23, 59, 87, .22);
+}
+
+.arctic-work-section .arctic-calculator__result dt,
+.arctic-work-section .arctic-calculator__result dd {
+  color: var(--arctic-outline, #173b57);
+  font-size: 13px;
+}
+
+.arctic-work-section .arctic-calculator__result dd {
+  font-weight: 700;
+}
+
+.arctic-work-section .arctic-calculator__cta {
+  justify-self: start;
+  width: min(240px, 100%);
+  min-height: 48px;
+  margin: 0;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.arctic-work-section .arctic-calculator__cta:hover {
+  background: var(--arctic-turquoise, #CBF7ED);
+  transform: translateY(-1px);
+}
+
+/* Keep every project dropdown arrow as heavy as its 2px field outline. */
+.journey-select {
+  position: relative;
+}
+
+.journey-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+}
+
+.journey-select::after {
+  content: "";
+  position: absolute;
+  right: 17px;
+  bottom: 15px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--arctic-outline, #173b57);
+  border-bottom: 2px solid var(--arctic-outline, #173b57);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+@media (max-width: 820px) {
+  .arctic-work-section .arctic-calculator {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .arctic-work-section .arctic-calculator__filters {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .arctic-work-section .arctic-calculator__controls {
+    grid-column: 1;
+    grid-row: 2;
+    border-right: 0;
+    border-bottom: 2px solid var(--arctic-outline, #173b57);
+  }
+
+  .arctic-work-section .arctic-calculator__result {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+
+@media (max-width: 560px) {
+  .arctic-work-section .arctic-calculator__filters {
+    grid-template-columns: 1fr;
+    padding: 22px 20px;
+  }
+
+  .arctic-work-section .arctic-calculator-host {
+    padding: 14px;
+  }
+
+  .arctic-work-section .arctic-calculator__controls,
+  .arctic-work-section .arctic-calculator__result {
+    padding: 28px 20px;
+  }
+
+  .arctic-work-section .arctic-calculator__range-value {
+    width: 170px;
+    min-width: 170px;
+    font-size: 14px;
+  }
+
+  .arctic-work-section .arctic-calculator__years legend {
+    margin-bottom: 22px;
+  }
+}
+/* /ARCTIC_CALCULATOR_GAME_STYLE_V1 */
+
+/* ARCTIC_3D_CONTROLS_PANEL_V1 */
+.city-controls-panel {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 18px;
+  margin-top: 14px;
+  padding: 18px 28px 20px;
+  border-radius: 16px;
+  background: #8fa8c0;
+}
+
+.city-story .game-window {
+  display: flex;
+}
+
+.city-story .city-chapter {
+  flex: 1 1 auto;
+  min-height: 555px;
+}
+
+.city-story .city-chapter .cesium-city {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.city-story .city-overlay {
+  height: 100%;
+}
+
+.city-story .city-headline {
+  right: auto;
+  max-width: calc(100% - 34px);
+}
+
+.city-controls-panel .timeline {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+}
+
+.city-controls-panel .timeline::before {
+  left: 0;
+  right: 0;
+  background: var(--arctic-outline, #173b57);
+}
+
+.city-controls-panel .timeline-point {
+  color: var(--arctic-outline, #173b57);
+}
+
+.city-controls-panel .timeline-point span {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px #fff;
+  transition: border-color .16s ease, transform .16s ease;
+}
+
+.city-controls-panel .timeline-point.is-active span {
+  border-color: var(--arctic-outline, #173b57);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.city-controls-panel .timeline-point.is-active span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--arctic-turquoise, #CBF7ED);
+  transform: translate(-50%, -50%);
+}
+
+.city-controls-panel .mode-switch {
+  position: static;
+  z-index: auto;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .city-controls-panel {
+    gap: 14px;
+    margin-top: 10px;
+    padding: 16px 14px 18px;
+  }
+
+  .city-controls-panel .mode-switch {
+    flex-wrap: wrap;
+  }
+}
+/* /ARCTIC_3D_CONTROLS_PANEL_V1 */
+
+/* ARCTIC_REVIEWS_PAGE_V1 */
+.reviews-chapter {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 555px;
+  overflow: auto;
+  padding: clamp(26px, 4vw, 54px) clamp(22px, 5vw, 72px) 42px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+}
+
+.reviews-intro {
+  max-width: 820px;
+}
+
+.reviews-eyebrow,
+.reviews-theme-label {
+  display: block;
+  color: var(--arctic-outline, #173b57);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+
+.reviews-intro h2 {
+  margin: 10px 0 14px;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.05;
+}
+
+.reviews-intro p {
+  max-width: 700px;
+  margin: 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.review-filters {
+  display: flex;
+  gap: 8px;
+  margin: 28px 0 20px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: thin;
+}
+
+.review-filter {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 15px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.review-filter:hover,
+.review-filter.is-active {
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.review-filter:focus-visible {
+  outline: 3px solid #94cbdc;
+  outline-offset: 2px;
+}
+
+.reviews-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr);
+  grid-auto-rows: minmax(0, auto);
+  gap: 14px;
+  align-items: stretch;
+  transition: opacity .12s ease, transform .12s ease;
+}
+
+.reviews-list.is-changing {
+  opacity: .25;
+  transform: translateY(5px);
+}
+
+.review-card {
+  position: relative;
+  min-width: 0;
+  padding: 22px 22px 19px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.review-card--featured {
+  grid-row: span 2;
+  min-height: 260px;
+  padding: 28px 28px 22px;
+}
+
+.review-card__quote {
+  position: absolute;
+  top: 13px;
+  right: 20px;
+  color: var(--arctic-turquoise, #CBF7ED);
+  font-size: 76px;
+  font-weight: 750;
+  line-height: .7;
+  pointer-events: none;
+}
+
+.review-card__author {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  padding-right: 42px;
+}
+
+.review-card__author strong {
+  font-size: 17px;
+}
+
+.review-card__author span {
+  color: var(--arctic-outline, #173b57);
+  font-size: 12px;
+  opacity: .7;
+}
+
+.review-card p {
+  position: relative;
+  z-index: 1;
+  margin: 22px 0 24px;
+  color: var(--arctic-outline, #173b57);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.review-card__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.review-card__topics span {
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--arctic-turquoise, #CBF7ED);
+  color: var(--arctic-outline, #173b57);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.reviews-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 28px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 16px;
+  color: var(--arctic-outline, #173b57);
+}
+
+.reviews-themes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 26px;
+}
+
+.reviews-theme-group {
+  min-width: 0;
+  padding: 22px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.reviews-theme-group--positive {
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.reviews-theme-group h3 {
+  margin: 9px 0 16px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.reviews-theme-group ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.reviews-theme-group li {
+  color: var(--arctic-outline, #173b57);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* Six journey points use one shared evenly-spaced rail. */
+.journey-step:nth-child(1) { left: 0%; }
+.journey-step:nth-child(2) { left: 20%; }
+.journey-step:nth-child(3) { left: 40%; }
+.journey-step:nth-child(4) { left: 60%; }
+.journey-step:nth-child(5) { left: 80%; }
+.journey-step:nth-child(6) { left: 100%; }
+
+@media (max-width: 760px) {
+  .reviews-chapter {
+    min-height: 535px;
+    padding: 24px 18px 30px;
+  }
+
+  .reviews-intro h2 {
+    font-size: 31px;
+  }
+
+  .reviews-intro p {
+    font-size: 15px;
+  }
+
+  .reviews-list,
+  .reviews-themes {
+    grid-template-columns: 1fr;
+  }
+
+  .review-card--featured {
+    grid-row: auto;
+    min-height: 0;
+  }
+
+  .reviews-theme-group {
+    padding: 19px;
+  }
+}
+/* /ARCTIC_REVIEWS_PAGE_V1 */
+
+/* ARCTIC_NATURE_CAROUSEL_V1 */
+.nature-chapter {
+  display: grid;
+  grid-template-columns: minmax(220px, .65fr) minmax(0, 1.35fr);
+  grid-template-rows: auto auto;
+  gap: 24px 30px;
+  min-height: 555px;
+  padding: clamp(28px, 4vw, 52px);
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+}
+
+.nature-copy {
+  align-self: center;
+}
+
+.nature-eyebrow {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--arctic-outline, #173b57);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.nature-copy h2 {
+  margin: 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 1.02;
+  text-align: left;
+}
+
+.nature-copy p {
+  max-width: 300px;
+  margin: 18px 0 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.nature-carousel {
+  position: relative;
+  min-width: 0;
+}
+
+.nature-carousel__viewport {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  min-height: 310px;
+  overflow: hidden;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 18px;
+  background: #eef4f5;
+}
+
+.nature-slide {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+
+.nature-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.nature-slide img,
+.nature-slide__placeholder {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  min-height: 310px;
+  object-fit: cover;
+}
+
+.nature-slide__placeholder {
+  background: #dce8eb;
+}
+
+.nature-slide figcaption {
+  position: relative;
+  z-index: 2;
+  align-self: end;
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 34px 24px 20px;
+  background: rgba(23, 59, 87, .88);
+  color: #fff;
+}
+
+.nature-slide figcaption strong {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.nature-slide figcaption span {
+  max-width: 620px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.nature-slide figcaption a {
+  width: fit-content;
+  color: var(--arctic-turquoise, #CBF7ED);
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.nature-carousel__button {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: rgba(23, 59, 87, .86);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.nature-carousel__button:hover {
+  background: var(--arctic-outline, #173b57);
+}
+
+.nature-carousel__button--prev { left: 14px; }
+.nature-carousel__button--next { right: 14px; }
+
+.nature-carousel__dots {
+  position: absolute;
+  z-index: 3;
+  right: 24px;
+  bottom: 19px;
+  display: flex;
+  gap: 7px;
+}
+
+.nature-carousel__dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.nature-carousel__dot.is-active {
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.nature-highlights {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-self: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nature-highlights li {
+  padding: 8px 12px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 9px;
+  color: var(--arctic-outline, #173b57);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .nature-chapter {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 20px;
+    min-height: 535px;
+    padding: 24px 18px 28px;
+  }
+
+  .nature-copy h2 {
+    font-size: 34px;
+  }
+
+  .nature-copy p {
+    max-width: none;
+    margin-top: 12px;
+  }
+
+  .nature-carousel__viewport,
+  .nature-slide img,
+  .nature-slide__placeholder {
+    min-height: 250px;
+  }
+
+  .nature-slide figcaption {
+    padding: 28px 17px 16px;
+  }
+
+  .nature-slide figcaption strong {
+    font-size: 17px;
+  }
+
+  .nature-slide figcaption span {
+    font-size: 12px;
+  }
+
+  .nature-carousel__dots {
+    right: 17px;
+    bottom: 15px;
+  }
+}
+/* /ARCTIC_NATURE_CAROUSEL_V1 */
+
+.nature-carousel.is-single .nature-carousel__button,
+.nature-carousel.is-single .nature-carousel__dots {
+  display: none;
+}
+
+/* ARCTIC_NATURE_WINDOW_FILL_V2 */
+/* Use the complete game frame for the nature story, including the photo area. */
+.nature-chapter {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 555px;
+  box-sizing: border-box;
+  grid-template-columns: minmax(230px, .6fr) minmax(0, 1.4fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+}
+
+.nature-carousel {
+  height: 100%;
+  min-height: 0;
+}
+
+.nature-carousel__viewport {
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+@media (max-width: 760px) {
+  .nature-chapter {
+    height: auto;
+    min-height: 535px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(300px, 1fr) auto;
+  }
+
+  .nature-carousel {
+    height: auto;
+  }
+
+  .nature-carousel__viewport {
+    height: auto;
+    min-height: 250px;
+    aspect-ratio: 16 / 10;
+  }
+}
+/* /ARCTIC_NATURE_WINDOW_FILL_V2 */
+
+/* ARCTIC_NAVIGATION_BOUNDS_V2 */
+/* Six centers use equal intervals and keep each 20px circle inside the frame. */
+.journey-steps {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.journey-steps::before {
+  left: 10px;
+  right: 10px;
+}
+
+.journey-step:nth-child(1) { left: 10px; }
+.journey-step:nth-child(2) { left: calc(10px + (100% - 20px) * .2); }
+.journey-step:nth-child(3) { left: calc(10px + (100% - 20px) * .4); }
+.journey-step:nth-child(4) { left: calc(10px + (100% - 20px) * .6); }
+.journey-step:nth-child(5) { left: calc(10px + (100% - 20px) * .8); }
+.journey-step:nth-child(6) { left: calc(100% - 10px); }
+
+@media (min-width: 761px) {
+  /* Keep the 3D navigation inside the same horizontal bounds as its map. */
+  .city-story .journey-step-row {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .journey-steps {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+/* /ARCTIC_NAVIGATION_BOUNDS_V2 */
+
+/* ARCTIC_STABLE_GAME_WINDOW_V3 */
+/* All journey chapters use one large, fixed viewport. */
+:root {
+  --arctic-game-window-height: 700px;
+}
+
+.arctic-game-host .region-frame,
+.arctic-game-host .game-window {
+  flex: 0 0 var(--arctic-game-window-height);
+  width: 100%;
+  height: var(--arctic-game-window-height);
+  min-height: var(--arctic-game-window-height);
+  box-sizing: border-box;
+}
+
+.arctic-game-host .game-window > .city-chapter,
+.arctic-game-host .game-window > .info-chapter,
+.arctic-game-host .game-window > .reviews-chapter {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.arctic-game-host .nature-chapter {
+  min-height: 0;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --arctic-game-window-height: 620px;
+  }
+}
+/* /ARCTIC_STABLE_GAME_WINDOW_V3 */
+
+/* ARCTIC_BENEFITS_PAGE_V2 */
+.benefits-chapter {
+  display: grid;
+  grid-template-columns: minmax(260px, .78fr) minmax(0, 1.22fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 32px clamp(34px, 6vw, 86px);
+  align-content: stretch;
+  padding: clamp(40px, 6vw, 86px);
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+}
+
+.benefits-intro {
+  align-self: center;
+  max-width: 430px;
+}
+
+.benefits-eyebrow {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--arctic-outline, #173b57);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.benefits-intro h2 {
+  margin: 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: clamp(34px, 4.5vw, 62px);
+  font-weight: 700;
+  line-height: 1.02;
+  text-align: left;
+}
+
+.benefits-intro p {
+  max-width: 360px;
+  margin: 24px 0 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.benefit-card {
+  display: grid;
+  min-height: 174px;
+  align-content: start;
+  gap: 14px;
+  padding: 22px;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+  transition: background-color .16s ease, transform .16s ease;
+}
+
+.benefit-card:hover {
+  background: var(--arctic-turquoise, #CBF7ED);
+  transform: translateY(-2px);
+}
+
+.benefit-card__number {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.benefit-card h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.benefit-card p {
+  margin: 0;
+  color: var(--arctic-outline, #173b57);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.benefits-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(23, 59, 87, .28);
+  color: var(--arctic-outline, #173b57);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .benefits-chapter {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 26px;
+    padding: 34px 24px 30px;
+  }
+
+  .benefits-intro h2 {
+    font-size: 36px;
+  }
+
+  .benefits-intro p {
+    margin-top: 14px;
+  }
+
+  .benefits-grid {
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 12px;
+  }
+
+  .benefit-card {
+    min-height: 0;
+    gap: 10px;
+    padding: 17px;
+  }
+}
+/* /ARCTIC_BENEFITS_PAGE_V2 */
+
+/* ARCTIC_CHATBOT_V1 */
+.arctic-chatbot .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.arctic-chatbot {
+  position: fixed;
+  z-index: 100;
+  left: 24px;
+  bottom: 24px;
+  width: min(340px, calc(100vw - 48px));
+  color: var(--arctic-outline, #173b57);
+  pointer-events: none;
+}
+
+.arctic-chatbot__panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(23, 59, 87, .18);
+  pointer-events: auto;
+}
+
+.arctic-chatbot__panel[hidden] {
+  display: none;
+}
+
+.arctic-chatbot__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 15px 12px;
+  background: var(--arctic-turquoise, #CBF7ED);
+}
+
+.arctic-chatbot__header div {
+  display: grid;
+  gap: 3px;
+}
+
+.arctic-chatbot__header strong {
+  font-size: 15px;
+}
+
+.arctic-chatbot__header span {
+  font-size: 11px;
+}
+
+.arctic-chatbot__close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--arctic-outline, #173b57);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.arctic-chatbot__messages {
+  display: grid;
+  gap: 8px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 0 14px;
+  scrollbar-width: thin;
+}
+
+.arctic-chatbot__message {
+  width: fit-content;
+  max-width: 88%;
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 11px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.arctic-chatbot__message--bot {
+  border: 1px solid rgba(23, 59, 87, .18);
+  background: #f1f6f7;
+}
+
+.arctic-chatbot__message--user {
+  justify-self: end;
+  background: var(--arctic-outline, #173b57);
+  color: #fff;
+}
+
+.arctic-chatbot__form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.arctic-chatbot__form input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  border: 1.5px solid var(--arctic-outline, #173b57);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--arctic-outline, #173b57);
+  font-size: 13px;
+}
+
+.arctic-chatbot__form button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--arctic-outline, #173b57);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.arctic-chatbot__mascot {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--arctic-outline, #173b57);
+  border-radius: 20px;
+  background: var(--arctic-turquoise, #CBF7ED);
+  box-shadow: 0 8px 20px rgba(23, 59, 87, .18);
+  pointer-events: auto;
+}
+
+.arctic-chatbot__mascot:hover {
+  background: #fff;
+}
+
+.arctic-chatbot__mascot svg {
+  width: 62px;
+  height: 62px;
+}
+
+.arctic-chatbot__teaser {
+  position: absolute;
+  left: 0;
+  bottom: 88px;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 48px));
+  padding: 10px 13px;
+  border: 1.5px solid var(--arctic-outline, #173b57);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(23, 59, 87, .14);
+  font-size: 13px;
+  line-height: 1.35;
+  pointer-events: auto;
+}
+
+.arctic-chatbot.is-open .arctic-chatbot__teaser {
+  display: none;
+}
+
+.arctic-chatbot__antenna,
+.arctic-chatbot__arm,
+.arctic-chatbot__smile {
+  fill: none;
+  stroke: var(--arctic-outline, #173b57);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.arctic-chatbot__antenna-dot {
+  fill: #fff;
+  stroke: var(--arctic-outline, #173b57);
+  stroke-width: 2;
+}
+
+.arctic-chatbot__head {
+  fill: #fff;
+  stroke: var(--arctic-outline, #173b57);
+  stroke-width: 2.5;
+}
+
+.arctic-chatbot__screen,
+.arctic-chatbot__body {
+  fill: var(--arctic-outline, #173b57);
+}
+
+.arctic-chatbot__eye {
+  fill: var(--arctic-turquoise, #CBF7ED);
+}
+
+@media (max-width: 760px) {
+  .arctic-chatbot {
+    left: 14px;
+    bottom: 14px;
+    width: min(320px, calc(100vw - 28px));
+  }
+
+  .arctic-chatbot__panel {
+    margin-bottom: 10px;
+  }
+
+  .arctic-chatbot__teaser {
+    bottom: 86px;
+    max-width: calc(100vw - 28px);
+  }
+}
+/* /ARCTIC_CHATBOT_V1 */

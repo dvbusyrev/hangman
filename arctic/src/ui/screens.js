@@ -1,11 +1,12 @@
 import { experienceOptions } from "../state.js";
 
 const journeyPages = [
-  { id: "region", label: "Области" },
+  { id: "region", label: "Регионы" },
   { id: "city", label: "Города" },
   { id: "life", label: "3D-карта" },
   { id: "nature", label: "Природа" },
-  { id: "benefits", label: "Бонусы" }
+  { id: "benefits", label: "Бонусы" },
+  { id: "reviews", label: "Отзывы" }
 ];
 
 export function renderStartScreen(root, { professions, onStart }) {
@@ -46,7 +47,7 @@ export function renderRegionScreen(root, {
       <div class="region-frame">
         <div id="cesium-container" class="cesium-region"></div>
       </div>
-      ${page === "city" ? renderMode(state.selectedMode) : ""}
+      ${renderMode(state.selectedMode, page !== "city")}
     </section>
   `);
 
@@ -76,13 +77,28 @@ export function updateJourneyControls(refs, {
   bindJourneyControls(refs.journeyControls, { onPage, onRegionChange, onCityChange, onProfileChange });
 }
 
+export function updateRegionMode(root, selectedMode, page) {
+  const modeSwitch = root?.querySelector(".region-story > .mode-switch");
+  if (!modeSwitch) return;
+
+  modeSwitch.hidden = page !== "city";
+  modeSwitch.querySelectorAll("[data-mode]").forEach((button) => {
+    const active = button.dataset.mode === selectedMode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
 export function renderCityStory(root, {
   scenarios,
   state,
   professions,
   city,
   nature,
+  naturePhotos,
   benefits,
+  reviews,
+  reviewTopics,
   stats,
   offer,
   onBack,
@@ -93,7 +109,13 @@ export function renderCityStory(root, {
   onTimeline,
   onMode
 }) {
-  const page = state.chapter === "nature" ? "nature" : state.chapter === "benefits" ? "benefits" : "life";
+  const page = state.chapter === "nature"
+    ? "nature"
+    : state.chapter === "benefits"
+      ? "benefits"
+      : state.chapter === "reviews"
+        ? "reviews"
+        : "life";
 
   root.innerHTML = shell(`
     <section class="story-screen city-story" data-chapter="${state.chapter}">
@@ -102,8 +124,14 @@ export function renderCityStory(root, {
       </div>
 
       <div class="game-window">
-        ${renderChapter(state, city, nature, benefits, stats, offer)}
+        ${renderChapter(state, city, nature, naturePhotos, benefits, reviews, reviewTopics, stats, offer)}
       </div>
+      ${page === "life" ? `
+        <div class="city-controls-panel">
+          ${renderTimeline(state.selectedYears)}
+          ${renderMode(state.selectedMode)}
+        </div>
+      ` : ""}
     </section>
   `);
 
@@ -116,6 +144,12 @@ export function renderCityStory(root, {
   root.querySelectorAll("[data-mode]").forEach((button) => {
     button.addEventListener("click", () => onMode(button.dataset.mode));
   });
+
+  const reviewsRoot = root.querySelector(".reviews-chapter");
+  if (reviewsRoot) bindReviewFilters(reviewsRoot, reviews, reviewTopics);
+
+  const natureRoot = root.querySelector(".nature-chapter");
+  if (natureRoot) bindNatureCarousel(natureRoot, naturePhotos);
 
   return {
     cesiumContainer: root.querySelector("#cesium-container"),
@@ -162,7 +196,8 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
     city: page !== "region" && Boolean(selectedRegion),
     life: Boolean(state.selectedCity),
     nature: Boolean(state.selectedCity),
-    benefits: Boolean(state.selectedCity)
+    benefits: Boolean(state.selectedCity),
+    reviews: Boolean(state.selectedCity)
   };
   return `
     <div class="journey-step-row" aria-label="Этапы выбора">
@@ -184,7 +219,22 @@ function renderJourneyControls({ scenarios, state, professions = [], page }) {
       </div>
     </div>
 
-    ${page === "region" ? `
+    ${page === "life" ? `
+      <div class="journey-select-row journey-profile-row">
+        <label class="journey-select">
+          <span>Профессия</span>
+          <select data-profile-profession>
+            ${professions.map((profession) => `<option value="${escapeHtml(profession)}" ${state.profession === profession ? "selected" : ""}>${escapeHtml(profession)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="journey-select">
+          <span>Опыт работы</span>
+          <select data-profile-experience>
+            ${experienceOptions.map((option) => `<option value="${escapeHtml(option.id)}" ${state.experience === option.id ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+    ` : page === "region" ? `
       <div class="journey-select-row is-region-only">
         <label class="journey-select">
           <span>Регион</span>
@@ -236,29 +286,35 @@ function bindJourneyControls(container, { onPage, onRegionChange, onCityChange, 
   });
 }
 
-function renderChapter(state, city, nature, benefits, stats, offer) {
+function renderChapter(state, city, nature, naturePhotos, benefits, reviews, reviewTopics, stats, offer) {
   if (state.chapter === "nature") {
-    return `
-      <section class="info-chapter nature-chapter">
-        <h2>Красота природы</h2>
-        <div class="mountain-illustration" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="info-card">
-          <ul>${nature.map((item) => `<li><strong>${escapeHtml(item.title)}</strong>${item.text ? `<span>${escapeHtml(item.text)}</span>` : ""}</li>`).join("")}</ul>
-        </div>
-      </section>
-    `;
+    return renderNatureChapter(city, nature, naturePhotos);
   }
 
   if (state.chapter === "benefits") {
     return `
       <section class="info-chapter benefits-chapter">
-        <h2>Бонусы жизни в Арктике</h2>
-        <div class="mountain-illustration" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="info-card">
-          <ul>${benefits.map((item) => `<li><strong>${escapeHtml(item.title)}</strong>${item.text ? `<span>${escapeHtml(item.text)}</span>` : ""}</li>`).join("")}</ul>
+        <div class="benefits-intro">
+          <span class="benefits-eyebrow">${escapeHtml(city.name)}</span>
+          <h2>Бонусы жизни<br />в Арктике</h2>
+          <p>Поддержка, которая помогает начать жизнь и работу на Севере.</p>
         </div>
+        <div class="benefits-grid" aria-label="Доступные меры поддержки">
+          ${(benefits ?? []).map((item, index) => `
+            <article class="benefit-card">
+              <span class="benefit-card__number">${String(index + 1).padStart(2, "0")}</span>
+              <h3>${escapeHtml(item.title)}</h3>
+              ${item.text ? `<p>${escapeHtml(item.text)}</p>` : ""}
+            </article>
+          `).join("")}
+        </div>
+        <p class="benefits-note">Условия зависят от региона, профессии и работодателя.</p>
       </section>
     `;
+  }
+
+  if (state.chapter === "reviews") {
+    return renderReviewsChapter(city, reviews, reviewTopics);
   }
 
   const forcedCardKind = state.chapter === "estate" ? "estate" : state.chapter === "work" ? "work" : null;
@@ -267,7 +323,6 @@ function renderChapter(state, city, nature, benefits, stats, offer) {
     <section class="city-chapter">
       <div class="city-headline">
         <strong>${escapeHtml(city.name)}</strong>
-        <span>${stats.effectiveExperience.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} года опыта · зарплата ${money(stats.salary)} · аренда ${stats.affordableRent} · покупка ${stats.affordableSale}</span>
       </div>
       <div id="cesium-container" class="cesium-city"></div>
       <div id="city-overlay" class="city-overlay ${forcedCardKind ? "is-forced" : ""}">
@@ -275,10 +330,175 @@ function renderChapter(state, city, nature, benefits, stats, offer) {
           ${offer ? renderOfferBody(offer) : ""}
         </div>
       </div>
-      ${renderTimeline(state.selectedYears)}
-      ${renderMode(state.selectedMode)}
     </section>
   `;
+}
+
+function renderNatureChapter(city, highlights = [], photos = []) {
+  const slides = photos.length ? photos : highlights.map((item) => ({
+    title: item.title,
+    text: item.text,
+    src: "",
+    alt: item.title
+  }));
+
+  return `
+    <section class="info-chapter nature-chapter">
+      <div class="nature-copy">
+        <span class="nature-eyebrow">${escapeHtml(city.name)}</span>
+        <h2>Красота природы</h2>
+        <p>Северный ландшафт, который становится частью повседневной жизни.</p>
+      </div>
+
+      <div class="nature-carousel ${slides.length > 1 ? "" : "is-single"}" data-nature-carousel aria-label="Фотографии природы ${escapeHtml(city.name)}">
+        <div class="nature-carousel__viewport">
+          ${slides.map((slide, index) => `
+            <figure class="nature-slide ${index === 0 ? "is-active" : ""}" data-nature-slide="${index}">
+              ${slide.src
+                ? `<img src="${escapeHtml(slide.src)}" alt="${escapeHtml(slide.alt ?? slide.title)}" ${index === 0 ? "" : "loading=\"lazy\""} />`
+                : `<div class="nature-slide__placeholder" aria-hidden="true"></div>`}
+              <figcaption>
+                <strong>${escapeHtml(slide.title)}</strong>
+                ${slide.text ? `<span>${escapeHtml(slide.text)}</span>` : ""}
+                ${slide.credit && slide.source
+                  ? `<a href="${escapeHtml(slide.source)}" target="_blank" rel="noreferrer">Фото: ${escapeHtml(slide.credit)}</a>`
+                  : ""}
+              </figcaption>
+            </figure>
+          `).join("")}
+        </div>
+        <button type="button" class="nature-carousel__button nature-carousel__button--prev" data-nature-prev aria-label="Предыдущая фотография">←</button>
+        <button type="button" class="nature-carousel__button nature-carousel__button--next" data-nature-next aria-label="Следующая фотография">→</button>
+        <div class="nature-carousel__dots" role="tablist" aria-label="Выбор фотографии">
+          ${slides.map((slide, index) => `
+            <button type="button" class="nature-carousel__dot ${index === 0 ? "is-active" : ""}" data-nature-dot="${index}" aria-label="Фотография ${index + 1}" aria-selected="${index === 0}"></button>
+          `).join("")}
+        </div>
+      </div>
+
+      <ul class="nature-highlights" aria-label="Что посмотреть рядом">
+        ${highlights.map((item) => `<li>${escapeHtml(item.title)}</li>`).join("")}
+      </ul>
+    </section>
+  `;
+}
+
+function bindNatureCarousel(root) {
+  const slides = [...root.querySelectorAll("[data-nature-slide]")];
+  const dots = [...root.querySelectorAll("[data-nature-dot]")];
+  if (slides.length < 2) return;
+
+  let activeIndex = 0;
+  const showSlide = (nextIndex) => {
+    activeIndex = (nextIndex + slides.length) % slides.length;
+    slides.forEach((slide, index) => slide.classList.toggle("is-active", index === activeIndex));
+    dots.forEach((dot, index) => {
+      const isActive = index === activeIndex;
+      dot.classList.toggle("is-active", isActive);
+      dot.setAttribute("aria-selected", String(isActive));
+    });
+  };
+
+  root.querySelector("[data-nature-prev]")?.addEventListener("click", () => showSlide(activeIndex - 1));
+  root.querySelector("[data-nature-next]")?.addEventListener("click", () => showSlide(activeIndex + 1));
+  dots.forEach((dot) => dot.addEventListener("click", () => showSlide(Number(dot.dataset.natureDot))));
+}
+
+function renderReviewsChapter(city, reviewSet = {}, topics = []) {
+  return `
+    <section class="reviews-chapter">
+      <div class="reviews-intro">
+        <span class="reviews-eyebrow">ГОРОД ГЛАЗАМИ ЖИТЕЛЕЙ</span>
+        <h2>Каково жить в ${escapeHtml(city.name)}</h2>
+        <p>Без туристических буклетов — о работе, погоде, быте и том, к чему действительно приходится привыкать.</p>
+      </div>
+
+      <div class="review-filters" role="tablist" aria-label="Темы отзывов">
+        ${topics.map((topic, index) => `
+          <button
+            type="button"
+            class="review-filter ${index === 0 ? "is-active" : ""}"
+            data-review-topic="${escapeHtml(topic.id)}"
+            aria-pressed="${index === 0}"
+          >${escapeHtml(topic.label)}</button>
+        `).join("")}
+      </div>
+
+      <div class="reviews-list" data-reviews-list>
+        ${renderReviewCards(reviewSet.reviews ?? [], topics)}
+      </div>
+
+      <div class="reviews-themes">
+        <section class="reviews-theme-group reviews-theme-group--positive">
+          <span class="reviews-theme-label">НРАВИТСЯ</span>
+          <h3>О чём жители говорят чаще всего</h3>
+          <ul>${(reviewSet.likes ?? []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </section>
+        <section class="reviews-theme-group">
+          <span class="reviews-theme-label">НУЖНО ПРИВЫКНУТЬ</span>
+          <h3>О чём важно знать заранее</h3>
+          <ul>${(reviewSet.adjustments ?? []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </section>
+      </div>
+    </section>
+  `;
+}
+
+function renderReviewCards(reviews = [], topics = []) {
+  if (!reviews.length) {
+    return `<p class="reviews-empty">По этой теме пока нет отзывов.</p>`;
+  }
+
+  const topicLabels = new Map(topics.map((topic) => [topic.id, topic.label]));
+  const featured = reviews.find((review) => review.featured) ?? reviews[0];
+  const compact = reviews.filter((review) => review.id !== featured.id);
+
+  return [featured, ...compact].map((review, index) => `
+    <article class="review-card ${index === 0 ? "review-card--featured" : ""}">
+      <span class="review-card__quote" aria-hidden="true">“</span>
+      <div class="review-card__author">
+        <strong>${escapeHtml(review.name)}${review.age ? `, ${Number(review.age)}` : ""}</strong>
+        <span>${escapeHtml(review.experience)}</span>
+      </div>
+      <p>${escapeHtml(review.text)}</p>
+      <div class="review-card__topics">
+        ${(review.topics ?? []).map((topic) => `<span>${escapeHtml(topicLabels.get(topic) ?? topic)}</span>`).join("")}
+      </div>
+    </article>
+  `).join("");
+}
+
+function bindReviewFilters(root, reviewSet = {}, topics = []) {
+  const list = root.querySelector("[data-reviews-list]");
+  const buttons = [...root.querySelectorAll("[data-review-topic]")];
+  if (!list || !buttons.length) return;
+
+  let activeTopic = buttons[0].dataset.reviewTopic;
+  let transitionTimer = 0;
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextTopic = button.dataset.reviewTopic;
+      if (!nextTopic || nextTopic === activeTopic) return;
+      activeTopic = nextTopic;
+
+      buttons.forEach((item) => {
+        const isActive = item === button;
+        item.classList.toggle("is-active", isActive);
+        item.setAttribute("aria-pressed", String(isActive));
+      });
+
+      window.clearTimeout(transitionTimer);
+      list.classList.add("is-changing");
+      transitionTimer = window.setTimeout(() => {
+        const filtered = activeTopic === "all"
+          ? reviewSet.reviews ?? []
+          : (reviewSet.reviews ?? []).filter((review) => (review.topics ?? []).includes(activeTopic));
+        list.innerHTML = renderReviewCards(filtered, topics);
+        list.classList.remove("is-changing");
+      }, 110);
+    });
+  });
 }
 
 function renderTimeline(selectedYears) {
@@ -299,9 +519,9 @@ function renderTimeline(selectedYears) {
   `;
 }
 
-function renderMode(selectedMode) {
+function renderMode(selectedMode, hidden = false) {
   return `
-    <div class="mode-switch" role="group" aria-label="Тип предложений">
+    <div class="mode-switch" role="group" aria-label="Тип предложений"${hidden ? " hidden" : ""}>
       <button type="button" class="mode-switch__button ${selectedMode === "profession" ? "is-active" : ""}" data-mode="profession" aria-pressed="${selectedMode === "profession"}">Вакансии</button>
       <button type="button" class="mode-switch__button ${selectedMode === "estate" ? "is-active" : ""}" data-mode="estate" aria-pressed="${selectedMode === "estate"}">Недвижимость</button>
     </div>

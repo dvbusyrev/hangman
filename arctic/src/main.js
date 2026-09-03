@@ -2,7 +2,7 @@ import "./styles.css";
 import { createArcticViewer, setupRegionMap } from "./cesium/map.js";
 import { setupRegionMap2D } from "./ui/regionMap2d.js";
 import { createRouteController, enterCityScene, preloadCityScene } from "./cesium/city.js";
-import { loadCsvPrototypeData, loadJson } from "./data.js";
+import { expandMockCatalog, loadCsvPrototypeData, loadJson } from "./data.js";
 import { experienceOptions, setState, state } from "./state.js";
 import {
   getAvailableOffers,
@@ -13,9 +13,11 @@ import {
   positionOfferCard,
   renderCityStory,
   renderRegionScreen,
+  updateRegionMode,
   updateJourneyControls,
   updateOfferCard
 } from "./ui/screens.js";
+import { setupChatbot } from "./ui/chatbot.js";
 
 const root = document.querySelector("#life-app");
 const calculatorRoot = document.querySelector("#career-calculator");
@@ -24,6 +26,7 @@ let scenarios = null;
 let allOffers = [];
 let natureData = {};
 let benefitsData = {};
+let reviewsData = { topics: [], cities: {} };
 let professions = [];
 let prototypeConfig = {};
 let viewer = null;
@@ -31,33 +34,39 @@ let regionMap = null;
 let cityScene = null;
 let routeController = null;
 let isTransitioning = false;
+let calculatorUpdateTimer = 0;
 
 let calculatorState = {
   profession: "",
   experience: "none",
   regionId: "",
   cityId: "",
-  years: 1
+  years: 1,
+  savingsRate: 10
 };
 
 setupLandingNavigation();
+setupChatbot();
 boot();
 
 async function boot() {
   try {
-    const [csvData, scenarioData, nextNatureData, nextBenefitsData, nextConfig] = await Promise.all([
+    const [csvData, scenarioData, nextNatureData, nextBenefitsData, nextReviewsData, nextConfig, nextMockCatalog] = await Promise.all([
       loadCsvPrototypeData(),
       loadJson("/data/scenarios.json"),
       loadJson("/data/nature.json"),
       loadJson("/data/benefits.json"),
-      loadJson("/data/config.json")
+      loadJson("/data/reviews.json"),
+      loadJson("/data/config.json"),
+      loadJson("/data/mock-catalog.json")
     ]);
 
     professions = csvData.professions;
-    allOffers = csvData.offers;
     scenarios = ensureRequiredRegions(scenarioData);
+    allOffers = expandMockCatalog(csvData.offers, scenarios, nextMockCatalog);
     natureData = nextNatureData;
     benefitsData = nextBenefitsData;
+    reviewsData = nextReviewsData ?? reviewsData;
     prototypeConfig = nextConfig ?? {};
 
     initializeCalculator();
@@ -247,10 +256,16 @@ async function showRegions(page = "region") {
 }async function navigateMapPage(refs, page) {
   if (isTransitioning) return;
 
-  if (["life", "nature", "benefits"].includes(page)) {
+  if (["life", "nature", "benefits", "reviews"].includes(page)) {
     if (state.selectedCity) {
       setState({
-        chapter: page === "nature" ? "nature" : page === "benefits" ? "benefits" : "city",
+        chapter: page === "nature"
+          ? "nature"
+          : page === "benefits"
+            ? "benefits"
+            : page === "reviews"
+              ? "reviews"
+              : "city",
         selectedObject: null
       });
       renderCurrentStory();
@@ -347,6 +362,7 @@ function refreshMapJourneyControls(refs, page) {
     onCityChange: (cityId) => handleCitySelect(cityId),
     onProfileChange: (patch) => handleMapProfileChange(refs, page, patch)
   });
+  updateRegionMode(root, state.selectedMode, page);
 }
 
 function handleMapProfileChange(refs, page, patch) {
@@ -364,14 +380,17 @@ function handleMapModeChange(mode) {
   });
 }
 
-function handleCitySelect(cityId) {
+function handleCitySelect(cityId, options = {}) {
   if (!cityId) return;
   const city = findCityById(cityId);
-  if (city?.ready) handleCityPick(city);
+  if (city?.ready) handleCityPick(city, options);
 }
 
-function handleCityPick(city) {
+function handleCityPick(city, { preserveChapter = false } = {}) {
   const region = scenarios.regions.find((item) => item.cities.some((candidate) => candidate.id === city.id));
+  const currentChapter = ["nature", "benefits", "reviews"].includes(state.chapter)
+    ? state.chapter
+    : "city";
   setState({
     selectedRegion: region?.id ?? state.selectedRegion,
     selectedCity: city.id,
@@ -379,7 +398,7 @@ function handleCityPick(city) {
     selectedMode: "profession",
     selectedObject: null,
     routeProgress: 0,
-    chapter: "city"
+    chapter: preserveChapter ? currentChapter : "city"
   });
   renderCurrentStory();
 }
@@ -401,7 +420,10 @@ async function renderCurrentStory() {
 
   const stats = getCityStats(allOffers, state);
   const nature = natureData[state.selectedRegion] ?? [];
+  const naturePhotos = natureData.cityPhotos?.[city.id] ?? [];
   const benefits = benefitsData[state.selectedRegion] ?? [];
+  const reviews = reviewsData.cities?.[city.id] ?? { reviews: [], likes: [], adjustments: [] };
+  const reviewTopics = reviewsData.topics ?? [];
 
   const refs = renderCityStory(root, {
     scenarios,
@@ -409,7 +431,10 @@ async function renderCurrentStory() {
     professions,
     city,
     nature,
+    naturePhotos,
     benefits,
+    reviews,
+    reviewTopics,
     stats,
     offer,
     onBack: () => showRegions("city"),
@@ -419,7 +444,7 @@ async function renderCurrentStory() {
       setState({ selectedRegion: regionId, selectedCity: null, selectedObject: null });
       showRegions("city");
     },
-    onCityChange: (cityId) => handleCitySelect(cityId),
+    onCityChange: (cityId) => handleCitySelect(cityId, { preserveChapter: true }),
     onProfileChange: (patch) => {
       setState({ ...patch, selectedObject: null });
       renderCurrentStory();
@@ -491,7 +516,8 @@ function initializeCalculator() {
     experience: experienceOptions[0]?.id ?? "none",
     regionId: region?.id ?? "",
     cityId: city?.id ?? "",
-    years: 1
+    years: 1,
+    savingsRate: 10
   };
 }
 
@@ -513,58 +539,90 @@ function renderCalculator() {
   calculatorRoot.innerHTML = `
     <div class="arctic-calculator">
       <form class="arctic-calculator__form" id="arctic-calculator-form">
-        <label>
-          <span>Профессия</span>
-          <input name="profession" list="arctic-professions" value="${escapeHtml(calculatorState.profession)}" autocomplete="off" />
-          <datalist id="arctic-professions">
-            ${professions.map((profession) => `<option value="${escapeHtml(profession)}"></option>`).join("")}
-          </datalist>
-        </label>
+        <div class="arctic-calculator__filters">
+          <label>
+            <span>Регион</span>
+            <select name="regionId">
+              ${readyRegions.map((region) => `<option value="${region.id}" ${calculatorState.regionId === region.id ? "selected" : ""}>${escapeHtml(region.name)}</option>`).join("")}
+            </select>
+          </label>
 
-        <label>
-          <span>Опыт</span>
-          <select name="experience">
-            ${experienceOptions.map((option) => `<option value="${option.id}" ${calculatorState.experience === option.id ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
-          </select>
-        </label>
+          <label>
+            <span>Город</span>
+            <select name="cityId">
+              ${cities.map((city) => `<option value="${city.id}" ${calculatorState.cityId === city.id ? "selected" : ""}>${escapeHtml(city.name)}</option>`).join("")}
+            </select>
+          </label>
 
-        <label>
-          <span>Регион</span>
-          <select name="regionId">
-            ${readyRegions.map((region) => `<option value="${region.id}" ${calculatorState.regionId === region.id ? "selected" : ""}>${escapeHtml(region.name)}</option>`).join("")}
-          </select>
-        </label>
+          <label>
+            <span>Профессия</span>
+            <select name="profession">
+              ${professions.map((profession) => `<option value="${escapeHtml(profession)}" ${calculatorState.profession === profession ? "selected" : ""}>${escapeHtml(profession)}</option>`).join("")}
+            </select>
+          </label>
 
-        <label>
-          <span>Город</span>
-          <select name="cityId">
-            ${cities.map((city) => `<option value="${city.id}" ${calculatorState.cityId === city.id ? "selected" : ""}>${escapeHtml(city.name)}</option>`).join("")}
-          </select>
-        </label>
+          <label>
+            <span>Стаж работы</span>
+            <select name="experience">
+              ${experienceOptions.map((option) => `<option value="${option.id}" ${calculatorState.experience === option.id ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+            </select>
+          </label>
+        </div>
 
-        <fieldset class="arctic-calculator__years">
-          <legend>Период</legend>
-          ${[1, 3, 5].map((years) => `
-            <label>
-              <input type="radio" name="years" value="${years}" ${calculatorState.years === years ? "checked" : ""} />
-              <span>${years} ${years === 1 ? "год" : years === 3 ? "года" : "лет"}</span>
-            </label>
-          `).join("")}
-        </fieldset>
+        <div class="arctic-calculator__controls">
+          <fieldset class="arctic-calculator__years">
+            <legend>Период работы</legend>
+            <div class="arctic-calculator__range">
+              <div class="arctic-calculator__range-row">
+                <input
+                  type="range"
+                  name="years"
+                  min="0"
+                  max="60"
+                  step="1"
+                  value="${Math.round(Number(calculatorState.years) * 12)}"
+                  aria-label="Период работы в месяцах"
+                />
+                <output class="arctic-calculator__range-value" data-years-value>${calculatorPeriodLabel(Math.round(Number(calculatorState.years) * 12))}</output>
+              </div>
+            </div>
+          </fieldset>
+
+          <label class="arctic-calculator__savings">
+            <span class="arctic-calculator__range-label">
+              <strong>Процент отложенных</strong>
+            </span>
+            <div class="arctic-calculator__range-row">
+              <input
+                type="range"
+                name="savingsRate"
+                min="0"
+                max="100"
+                step="1"
+                value="${calculatorState.savingsRate}"
+                aria-label="Процент отложенных денег"
+              />
+              <output class="arctic-calculator__range-value" data-savings-value>${calculatorState.savingsRate}%</output>
+            </div>
+          </label>
+        </div>
       </form>
 
-      <div class="arctic-calculator__result">
-        <span class="arctic-calculator__kicker">${escapeHtml(summary.cityName)}</span>
-        <h3>${money(summary.totalIncome)}</h3>
-        <p>Ориентировочный доход за ${calculatorState.years} ${calculatorState.years === 1 ? "год" : calculatorState.years === 3 ? "года" : "лет"}.</p>
-        <dl>
-          <div><dt>Средняя зарплата</dt><dd>${money(summary.salary)}/мес</dd></div>
-          <div><dt>Опыт к концу периода</dt><dd>${summary.experience.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} года</dd></div>
-          <div><dt>Доступная аренда</dt><dd>${summary.rentCount}</dd></div>
-          <div><dt>Доступная покупка</dt><dd>${summary.saleCount}</dd></div>
-        </dl>
+      <section class="arctic-calculator__result" aria-labelledby="calculator-result-title">
+        <div class="arctic-calculator__result-summary">
+          <span class="arctic-calculator__kicker" id="calculator-result-title">Результат</span>
+          <strong class="arctic-calculator__city" data-calculator-city>${escapeHtml(summary.cityName)}</strong>
+          <h3 data-calculator-total-income>${money(summary.totalIncome)}</h3>
+          <p data-calculator-income-copy>Доход за период. Можно отложить ${money(summary.savedAmount)}.</p>
+        </div>
+        <div class="arctic-calculator__result-details">
+          <h4>Что эквивалентно</h4>
+          <dl data-calculator-equivalents>
+            ${summary.equivalents.map((item) => `<div><dt>${escapeHtml(item.label)}</dt><dd>${escapeHtml(item.value)}</dd></div>`).join("")}
+          </dl>
+        </div>
         <button type="button" class="arctic-calculator__cta" id="open-calculated-city">Открыть город</button>
-      </div>
+      </section>
     </div>
   `;
 
@@ -578,16 +636,29 @@ function renderCalculator() {
       const region = scenarios.regions.find((item) => item.id === target.value);
       calculatorState.cityId = region?.cities.find((city) => city.ready)?.id ?? "";
     } else if (target.name === "years") {
-      calculatorState.years = Number(target.value);
+      calculatorState.years = Number(target.value) / 12;
+      scheduleCalculatorResultUpdate();
+      return;
+    } else if (target.name === "savingsRate") {
+      calculatorState.savingsRate = Number(target.value);
+      scheduleCalculatorResultUpdate();
+      return;
     } else {
       calculatorState[target.name] = target.value;
     }
     renderCalculator();
   });
 
-  form?.querySelector("input[name='profession']")?.addEventListener("change", (event) => {
-    calculatorState.profession = event.currentTarget.value.trim();
-    renderCalculator();
+  form?.querySelector("input[name='savingsRate']")?.addEventListener("input", (event) => {
+    const output = form.querySelector("[data-savings-value]");
+    calculatorState.savingsRate = Number(event.currentTarget.value);
+    if (output) output.textContent = `${calculatorState.savingsRate}%`;
+  });
+
+  form?.querySelector("input[name='years']")?.addEventListener("input", (event) => {
+    const output = form.querySelector("[data-years-value]");
+    calculatorState.years = Number(event.currentTarget.value) / 12;
+    if (output) output.textContent = calculatorPeriodLabel(event.currentTarget.value);
   });
 
   calculatorRoot.querySelector("#open-calculated-city")?.addEventListener("click", () => {
@@ -610,6 +681,32 @@ function renderCalculator() {
   });
 }
 
+function scheduleCalculatorResultUpdate() {
+  window.clearTimeout(calculatorUpdateTimer);
+  calculatorUpdateTimer = window.setTimeout(() => {
+    calculatorUpdateTimer = 0;
+    updateCalculatorResult();
+  }, 80);
+}
+
+function updateCalculatorResult() {
+  if (!calculatorRoot) return;
+  const summary = getCalculatorSummary();
+  const city = calculatorRoot.querySelector("[data-calculator-city]");
+  const totalIncome = calculatorRoot.querySelector("[data-calculator-total-income]");
+  const incomeCopy = calculatorRoot.querySelector("[data-calculator-income-copy]");
+  const equivalents = calculatorRoot.querySelector("[data-calculator-equivalents]");
+
+  if (city) city.textContent = summary.cityName;
+  if (totalIncome) totalIncome.textContent = money(summary.totalIncome);
+  if (incomeCopy) incomeCopy.textContent = `Доход за период. Можно отложить ${money(summary.savedAmount)}.`;
+  if (equivalents) {
+    equivalents.innerHTML = summary.equivalents
+      .map((item) => `<div><dt>${escapeHtml(item.label)}</dt><dd>${escapeHtml(item.value)}</dd></div>`)
+      .join("");
+  }
+}
+
 function getCalculatorSummary() {
   const calcView = {
     profession: calculatorState.profession,
@@ -618,13 +715,27 @@ function getCalculatorSummary() {
     selectedYears: calculatorState.years
   };
   const stats = getCityStats(allOffers, calcView);
+  const totalIncome = stats.salary * 12 * calculatorState.years;
+  const savingsRate = Number(calculatorState.savingsRate ?? 0);
+  const savedAmount = Math.round(totalIncome * savingsRate / 100);
+  const apartmentProgress = Math.min(100, Math.round(savedAmount / 2500000 * 100));
+  const carProgress = Math.min(100, Math.round(savedAmount / 1500000 * 100));
+  const rentMonths = Math.floor(savedAmount / Math.max(stats.monthlyHousingBudget, 1));
+
   return {
     cityName: findCityById(calculatorState.cityId)?.name ?? "Арктика",
     salary: stats.salary,
-    totalIncome: stats.salary * 12 * calculatorState.years,
+    totalIncome,
+    savedAmount,
     experience: getEffectiveExperience(calculatorState.experience, calculatorState.years),
     rentCount: stats.affordableRent,
-    saleCount: stats.affordableSale
+    saleCount: stats.affordableSale,
+    equivalents: [
+      { label: "Квартира", value: `${apartmentProgress}% первого взноса` },
+      { label: "Автомобиль", value: `${carProgress}% стоимости` },
+      { label: "Аренда", value: `${rentMonths} мес.` },
+      { label: "Накопленный резерв", value: money(savedAmount) }
+    ]
   };
 }
 
@@ -663,8 +774,28 @@ function destroyCesium() {
 }
 
 function money(value) {
-  if (!value) return "—";
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "—";
   return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value)} ₽`;
+}
+
+function calculatorPeriodLabel(value) {
+  const totalMonths = Math.max(0, Math.round(Number(value)));
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  const parts = [];
+
+  if (years > 0) parts.push(`${years} ${russianCountLabel(years, "год", "года", "лет")}`);
+  if (months > 0) parts.push(`${months} ${russianCountLabel(months, "месяц", "месяца", "месяцев")}`);
+
+  return parts.join(" ") || "0 месяцев";
+}
+
+function russianCountLabel(value, one, few, many) {
+  const remainder10 = value % 10;
+  const remainder100 = value % 100;
+  if (remainder10 === 1 && remainder100 !== 11) return one;
+  if (remainder10 >= 2 && remainder10 <= 4 && (remainder100 < 12 || remainder100 > 14)) return few;
+  return many;
 }
 
 function escapeHtml(value) {

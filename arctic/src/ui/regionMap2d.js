@@ -5,7 +5,8 @@ import {
   calculateCenteredContentViewBox,
   getInnerViewportAspect,
   loadRussiaContextSvg,
-  pathCenter
+  pathCenter,
+  resolveSvgLabelCollisions
 } from "./russiaMapContext.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -80,6 +81,7 @@ export async function setupRegionMap2D(container, scenarios, {
 
     const pathById = new Map();
     const labelById = new Map();
+    const regionLabels = [];
 
     regions.forEach((region) => {
       const path = getProjectRegionPath(region.id);
@@ -115,6 +117,11 @@ export async function setupRegionMap2D(container, scenarios, {
 
       label.dataset.regionId = region.id;
       labelById.set(region.id, label);
+      regionLabels.push({
+        label,
+        x: center.x + offset.x,
+        y: center.y + offset.y
+      });
 
       path.addEventListener("click", pick);
       path.addEventListener("keydown", (event) => {
@@ -135,6 +142,8 @@ export async function setupRegionMap2D(container, scenarios, {
       label.addEventListener("pointerenter", () => setHover(true));
       label.addEventListener("pointerleave", () => setHover(false));
     });
+
+    resolveSvgLabelCollisions(regionLabels);
 
     const missing = regions.filter((region) => !pathById.has(region.id));
     if (missing.length) {
@@ -204,6 +213,7 @@ export async function setupRegionMap2D(container, scenarios, {
         0.015,
         0.80
       );
+      const cityLabels = [];
 
       readyCities.forEach((city) => {
         const coordinates = cityCoordinates(city);
@@ -236,8 +246,17 @@ export async function setupRegionMap2D(container, scenarios, {
           }
         });
 
+        cityLabels.push({
+          label: nodes[nodes.length - 1],
+          x: point.x,
+          y: point.y - 26 * markerScale,
+          scale: markerScale
+        });
+
         nodes.forEach((node) => cityNodes.add(node));
       });
+
+      resolveSvgLabelCollisions(cityLabels, { gap: 5 });
     };
 
     applySelection(selectedRegionId);

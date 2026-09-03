@@ -145,6 +145,80 @@ export async function loadCsvPrototypeData() {
   return { professions, offers: [...work, ...rent, ...sale] };
 }
 
+export function expandMockCatalog(baseOffers, scenarios, catalog) {
+  const offers = [...baseOffers];
+  const profiles = catalog?.professionProfiles ?? [];
+  const housing = catalog?.housing ?? {};
+
+  for (const region of scenarios?.regions ?? []) {
+    for (const city of region.cities ?? []) {
+      if (!city.ready) continue;
+      const factor = Number(catalog?.cityFactors?.[city.id] ?? 1);
+
+      for (const profile of profiles) {
+        const existingCount = offers.filter((offer) =>
+          offer.cityId === city.id && offer.kind === "work" && offer.profession === profile.name
+        ).length;
+        const targetCount = Number(profile.vacancyCount ?? 2);
+        const missingCount = Math.max(0, targetCount - existingCount);
+
+        for (let variant = 0; variant < missingCount; variant += 1) {
+          const levelFactor = 0.86 + variant * 0.07;
+          const salaryFrom = roundMoney(Number(profile.salaryFrom) * factor * levelFactor);
+          const salaryTo = roundMoney(Number(profile.salaryTo) * factor * levelFactor);
+          offers.push({
+            id: `catalog-work-${city.id}-${slug(profile.name)}-${variant + 1}`,
+            cityId: city.id,
+            buildingId: null,
+            kind: "work",
+            profession: profile.name,
+            position: profile.positions?.[variant % profile.positions.length] ?? profile.name,
+            company: profile.companies?.[variant % profile.companies.length] ?? "Работодатель",
+            salary: Math.round((salaryFrom + salaryTo) / 2),
+            salaryFrom,
+            salaryTo,
+            minExperience: Number(profile.minExperience ?? 0) + Math.min(6, Math.floor(variant / 2)),
+            source: "Демонстрационный каталог"
+          });
+        }
+      }
+
+      for (const [kind, templates] of [["rent", housing.rent], ["sale", housing.sale]]) {
+        for (let index = 0; index < (templates ?? []).length; index += 1) {
+          const template = templates[index];
+          const basePrice = Number(template.price ?? 0) * factor;
+          offers.push({
+            id: `catalog-${kind}-${city.id}-${index + 1}`,
+            cityId: city.id,
+            buildingId: null,
+            kind,
+            address: `${template.street}, ${index + 4}`,
+            area: Number(template.area ?? 0),
+            price: kind === "rent" ? roundMoney(basePrice) : roundMoney(basePrice, 10000),
+            rooms: Number(template.rooms ?? 0),
+            source: "Демонстрационный каталог"
+          });
+        }
+      }
+    }
+  }
+
+  return offers;
+}
+
+function slug(value) {
+  return String(value ?? "")
+    .toLocaleLowerCase("ru-RU")
+    .replace(/[^a-zа-яё0-9]+/gi, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function roundMoney(value, step = 1000) {
+  const amount = Number(value);
+  const increment = Number(step) || 1000;
+  return Math.round(amount / increment) * increment;
+}
+
 function detectDelimiter(firstLine) {
   const candidates = [";", ",", "\t"];
   return candidates

@@ -39,6 +39,18 @@
     {
       "title": "Тундра",
       "text": "Природный образ Ненецкого округа."
+    },
+    {
+      "title": "Печора",
+      "text": "Большая северная река рядом с Нарьян-Маром."
+    },
+    {
+      "title": "Оленьи стада",
+      "text": "Традиционный уклад и открытые пространства тундры."
+    },
+    {
+      "title": "Полярная ночь",
+      "text": "Зимой горизонт окрашен длинными сумерками."
     }
   ],
   "arkhangelsk": [
@@ -59,6 +71,368 @@
     {
       "title": "Арктические ландшафты",
       "text": "Северная Якутия."
+    },
+    {
+      "title": "Море Лаптевых",
+      "text": "Ледяное море и северные морские маршруты."
+    },
+    {
+      "title": "Полярный день",
+      "text": "Летом свет долго не уступает место ночи."
+    },
+    {
+      "title": "Тундровые озера",
+      "text": "Чистые водоемы среди северных равнин."
     }
-  ]
+  ],
+  "karelia": [
+    {
+      "title": "Озера",
+      "text": "Ладога, Онежское озеро и тысячи северных водоемов."
+    },
+    {
+      "title": "Скалы и леса",
+      "text": "Сосновые берега и гранитные маршруты."
+    },
+    {
+      "title": "Белое море",
+      "text": "Поморское побережье в нескольких часах от городов."
+    }
+  ],
+  "komi": [
+    {
+      "title": "Приполярный Урал",
+      "text": "Горные маршруты и перевалы рядом с Воркутой."
+    },
+    {
+      "title": "Тайга",
+      "text": "Большие лесные пространства и северные реки."
+    },
+    {
+      "title": "Полярные сумерки",
+      "text": "Особенный свет короткого северного дня."
+    }
+  ],
+  "yamalo-nenets": [
+    {
+      "title": "Тундра Ямала",
+      "text": "Открытые пространства полуострова и кочевые маршруты."
+    },
+    {
+      "title": "Обь",
+      "text": "Широкая река и северные водные пути."
+    },
+    {
+      "title": "Полярный день",
+      "text": "Летом солнце почти не скрывается за горизонтом."
+    }
+  ],
+  "krasnoyarsk": [
+    {
+      "title": "Плато Путорана",
+      "text": "Каньоны, водопады и нетронутые северные плато."
+    },
+    {
+      "title": "Енисей",
+      "text": "Одна из главных рек Сибири."
+    },
+    {
+      "title": "Северное сияние",
+      "text": "Небо Таймыра становится частью ежедневного маршрута."
+    }
+  ],
+  "cityPhotos": {
+    "murmansk-city": [
+      {
+        "title": "Мурманский берег",
+        "text": "Город встречается с Кольским заливом и открытым северным горизонтом.",
+        "src": "/landing/nature/murmansk-coast.jpg",
+        "alt": "Северный берег и вода в Мурманске",
+        "credit": "Natalia Arkusha",
+        "source": "https://unsplash.com/photos/LAwBCDjGiNY"
+      },
+      {
+        "title": "Арктический океан",
+        "text": "Снежные берега и холодное море рядом с городом.",
+        "src": "/landing/nature/murmansk-arctic-ocean.jpg",
+        "alt": "Снежный берег и море в Мурманской области",
+        "credit": "Alex jiang",
+        "source": "https://unsplash.com/photos/3RlGgFe8W4I"
+      },
+      {
+        "title": "Хибины",
+        "text": "Горные маршруты начинаются недалеко от Мурманска.",
+        "src": "/landing/nature/khibiny-lake.jpg",
+        "alt": "Озеро и горы Хибин",
+        "credit": "Nikolay Grechushkin",
+        "source": "https://unsplash.com/photos/ezIBtS-XBuM"
+      },
+      {
+        "title": "Дорога к Териберке",
+        "text": "Открытые пространства, вода и длинный северный свет.",
+        "src": "/landing/nature/teriberka-sunset.jpg",
+        "alt": "Пейзаж Териберки на закате",
+        "credit": "Anastasiia Nelen",
+        "source": "https://unsplash.com/photos/HItc_YhQdUk"
+      }
+    ],
+    "kirovsk": [
+      {
+        "title": "Хибинские озёра",
+        "text": "Тундровые склоны и вода в нескольких минутах от города.",
+        "src": "/landing/nature/khibiny-lake.jpg",
+        "alt": "Озеро среди гор Хибин",
+        "credit": "Nikolay Grechushkin",
+        "source": "https://unsplash.com/photos/ezIBtS-XBuM"
+      },
+      {
+        "title": "Горы в облаках",
+        "text": "Северный рельеф, который меняется вместе с погодой.",
+        "src": "/landing/nature/murmansk-arctic-ocean.jpg",
+        "alt": "Снежные горы и вода на Кольском полуострове",
+        "credit": "Alex jiang",
+        "source": "https://unsplash.com/photos/3RlGgFe8W4I"
+      }
+    ],
+    "petrozavodsk": [
+      {
+        "title": "Озеро рядом с Петрозаводском",
+        "text": "Карельская вода и северный лес в городском маршруте.",
+        "src": "/landing/nature/petrozavodsk-lake.jpg",
+        "alt": "Озеро в Петрозаводске",
+        "credit": "Mariya Tereshkova",
+        "source": "https://unsplash.com/photos/CsChneN0o3Q"
+      }
+    ],
+    "kem": [
+      {
+        "title": "Карельское побережье",
+        "text": "Скалы, вода и лесной горизонт Беломорья.",
+        "src": "/landing/nature/petrozavodsk-lake.jpg",
+        "alt": "Северное озеро в Карелии",
+        "credit": "Mariya Tereshkova",
+        "source": "https://unsplash.com/photos/CsChneN0o3Q"
+      }
+    ],
+    "vorkuta": [
+      {
+        "title": "Зимняя тайга Коми",
+        "text": "Снег, река и хвойный лес вокруг заполярного города.",
+        "src": "/landing/nature/komi-forest.jpg",
+        "alt": "Зимний лес и река в Республике Коми",
+        "credit": "Vladimir Fedotov",
+        "source": "https://unsplash.com/photos/GWggAB8uAlA"
+      }
+    ],
+    "inta": [
+      {
+        "title": "Река в зимней тайге",
+        "text": "Тихий северный пейзаж рядом с городом.",
+        "src": "/landing/nature/komi-forest.jpg",
+        "alt": "Зимняя река среди лесов Республики Коми",
+        "credit": "Vladimir Fedotov",
+        "source": "https://unsplash.com/photos/GWggAB8uAlA"
+      }
+    ],
+    "naryan-mar": [
+      {
+        "title": "Зимняя тундра",
+        "text": "Северная природа и традиционный уклад Ненецкого округа.",
+        "src": "/landing/nature/nenets-winter.jpg",
+        "alt": "Зимний чум среди заснеженного леса в Ненецком округе",
+        "credit": "Hans-Jurgen Mager",
+        "source": "https://unsplash.com/photos/3eIYYqkPnQ4"
+      }
+    ],
+    "iskateley": [
+      {
+        "title": "Тундра рядом",
+        "text": "Северный лес и традиционный уклад Печорского края.",
+        "src": "/landing/nature/nenets-winter.jpg",
+        "alt": "Зимний чум среди заснеженного леса в Ненецком округе",
+        "credit": "Hans-Jurgen Mager",
+        "source": "https://unsplash.com/photos/3eIYYqkPnQ4"
+      }
+    ],
+    "arkhangelsk-city": [
+      {
+        "title": "Северный свет",
+        "text": "Зимнее небо и открытые пространства Архангельской области.",
+        "src": "/landing/nature/arkhangelsk-snow.jpg",
+        "alt": "Снежный пейзаж Архангельской области на закате",
+        "credit": "Михаил Лазарев",
+        "source": "https://unsplash.com/photos/o__0Yy63LKU"
+      },
+      {
+        "title": "Поморский лес",
+        "text": "Лесные маршруты начинаются рядом с городом.",
+        "src": "/landing/nature/arkhangelsk-forest.jpg",
+        "alt": "Лесной пейзаж рядом с Архангельском",
+        "credit": "Alexander Sychev",
+        "source": "https://unsplash.com/photos/vidP2-EzDKI"
+      },
+      {
+        "title": "Реки Севера",
+        "text": "Вода остаётся главным ориентиром северного ландшафта.",
+        "src": "/landing/nature/arkhangelsk-river.jpg",
+        "alt": "Река и лес в Архангельской области",
+        "credit": "Artem Chernykh",
+        "source": "https://unsplash.com/photos/od9Bq1yjjYQ"
+      }
+    ],
+    "severodvinsk": [
+      {
+        "title": "Белое море",
+        "text": "Морской горизонт рядом с городом и портом.",
+        "src": "/landing/nature/arkhangelsk-snow.jpg",
+        "alt": "Снежный морской пейзаж Архангельской области",
+        "credit": "Михаил Лазарев",
+        "source": "https://unsplash.com/photos/o__0Yy63LKU"
+      },
+      {
+        "title": "Северная Двина",
+        "text": "Реки и леса формируют характер Поморья.",
+        "src": "/landing/nature/arkhangelsk-forest.jpg",
+        "alt": "Лес и вода в Архангельской области",
+        "credit": "Artem Chernykh",
+        "source": "https://unsplash.com/photos/od9Bq1yjjYQ"
+      }
+    ],
+    "norilsk": [
+      {
+        "title": "Ручьи Норильска",
+        "text": "Ледяная вода, снег и суровый ландшафт Таймыра.",
+        "src": "/landing/nature/norilsk-stream.jpg",
+        "alt": "Заснеженный ручей в Норильске",
+        "credit": "Maxim Bogdanov",
+        "source": "https://unsplash.com/photos/gILLotXpoes"
+      },
+      {
+        "title": "Снежные сопки",
+        "text": "Рельеф Таймыра меняется от долины к северным склонам.",
+        "src": "/landing/nature/norilsk-hills.jpg",
+        "alt": "Заснеженная сопка в Норильске",
+        "credit": "Maxim Bogdanov",
+        "source": "https://unsplash.com/photos/wjAR4jo979Y"
+      },
+      {
+        "title": "Северный хребет",
+        "text": "Свет, снег и открытое пространство за городом.",
+        "src": "/landing/nature/norilsk-snow-ridge.jpg",
+        "alt": "Снежный хребет в Норильске",
+        "credit": "Maxim Bogdanov",
+        "source": "https://unsplash.com/photos/3yLolLvdJlA"
+      }
+    ],
+    "dudinka": [
+      {
+        "title": "Таймырская вода",
+        "text": "Реки и снег задают ритм северного портового города.",
+        "src": "/landing/nature/norilsk-stream.jpg",
+        "alt": "Заснеженный ручей на Таймыре",
+        "credit": "Maxim Bogdanov",
+        "source": "https://unsplash.com/photos/gILLotXpoes"
+      },
+      {
+        "title": "Таймырские сопки",
+        "text": "Снежный рельеф и открытый горизонт рядом с портовым городом.",
+        "src": "/landing/nature/norilsk-hills.jpg",
+        "alt": "Заснеженная сопка на Таймыре",
+        "credit": "Maxim Bogdanov",
+        "source": "https://unsplash.com/photos/wjAR4jo979Y"
+      },
+      {
+        "title": "Снежный хребет",
+        "text": "Суровый, но выразительный ландшафт Крайнего Севера.",
+        "src": "/landing/nature/norilsk-snow-ridge.jpg",
+        "alt": "Снежный хребет на Таймыре",
+        "credit": "Maxim Bogdanov",
+        "source": "https://unsplash.com/photos/3yLolLvdJlA"
+      }
+    ],
+    "salekhard": [
+      {
+        "title": "Полярный горизонт",
+        "text": "Свет и простор Ямала вокруг города.",
+        "src": "/landing/nature/novy-urengoy-sunset.jpg",
+        "alt": "Закатный пейзаж Ямала",
+        "credit": "Albert Gubaydullin",
+        "source": "https://unsplash.com/photos/ykzE2Jq4yNo"
+      }
+    ],
+    "novy-urengoy": [
+      {
+        "title": "Свет Ямала",
+        "text": "Длинный северный вечер и простор за городской чертой.",
+        "src": "/landing/nature/novy-urengoy-sunset.jpg",
+        "alt": "Закат в Новом Уренгое",
+        "credit": "Albert Gubaydullin",
+        "source": "https://unsplash.com/photos/ykzE2Jq4yNo"
+      }
+    ],
+    "anadyr": [
+      {
+        "title": "Чукотская тундра",
+        "text": "Широкий ландшафт Чукотки открывается сразу за городом.",
+        "src": "/landing/nature/chukotka-river.jpg",
+        "alt": "Река и горы Чукотки",
+        "credit": "Alexandr Bormotin",
+        "source": "https://unsplash.com/photos/1VM_IjUESLs"
+      },
+      {
+        "title": "Анадырская река",
+        "text": "Вода и долины задают масштаб восточного Арктического побережья.",
+        "src": "/landing/nature/chukotka-river.jpg",
+        "alt": "Долина реки в Чукотке",
+        "credit": "Alexandr Bormotin",
+        "source": "https://unsplash.com/photos/1VM_IjUESLs"
+      }
+    ],
+    "pevek": [
+      {
+        "title": "Побережье Чукотки",
+        "text": "Северное море и горные долины рядом с самым восточным регионом страны.",
+        "src": "/landing/nature/chukotka-river.jpg",
+        "alt": "Горная долина в Чукотке",
+        "credit": "Alexandr Bormotin",
+        "source": "https://unsplash.com/photos/1VM_IjUESLs"
+      }
+    ],
+    "tiksi": [
+      {
+        "title": "Якутский простор",
+        "text": "Снежные склоны и тишина арктического побережья.",
+        "src": "/landing/nature/yakutia-cliff.jpg",
+        "alt": "Снежный пейзаж Якутии",
+        "credit": "Mert Akengin",
+        "source": "https://unsplash.com/photos/Ewnr9xBlBgE"
+      },
+      {
+        "title": "Река и каньоны",
+        "text": "Большие реки Якутии становятся частью маршрутов и экспедиций.",
+        "src": "/landing/nature/yakutia-river.jpg",
+        "alt": "Река среди скал в Якутии",
+        "credit": "Haaska World",
+        "source": "https://unsplash.com/photos/UtsAO7gLGZQ"
+      }
+    ],
+    "chersky": [
+      {
+        "title": "Северные склоны",
+        "text": "Ландшафт Колымы и Якутии начинается прямо за посёлком.",
+        "src": "/landing/nature/yakutia-cliff.jpg",
+        "alt": "Горный пейзаж Якутии",
+        "credit": "Mert Akengin",
+        "source": "https://unsplash.com/photos/Ewnr9xBlBgE"
+      },
+      {
+        "title": "Большая река",
+        "text": "Вода, скалы и простор определяют северный маршрут.",
+        "src": "/landing/nature/yakutia-river.jpg",
+        "alt": "Широкая река в Якутии",
+        "credit": "Haaska World",
+        "source": "https://unsplash.com/photos/UtsAO7gLGZQ"
+      }
+    ]
+  }
 }

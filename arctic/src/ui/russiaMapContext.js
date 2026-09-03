@@ -246,6 +246,66 @@ export function addSvgLabel(svg, {
   return group;
 }
 
+export function resolveSvgLabelCollisions(items, { gap = 8 } = {}) {
+  const placed = [];
+
+  items.forEach((item) => {
+    const label = item?.label;
+    const rect = label?.querySelector("rect");
+    const x = Number(item?.x);
+    const y = Number(item?.y);
+    const scale = Number(item?.scale) || 1;
+    if (!label || !rect || !Number.isFinite(x) || !Number.isFinite(y)) return;
+
+    const width = (Number(rect.getAttribute("width")) || 84) * scale;
+    const height = (Number(rect.getAttribute("height")) || 27) * scale;
+    const stepX = width + gap;
+    const stepY = height + gap;
+    const candidates = [
+      [0, 0],
+      [0, -stepY],
+      [0, stepY],
+      [-stepX, 0],
+      [stepX, 0],
+      [-stepX, -stepY],
+      [stepX, -stepY],
+      [-stepX, stepY],
+      [stepX, stepY]
+    ];
+
+    let best = null;
+    candidates.forEach(([offsetX, offsetY]) => {
+      const box = {
+        left: x + offsetX - width / 2,
+        top: y + offsetY - height / 2,
+        right: x + offsetX + width / 2,
+        bottom: y + offsetY + height / 2
+      };
+      const overlap = placed.reduce((total, other) => total + intersectionArea(box, other), 0);
+      const distance = Math.hypot(offsetX, offsetY);
+      const score = overlap > 0 ? 1_000_000 + overlap : distance;
+
+      if (!best || score < best.score) {
+        best = { box, offsetX, offsetY, score };
+      }
+    });
+
+    const nextX = x + (best?.offsetX ?? 0);
+    const nextY = y + (best?.offsetY ?? 0);
+    label.setAttribute(
+      "transform",
+      `translate(${nextX.toFixed(2)} ${nextY.toFixed(2)})${scale === 1 ? "" : ` scale(${scale.toFixed(4)})`}`
+    );
+    placed.push(best.box);
+  });
+}
+
+function intersectionArea(first, second) {
+  const width = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
+  const height = Math.max(0, Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top));
+  return width * height;
+}
+
 export function pathCenter(path) {
   const box = path.getBBox();
   return {

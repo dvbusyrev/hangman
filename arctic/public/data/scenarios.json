@@ -118,6 +118,20 @@
             33.27
           ],
           "contextUrl": "/data/murmansk-context.geojson"
+        },
+        {
+          "id": "kirovsk",
+          "name": "Кировск",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 33.53, "lat": 67.615 },
+          "camera": { "lon": 33.53, "lat": 67.615, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
         }
       ]
     },
@@ -223,6 +237,20 @@
             53.15
           ],
           "contextUrl": "/data/naryan-mar-context.geojson"
+        },
+        {
+          "id": "iskateley",
+          "name": "Искателей",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 53.15, "lat": 67.68 },
+          "camera": { "lon": 53.15, "lat": 67.68, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
         }
       ]
     },
@@ -245,14 +273,180 @@
         {
           "id": "arkhangelsk-city",
           "name": "Архангельск",
-          "ready": false,
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 40.5159, "lat": 64.5393 },
           "camera": {
             "lon": 40.5159,
             "lat": 64.5393,
             "height": 1300,
             "heading": 35,
             "pitch": -42
-          }
+          },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        },
+        {
+          "id": "severodvinsk",
+          "name": "Северодвинск",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 39.82, "lat": 64.56 },
+          "camera": { "lon": 39.82, "lat": 64.56, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        }
+      ]
+    },
+    {
+      "id": "karelia",
+      "name": "Республика Карелия",
+      "center": { "lon": 32.5, "lat": 63.5, "height": 0 },
+      "camera": { "lon": 32.5, "lat": 63.5, "height": 1150000, "heading": 0, "pitch": -70 },
+      "cities": [
+        {
+          "id": "petrozavodsk",
+          "name": "Петрозаводск",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 34.35, "lat": 61.78 },
+          "camera": { "lon": 34.35, "lat": 61.78, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        },
+        {
+          "id": "kem",
+          "name": "Кемь",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 34.58, "lat": 64.95 },
+          "camera": { "lon": 34.58, "lat": 64.95, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        }
+      ]
+    },
+    {
+      "id": "komi",
+      "name": "Республика Коми",
+      "center": { "lon": 54, "lat": 64.3, "height": 0 },
+      "camera": { "lon": 54, "lat": 64.3, "height": 1250000, "heading": 0, "pitch": -70 },
+      "cities": [
+        {
+          "id": "vorkuta",
+          "name": "Воркута",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 64.04, "lat": 67.5 },
+          "camera": { "lon": 64.04, "lat": 67.5, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        },
+        {
+          "id": "inta",
+          "name": "Инта",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 60.17, "lat": 66.04 },
+          "camera": { "lon": 60.17, "lat": 66.04, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        }
+      ]
+    },
+    {
+      "id": "yamalo-nenets",
+      "name": "Ямало-Ненецкий автономный округ",
+      "center": { "lon": 74, "lat": 68.5, "height": 0 },
+      "camera": { "lon": 74, "lat": 68.5, "height": 1350000, "heading": 0, "pitch": -70 },
+      "cities": [
+        {
+          "id": "salekhard",
+          "name": "Салехард",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 66.61, "lat": 66.53 },
+          "camera": { "lon": 66.61, "lat": 66.53, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        },
+        {
+          "id": "novy-urengoy",
+          "name": "Новый Уренгой",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 76.68, "lat": 66.08 },
+          "camera": { "lon": 76.68, "lat": 66.08, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        }
+      ]
+    },
+    {
+      "id": "krasnoyarsk",
+      "name": "Красноярский край",
+      "center": { "lon": 92.5, "lat": 64, "height": 0 },
+      "camera": { "lon": 92.5, "lat": 64, "height": 1700000, "heading": 0, "pitch": -70 },
+      "cities": [
+        {
+          "id": "norilsk",
+          "name": "Норильск",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 88.2, "lat": 69.35 },
+          "camera": { "lon": 88.2, "lat": 69.35, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
+        },
+        {
+          "id": "dudinka",
+          "name": "Дудинка",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 86.18, "lat": 69.4 },
+          "camera": { "lon": 86.18, "lat": 69.4, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
         }
       ]
     },
@@ -374,6 +568,20 @@
             177.64
           ],
           "contextUrl": "/data/anadyr-context.geojson"
+        },
+        {
+          "id": "pevek",
+          "name": "Певек",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 170.3, "lat": 69.7 },
+          "camera": { "lon": 170.3, "lat": 69.7, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
         }
       ]
     },
@@ -479,6 +687,20 @@
             129.05
           ],
           "contextUrl": "/data/tiksi-context.geojson"
+        },
+        {
+          "id": "chersky",
+          "name": "Черский",
+          "ready": true,
+          "dataSource": "mock",
+          "buildingsUrl": "/data/mock-city-buildings.geojson",
+          "roadsUrl": "/data/mock-city-roads.geojson",
+          "mockOffset": { "lon": 161.35, "lat": 68.75 },
+          "camera": { "lon": 161.35, "lat": 68.75, "height": 1200, "heading": 35, "pitch": -42 },
+          "routeHeight": 9.5,
+          "routePitch": -4,
+          "maxBuildings": 80,
+          "walkStepMeters": 8
         }
       ]
     }

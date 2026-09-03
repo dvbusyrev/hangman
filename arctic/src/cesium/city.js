@@ -471,21 +471,26 @@ async function loadCitySceneData(city) {
   if (cityDataCache.has(city.id)) return cityDataCache.get(city.id);
 
   const promise = (async () => {
+    const allowMock = city.dataSource === "mock";
     const [localBuildings, localRoads, localContext] = await Promise.all([
-      loadLocalOsmGeoJson(city.buildingsUrl, "building"),
-      loadLocalOsmGeoJson(city.roadsUrl, "road"),
+      loadLocalOsmGeoJson(city.buildingsUrl, "building", { allowMock }),
+      loadLocalOsmGeoJson(city.roadsUrl, "road", { allowMock }),
       city.contextUrl ? loadOptionalGeoJson(city.contextUrl) : Promise.resolve(null)
     ]);
 
     if (!localBuildings) {
-      throw new Error(`${city.name}: нет локального OSM-файла домов ${city.buildingsUrl}. Запустите npm run offline:sync заранее, пока есть интернет.`);
+      const sourceLabel = allowMock ? "mock GeoJSON-файла" : "локального OSM-файла";
+      throw new Error(`${city.name}: нет ${sourceLabel} домов ${city.buildingsUrl}.`);
     }
     if (!localRoads) {
-      throw new Error(`${city.name}: нет локального OSM-файла дорог ${city.roadsUrl}. Запустите npm run offline:sync заранее, пока есть интернет.`);
+      const sourceLabel = allowMock ? "mock GeoJSON-файла" : "локального OSM-файла";
+      throw new Error(`${city.name}: нет ${sourceLabel} дорог ${city.roadsUrl}.`);
     }
 
-    console.info(`${city.name}: OFFLINE OSM scene: ${localBuildings.features.length} buildings, ${localRoads.features.length} roads, ${localContext?.features?.length ?? 0} map objects.`);
-    return { buildings: localBuildings, roads: localRoads, context: localContext };
+    const buildings = allowMock ? translateMockGeoJson(localBuildings, city.mockOffset) : localBuildings;
+    const roads = allowMock ? translateMockGeoJson(localRoads, city.mockOffset) : localRoads;
+    console.info(`${city.name}: ${allowMock ? "local mock" : "OFFLINE OSM"} scene: ${buildings.features.length} buildings, ${roads.features.length} roads, ${localContext?.features?.length ?? 0} map objects.`);
+    return { buildings, roads, context: localContext };
   })();
 
   cityDataCache.set(city.id, promise);
@@ -497,13 +502,13 @@ async function loadCitySceneData(city) {
   }
 }
 
-async function loadLocalOsmGeoJson(url, kind) {
+async function loadLocalOsmGeoJson(url, kind, { allowMock = false } = {}) {
   if (!url) return null;
   try {
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) return null;
     const data = await response.json();
-    if (!isRealOsmGeoJson(data, kind)) return null;
+    if (!isRealOsmGeoJson(data, kind, { allowMock })) return null;
     return data;
   } catch {
     return null;
@@ -522,16 +527,43 @@ async function loadOptionalGeoJson(url) {
   }
 }
 
-function isRealOsmGeoJson(data, kind) {
+function isRealOsmGeoJson(data, kind, { allowMock = false } = {}) {
   if (data?.type !== "FeatureCollection" || !Array.isArray(data.features) || !data.features.length) return false;
-  if (!String(data.properties?.source ?? "").includes("OpenStreetMap")) return false;
+  const collectionSource = String(data.properties?.source ?? "");
+  const hasValidSource = collectionSource.includes("OpenStreetMap") || (allowMock && collectionSource === "Arctic demo geometry");
+  if (!hasValidSource) return false;
+  const featureSourceIsValid = (feature) => {
+    const source = String(feature.properties?.source ?? "");
+    return source.includes("OpenStreetMap") || (allowMock && source === "Arctic demo geometry");
+  };
   if (kind === "building") {
-    return data.features.some((feature) => feature.geometry?.type === "Polygon" && feature.properties?.source === "OpenStreetMap");
+    return data.features.some((feature) => feature.geometry?.type === "Polygon" && featureSourceIsValid(feature));
   }
-  return data.features.some((feature) => feature.geometry?.type === "LineString" && feature.properties?.source === "OpenStreetMap");
+  return data.features.some((feature) => feature.geometry?.type === "LineString" && featureSourceIsValid(feature));
 }
 
-/** Build a compact undirected graph from the real OSM road LineStrings. */
+function translateMockGeoJson(collection, offset = {}) {
+  const lonOffset = Number(offset.lon ?? 0);
+  const latOffset = Number(offset.lat ?? 0);
+  const translated = structuredClone(collection);
+  translated.features = translated.features.map((feature) => ({
+    ...feature,
+    geometry: feature.geometry
+      ? { ...feature.geometry, coordinates: translateCoordinates(feature.geometry.coordinates, lonOffset, latOffset) }
+      : feature.geometry
+  }));
+  return translated;
+}
+
+function translateCoordinates(coordinates, lonOffset, latOffset) {
+  if (!Array.isArray(coordinates)) return coordinates;
+  if (coordinates.length >= 2 && typeof coordinates[0] === "number" && typeof coordinates[1] === "number") {
+    return [coordinates[0] + lonOffset, coordinates[1] + latOffset, ...coordinates.slice(2)];
+  }
+  return coordinates.map((item) => translateCoordinates(item, lonOffset, latOffset));
+}
+
+/** Build a compact undirected graph from the local city road LineStrings. */
 function buildRoadGraph(roads) {
   const nodes = new Map();
   const edges = [];
@@ -896,7 +928,7 @@ function prepareBuildingsForScene(buildings, route, city, buildingConfig = {}) {
   };
 }
 
-/** Randomly attach current CSV offers to real OSM buildings close to the generated walk. */
+/** Randomly attach current offers to local building footprints close to the generated walk. */
 function assignOffersToRandomBuildings(offers, features, route) {
   const nearRouteMeters = 170;
   const buildingRows = features.map((feature) => ({
@@ -1397,6 +1429,12 @@ function verifyRealOsmBuildings(collection, city) {
     if (Array.isArray(ring)) {
       footprintSignatures.add(ring.map((point) => `${Number(point[0]).toFixed(6)},${Number(point[1]).toFixed(6)}`).join("|"));
     }
+  }
+  if (city.dataSource === "mock") {
+    if (footprintSignatures.size !== features.length) {
+      throw new Error(`${city.name}: mock buildings cache contains duplicate footprints`);
+    }
+    return;
   }
   if (osmIds.size !== features.length || footprintSignatures.size !== features.length) {
     throw new Error(`${city.name}: buildings cache is not a unique real OSM footprint collection`);

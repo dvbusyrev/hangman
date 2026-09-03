@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#edf3f7" />
-    <title>Примерь жизнь в Арктике</title>
+    <title>Примерь своё будущее</title>
+    <link rel="icon" type="image/svg+xml" href="/landing/arctic-logo-favicon.svg" />
 
     <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
     <script>
@@ -32,11 +33,11 @@
         </a>
         <div class="arctic-hero__content">
           <h1 id="hero-title">АРКТИКА</h1>
-          <p>ПРИМЕРЬ СВОЮ ЖИЗНЬ</p>
+          <p>ПРИМЕРЬ СВОЁ БУДУЩЕЕ</p>
           <p class="arctic-hero__lede">
             Выбирайте город, изучайте<br />
             инфраструктуру, природу, отзывы<br />
-            и льготы. Узнайте, каково жить<br />
+            и льготы. Узнайте, какоыво жить<br />
             на Крайнем Севере.
           </p>
           <div class="arctic-hero__actions">
@@ -63,13 +64,15 @@
       <section class="arctic-duo arctic-duo--life" id="life-preview">
         <div class="arctic-duo__copy">
           <svg class="arctic-copy-icon arctic-copy-icon--outline" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M3.5 10.5 12 3.5l8.5 7"></path>
-            <path d="M5.5 9.2V20h13V9.2"></path>
-            <path d="M9.5 20v-6h5v6"></path>
+            <path class="arctic-house-body" d="M4 10.5 12 4l8 6.5V20H4V10.5Z"></path>
+            <path class="arctic-house-door" d="M9.5 20v-6h5v6Z"></path>
           </svg>
           <h2>ДЛЯ ЖИЗНИ</h2>
-          <p>Выбирайте города, изучайте инфраструктуру, природу, отзывы и льготы. Узнайте, каково жить на Крайнем Севере.</p>
-          <button type="button" class="arctic-arrow-link" data-scroll="#life-experience" aria-label="Перейти к интерактиву для жизни">→</button>
+          <p>Выберите город и узнайте,
+              каково здесь жить и работать:
+              от инфраструктуры и природы
+              до дохода, льгот и карьерных возможностей.</p>
+          <button type="button" class="arctic-arrow-link" data-scroll="#life-experience" aria-label="Перейти к интерактиву для жизни">↓</button>
         </div>
         <figure class="arctic-duo__image arctic-duo__image--city">
           <img
@@ -86,8 +89,8 @@
 
       <section class="arctic-experience-section" id="life-experience">
         <div class="arctic-experience-section__head">
-          <span>ПРИМЕРЬ ЖИЗНЬ</span>
-          <h2>Исследуйте Арктику</h2>
+<!--          <span>ПРИМЕРЬ ЖИЗНЬ</span>-->
+          <h2>ИССЛЕДУЙТЕ АРКТИКУ</h2>
         </div>
         <div id="life-app" class="arctic-game-host">
           <div class="arctic-loader">Загрузка интерактивной карты…</div>
@@ -97,7 +100,7 @@
       <section class="arctic-duo arctic-duo--work" id="work-preview">
         <figure class="arctic-duo__image arctic-duo__image--aurora">
           <img
-            src="/landing/aurora.png"
+            src="/landing/shutterstock_1309838638-scaled.jpg"
             width="1254"
             height="1254"
             alt="Северное сияние над горами"
@@ -108,20 +111,19 @@
         </figure>
         <div class="arctic-duo__copy">
           <svg class="arctic-copy-icon arctic-copy-icon--outline" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <rect x="3" y="7" width="18" height="13" rx="2"></rect>
-            <path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"></path>
-            <path d="M3 12h18"></path>
+            <path class="arctic-briefcase-body" d="M3.5 7.5h17v12a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5v-12Z"></path>
+            <path class="arctic-briefcase-handle" d="M8 7.5V5.75A1.75 1.75 0 0 1 9.75 4h4.5A1.75 1.75 0 0 1 16 5.75V7.5Z"></path>
+            <path class="arctic-briefcase-divider" d="M3.5 12h17"></path>
           </svg>
           <h2>ДЛЯ РАБОТЫ</h2>
           <p>Рассчитайте доход, посмотрите вакансии и перспективы. Сделайте первый шаг к новой карьере в Арктике.</p>
-          <button type="button" class="arctic-arrow-link" data-scroll="#work-calculator" aria-label="Перейти к калькулятору для работы">→</button>
+          <button type="button" class="arctic-arrow-link" data-scroll="#work-calculator" aria-label="Перейти к калькулятору для работы">↓</button>
         </div>
       </section>
 
       <section class="arctic-work-section" id="work-calculator">
         <div class="arctic-experience-section__head">
-          <span>ДЛЯ РАБОТЫ</span>
-          <h2>Калькулятор возможностей</h2>
+          <h2>КАЛЬКУЛЯТОР ВОЗМОЖНОСТЕЙ</h2>
         </div>
         <div id="career-calculator" class="arctic-calculator-host">
           <div class="arctic-loader">Загрузка калькулятора…</div>
@@ -130,7 +132,6 @@
 
       <section class="arctic-finale">
         <div class="arctic-finale__content">
-          <span class="arctic-finale__line" aria-hidden="true"></span>
           <h2>АРКТИКА БЛИЖЕ,<br />ЧЕМ КАЖЕТСЯ</h2>
           <p>Выберите свой путь<br />и начните путешествие</p>
         </div>

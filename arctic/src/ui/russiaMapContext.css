@@ -434,3 +434,28 @@
 }
 
 /* /ARCTIC_CITY_MARKERS_NAV_STYLE_V31 */
+
+/* ARCTIC_MAP_LABELS_PLAIN_WHITE_V1
+   Keep the label hit area, but remove its visible rectangular plate. */
+.city-map-2d-context-marker rect,
+.city-map-2d-context-marker:hover rect,
+.city-map-2d-context-marker.is-hovered rect,
+.city-map-2d-context-marker.is-selected rect,
+.city-map-2d-context-marker:focus-visible rect {
+  fill: transparent !important;
+  stroke: transparent !important;
+  stroke-width: 0 !important;
+}
+
+.city-map-2d-context-marker text,
+.city-map-2d-context-marker.is-hovered text,
+.city-map-2d-context-marker.is-selected text {
+  fill: #ffffff !important;
+  paint-order: stroke fill;
+  stroke: rgba(35, 57, 75, .34);
+  stroke-width: .8px;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 1px rgba(35, 57, 75, .22));
+}
+
+/* /ARCTIC_MAP_LABELS_PLAIN_WHITE_V1 */
