@@ -665,7 +665,8 @@ function largestRoadComponent(nodes, edges, adjacency) {
 
 /**
  * Create a cursor over the real OSM road graph. The array stores only the already visited and
- * immediately available camera path; every next branch is picked from the city's stable sequence.
+ * immediately available camera path; at junctions it keeps the straightest continuation and
+ * chooses a stable random turn only when there is no straight road ahead.
  */
 function makeRandomRoadWalk(graph, city, buildings = null, random = Math.random) {
   const eligible = graph.edges.filter((edge) => edge.length >= 7);
@@ -699,8 +700,8 @@ function makeRandomRoadWalk(graph, city, buildings = null, random = Math.random)
   const forwardEnd = forwardToB ? spawnEdge.b : spawnEdge.a;
   const backwardEnd = forwardToB ? spawnEdge.a : spawnEdge.b;
 
-  // Keep only the current segment to the next real OSM junction. Each next branch is selected
-  // randomly from the full road graph, so the walk can continue endlessly without user choice.
+  // Keep only the current segment to the next real OSM junction. The walk continues straight
+  // through ordinary intersections and turns only when the graph has no forward continuation.
   const forwardState = createWalkState(forwardEndKey, spawnEdge.id, [spawn, forwardEnd]);
   const backwardState = createWalkState(backwardEndKey, spawnEdge.id, [spawn, backwardEnd]);
   const stepMeters = Number(city.walkStepMeters ?? 3.5);
@@ -851,7 +852,7 @@ function extendWalkStateOneEdge(graph, state, random = Math.random) {
   if (variants.length === 1) {
     chosen = variants[0];
   } else {
-    chosen = chooseRandomRoadVariant(variants, state, random);
+    chosen = chooseRoadContinuation(variants, state, random);
   }
 
   if (!chosen) return null;
@@ -863,10 +864,17 @@ function extendWalkStateOneEdge(graph, state, random = Math.random) {
   return chosen.nextCoord;
 }
 
-function chooseRandomRoadVariant(variants, state, random = Math.random) {
+function chooseRoadContinuation(variants, state, random = Math.random) {
   if (!variants.length) return null;
+
+  const smallestTurn = Math.min(...variants.map((item) => Math.abs(item.turn)));
+  const straightest = variants.filter((item) => Math.abs(item.turn) <= smallestTurn + 0.5);
+  if (straightest.length === 1) return straightest[0];
+
+  // At a real corner or fork there may be two equally good turns. Keep the old seeded
+  // randomness only for that fallback, so a route still feels alive without zig-zagging.
   const recentEdges = new Set(state.recentEdges.slice(-8));
-  return weightedRandom(variants, (item) => {
+  return weightedRandom(straightest, (item) => {
     const recentPenalty = recentEdges.has(item.edge.id) ? 0.25 : 1;
     return roadSpawnWeight(item.edge.highway) * recentPenalty;
   }, random);

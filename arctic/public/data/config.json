@@ -66,7 +66,7 @@
   "navigation": {
     "cameraHeightMeters": 2.15,
     "cameraPitchDegrees": -1.0,
-    "fieldOfViewDegrees": 70,
+    "fieldOfViewDegrees": 60,
     "roadStepMeters": 2.8,
     "wheelDivisor": 340,
     "maxWheelStepsPerEvent": 0.75,
