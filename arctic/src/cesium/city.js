@@ -11,7 +11,7 @@ const colors = {
   work: Cesium.Color.fromCssColorString("#f1d75a").withAlpha(1),
   rent: Cesium.Color.fromCssColorString("#6bb6e7").withAlpha(1),
   sale: Cesium.Color.fromCssColorString("#79cb8c").withAlpha(1),
-  selected: Cesium.Color.fromCssColorString("#ff8a00").withAlpha(1),
+  selected: Cesium.Color.fromCssColorString("#ff6f00").withAlpha(1),
   road: Cesium.Color.fromCssColorString("#5c6970").withAlpha(0.76),
   route: Cesium.Color.fromCssColorString("#f6f7f7").withAlpha(0.95)
 };
@@ -123,6 +123,22 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
       ])
   );
 
+  const isBuildingInView = (building) => {
+    const world = anchorById.get(building?.id);
+    const cameraPosition = viewer.camera.positionWC;
+    const cameraDirection = viewer.camera.directionWC;
+    if (!world || !cameraPosition || !cameraDirection) return false;
+
+    const toBuilding = Cesium.Cartesian3.subtract(world, cameraPosition, new Cesium.Cartesian3());
+    if (Cesium.Cartesian3.dot(cameraDirection, toBuilding) <= 0) return false;
+
+    const point = viewer.scene.cartesianToCanvasCoordinates?.(world);
+    if (!point) return false;
+    const width = viewer.scene.canvas.clientWidth || viewer.scene.canvas.width;
+    const height = viewer.scene.canvas.clientHeight || viewer.scene.canvas.height;
+    return point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height;
+  };
+
   const pickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   pickHandler.setInputAction((movement) => {
     const picked = viewer.scene.pick(movement.position);
@@ -199,6 +215,7 @@ export async function enterCityScene(viewer, city, { offers = [], onBuildingPick
       if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
       return { x: point.x, y: point.y };
     },
+    isBuildingInView,
     highlight(buildingId) {
       if (selectedBuildingId === buildingId) return;
       selectedBuildingId = buildingId;
@@ -242,7 +259,6 @@ function createRoadLayerDataSource(roads, route, config = {}) {
   const maxRoads = Math.max(0, Number(config.maxRoads ?? 1200));
   const clampToGround = config.clampToGround !== false;
   const height = clampToGround ? 0 : Math.max(0, Number(config.heightMeters ?? 0.18));
-  const casingColor = Cesium.Color.fromCssColorString(config.casingColor ?? "#26343a").withAlpha(Number(config.casingAlpha ?? 0.9));
   const fillColor = Cesium.Color.fromCssColorString(config.fillColor ?? "#fff8e8").withAlpha(Number(config.fillAlpha ?? 0.98));
   const majorFillColor = Cesium.Color.fromCssColorString(config.majorFillColor ?? "#f0c85c").withAlpha(Number(config.majorAlpha ?? 0.98));
   const serviceFillColor = Cesium.Color.fromCssColorString(config.serviceFillColor ?? "#ece8de").withAlpha(Number(config.serviceAlpha ?? 0.72));
@@ -255,22 +271,11 @@ function createRoadLayerDataSource(roads, route, config = {}) {
 
       const highway = feature.properties?.highway ?? "road";
       const width = roadWidthPixels(highway, config);
-      const casingWidth = width + roadCasingExtraWidthPixels(config);
       const isMajor = ["motorway", "trunk", "primary", "secondary"].includes(highway);
       const isService = ["service", "pedestrian"].includes(highway);
       const fill = isMajor ? majorFillColor : isService ? serviceFillColor : fillColor;
       const id = feature.id ?? `${highway}-${index}`;
 
-      source.entities.add({
-        id: `road-casing-${id}`,
-        polyline: {
-          positions,
-          width: casingWidth,
-          material: casingColor,
-          clampToGround,
-          zIndex: 0
-        }
-      });
       source.entities.add({
         id: `road-fill-${id}`,
         polyline: {
@@ -278,7 +283,7 @@ function createRoadLayerDataSource(roads, route, config = {}) {
           width,
           material: fill,
           clampToGround,
-          zIndex: 1
+          zIndex: 0
         }
       });
     });
@@ -341,11 +346,6 @@ function roadWidthPixels(_highway, config = {}) {
   const configured = Number(config.widthPixels ?? config.width ?? config.widthMeters ?? config.widths?.default ?? 24);
   const base = Number.isFinite(configured) && configured > 0 ? configured : 24;
   return Math.max(1.5, base * Number(config.widthScale ?? 1));
-}
-
-function roadCasingExtraWidthPixels(config = {}) {
-  const configured = Number(config.casingExtraWidthPixels ?? config.casingExtraWidth ?? config.casingExtraWidthMeters ?? 8);
-  return Number.isFinite(configured) && configured >= 0 ? configured : 8;
 }
 
 function createBuildingDataSource(preparedBuildings, getAssignment, buildingConfig, lightingConfig) {
@@ -1112,7 +1112,8 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
       activeFocusBuildingId,
       Number(settings.cardTriggerDistanceMeters ?? 115),
       Number(settings.cardHideBehindDegrees ?? 98),
-      settings
+      settings,
+      (building) => walk.isBuildingInView?.(building) ?? true
     );
     activeFocusBuildingId = focusBuildingId;
     onProgress?.({
@@ -1176,15 +1177,15 @@ function applyCameraPoint(viewer, camera) {
   });
 }
 
-function stickyFocusBuilding(buildings, point, cameraHeading, previousId, thresholdMeters, hideBehindDegrees = 98, settings = {}) {
+function stickyFocusBuilding(buildings, point, cameraHeading, previousId, thresholdMeters, hideBehindDegrees = 98, settings = {}, isInView = null) {
   const releaseDistance = Math.max(thresholdMeters, Number(settings.cardReleaseDistanceMeters ?? thresholdMeters * 1.65));
   const releaseBehind = Math.max(hideBehindDegrees, Number(settings.cardReleaseBehindDegrees ?? 180));
   const switchAdvantage = Math.max(0, Number(settings.cardSwitchAdvantageMeters ?? 45));
   const previous = previousId ? buildings?.find((building) => building.id === previousId) : null;
   const previousMetric = previous ? focusMetric(previous, point, cameraHeading) : null;
 
-  if (previousMetric && previousMetric.distance <= releaseDistance && previousMetric.relative <= releaseBehind) {
-    const challengerId = nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees, previousId);
+  if (previousMetric && (!isInView || isInView(previous)) && previousMetric.distance <= releaseDistance && previousMetric.relative <= releaseBehind) {
+    const challengerId = nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees, previousId, isInView);
     if (!challengerId) return previousId;
 
     const challenger = buildings.find((building) => building.id === challengerId);
@@ -1193,14 +1194,15 @@ function stickyFocusBuilding(buildings, point, cameraHeading, previousId, thresh
     return previousId;
   }
 
-  return nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees);
+  return nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees, null, isInView);
 }
 
-function nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees = 98, excludedId = null) {
+function nearestFocusBuilding(buildings, point, cameraHeading, thresholdMeters, hideBehindDegrees = 98, excludedId = null, isInView = null) {
   let best = null;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const building of buildings ?? []) {
     if (building.id === excludedId) continue;
+    if (isInView && !isInView(building)) continue;
     const { distance, relative } = focusMetric(building, point, cameraHeading);
     if (distance > thresholdMeters || distance >= bestDistance) continue;
     if (relative > hideBehindDegrees) continue;
