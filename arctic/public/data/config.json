@@ -197,10 +197,7 @@
     "parking": "#c9cecc",
     "buildingStroke": "#7f8c90",
     "majorRoad": "#f0c85c",
-    "rail": "#667177",
-    "roadWidth": 8,
-    "roadWidthScale": 1.25,
-    "roadCasingExtraWidth": 3
+    "rail": "#667177"
   },
   "roads": {
     "enabled": true,

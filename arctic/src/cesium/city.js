@@ -1317,10 +1317,6 @@ function removeConsecutiveDuplicates(coordinates) {
   return result;
 }
 
-function roadWidth(_highway) {
-  return 6;
-}
-
 function polygonCentroid(ring) {
   const count = Math.max(1, ring.length - 1);
   let lon = 0;
@@ -1683,21 +1679,6 @@ async function renderLocalBasemap(raw, config) {
     }
   }
 
-  // Roads: casing + fill, with main streets slightly warmer just like a normal map.
-  const roadFeatures = (raw.roads?.features ?? []).filter((feature) => feature.geometry?.type === "LineString");
-  for (const pass of ["casing", "fill"]) {
-    for (const feature of roadFeatures) {
-      const highway = feature.properties?.highway;
-      const width = scaledRoadWidth(highway, size, config);
-      const isMajor = ["motorway", "trunk", "primary", "secondary"].includes(highway);
-      const color = pass === "casing"
-        ? palette.roadCasing
-        : isMajor ? palette.majorRoad : palette.roadFill;
-      const casingExtra = scaledRoadCasingExtraWidth(size, config);
-      drawLine(ctx, feature.geometry.coordinates, project, color, pass === "casing" ? width + casingExtra : width);
-    }
-  }
-
   // All downloaded real OSM footprints remain visible in 2D even if only a configurable number
   // are extruded into 3D for performance.
   for (const feature of raw.buildings?.features ?? []) {
@@ -1839,19 +1820,6 @@ function drawLine(ctx, coordinates, project, color, width, dash = null) {
   ctx.setLineDash(dash ?? []);
   ctx.stroke();
   ctx.setLineDash([]);
-}
-
-function scaledRoadWidth(highway, size, config = {}) {
-  const base = Number(config.roadWidth ?? roadWidth(highway));
-  const scale = Number(config.roadWidthScale ?? 1);
-  const width = (Number.isFinite(base) && base > 0 ? base : roadWidth(highway)) * (Number.isFinite(scale) && scale > 0 ? scale : 1);
-  return Math.max(1.5, width * (size / 1024));
-}
-
-function scaledRoadCasingExtraWidth(size, config = {}) {
-  const base = Number(config.roadCasingExtraWidth ?? 2.6);
-  const width = Number.isFinite(base) && base >= 0 ? base : 2.6;
-  return Math.max(1.5, width * (size / 1024));
 }
 
 function clamp(value, min, max) {

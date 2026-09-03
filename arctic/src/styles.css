@@ -3767,7 +3767,6 @@ body {
   z-index: 2;
   align-self: end;
   display: grid;
-  gap: 5px;
   margin: 0;
   padding: 34px 24px 20px;
   background: rgba(23, 59, 87, .88);
