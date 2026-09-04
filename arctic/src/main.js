@@ -482,6 +482,9 @@ async function renderCurrentStory() {
       cityScene?.highlight?.(null);
       updateOfferCard(refs, null);
       routeController?.refresh?.();
+    },
+    onRouteMove: (steps) => {
+      routeController?.moveBy?.(steps);
     }
   });
 

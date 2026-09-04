@@ -108,7 +108,8 @@ export function renderCityStory(root, {
   onCityChange,
   onProfileChange,
   onTimeline,
-  onMode
+  onMode,
+  onRouteMove
 }) {
   const page = state.chapter === "nature"
     ? "nature"
@@ -144,6 +145,10 @@ export function renderCityStory(root, {
 
   root.querySelectorAll("[data-mode]").forEach((button) => {
     button.addEventListener("click", () => onMode(button.dataset.mode));
+  });
+
+  root.querySelectorAll("[data-route-move]").forEach((button) => {
+    button.addEventListener("click", () => onRouteMove?.(Number(button.dataset.routeMove)));
   });
 
   const reviewsRoot = root.querySelector(".reviews-chapter");
@@ -331,6 +336,10 @@ function renderChapter(state, city, nature, naturePhotos, benefits, reviews, rev
           <div id="object-card" class="object-card" ${offer ? "" : "hidden"}>
             ${offer ? renderOfferBody(offer) : ""}
           </div>
+        </div>
+        <div class="city-route-controls" aria-label="Движение по маршруту">
+          <button type="button" data-route-move="-1" aria-label="Двигаться назад">↓</button>
+          <button type="button" data-route-move="1" aria-label="Двигаться вперёд">↑</button>
         </div>
       </div>
     </section>

@@ -2090,6 +2090,7 @@ body {
 
 .journey-step:has(input:disabled) strong {
   opacity: .34;
+  left: -55%;
 }
 
 .journey-step:has(input:disabled):hover > span {
@@ -3398,13 +3399,11 @@ body {
   border: 2px solid var(--arctic-outline, #173b57);
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 0 2px #fff;
   transition: border-color .16s ease, transform .16s ease;
 }
 
 .city-controls-panel .timeline-point.is-active span {
   border-color: var(--arctic-outline, #173b57);
-  box-shadow: 0 0 0 2px #fff;
 }
 
 .city-controls-panel .timeline-point.is-active span::after {
@@ -4564,3 +4563,462 @@ body {
   }
 }
 /* /ARCTIC_HERO_MOBILE_TYPE_MATCH_V1 */
+
+/* ARCTIC_GAME_MOBILE_LAYOUT_V1 */
+.city-route-controls {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .arctic-experience-section {
+    padding: 16px 8px 24px;
+  }
+
+  .arctic-game-host .prototype-shell {
+    min-height: 0;
+    border-radius: 16px;
+  }
+
+  .arctic-game-host .story-screen {
+    min-height: 0;
+    padding: 12px 8px 14px;
+  }
+
+  .arctic-game-host .journey-controls {
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .arctic-game-host .journey-step-row,
+  .arctic-game-host .journey-steps {
+    height: 56px;
+  }
+
+  .arctic-game-host .journey-steps::before {
+    top: 8px;
+    left: 9px;
+    right: 9px;
+  }
+
+  .arctic-game-host .journey-step {
+    width: 20px;
+    min-height: 54px;
+  }
+
+
+  .arctic-game-host .journey-step:nth-child(2) { left: calc((100% - 20px) * .2); }
+  .arctic-game-host .journey-step:nth-child(3) { left: calc((100% - 20px) * .4); }
+  .arctic-game-host .journey-step:nth-child(4) { left: calc((100% - 20px) * .6); }
+  .arctic-game-host .journey-step:nth-child(5) { left: calc((100% - 20px) * .8); }
+
+  .arctic-game-host .journey-step > span {
+    width: 18px;
+    height: 18px;
+  }
+
+  .arctic-game-host .journey-step strong {
+    position: absolute;
+    top: 25px;
+
+    display: block;
+    width: 56px;
+    max-width: 56px;
+    overflow: hidden;
+    font-size: 9px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    transform: translateX(-50%);
+    text-align: center;
+    white-space: normal;
+  }
+
+  .arctic-game-host .journey-step:first-child strong {
+    left: 0;
+    transform: none;
+  }
+
+  .arctic-game-host .journey-step:last-child strong {
+    left: -170%;
+    transform: translateX(-100%);
+  }
+
+  .arctic-game-host .journey-select-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .arctic-game-host .journey-select-row.is-region-only {
+    grid-template-columns: 1fr;
+  }
+
+  .arctic-game-host .journey-select {
+    min-width: 0;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .arctic-game-host .journey-select select {
+    height: 37px;
+    padding: 0 27px 0 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .arctic-game-host .journey-select::after {
+    right: 10px;
+    bottom: 13px;
+    width: 7px;
+    height: 7px;
+  }
+
+  .arctic-game-host .region-frame,
+  .arctic-game-host .game-window {
+    flex: 0 0 430px;
+    width: 100%;
+    height: 430px;
+    min-height: 430px;
+  }
+
+  .arctic-game-host .cesium-region,
+  .arctic-game-host .region-map-2d-host,
+  .arctic-game-host .city-map-2d-host,
+  .arctic-game-host .region-map-2d-stage,
+  .arctic-game-host .city-map-2d-stage,
+  .arctic-game-host .russia-context-map-stage {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    padding: 0;
+  }
+
+  .arctic-game-host .region-story .russia-context-map__svg {
+    transform: scale(1.12);
+    transform-origin: center;
+  }
+
+  .arctic-game-host .game-window > .city-chapter,
+  .arctic-game-host .game-window > .info-chapter,
+  .arctic-game-host .game-window > .reviews-chapter {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .arctic-game-host .city-chapter {
+    min-height: 0;
+  }
+
+  .arctic-game-host .city-3d-viewport,
+  .arctic-game-host .city-story .city-3d-viewport {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .arctic-game-host .city-headline {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    max-width: calc(100% - 16px);
+    padding: 6px 8px;
+  }
+
+  .arctic-game-host .city-headline strong {
+    font-size: 13px;
+  }
+
+  .arctic-game-host .object-card {
+    width: min(248px, calc(100% - 20px));
+    min-height: 0;
+    padding: 10px 12px;
+  }
+
+  .arctic-game-host .object-card h3 {
+    margin: 4px 0 3px;
+    font-size: 16px;
+  }
+
+  .arctic-game-host .object-card p {
+    font-size: 13px;
+  }
+
+  .arctic-game-host .city-controls-panel {
+    gap: 8px;
+    margin-top: 8px;
+    padding: 10px 10px 11px;
+    border-radius: 12px;
+  }
+
+  .arctic-game-host .city-controls-panel .timeline {
+    min-height: 40px;
+  }
+
+  .arctic-game-host .city-controls-panel .timeline::before {
+    top: 7px;
+  }
+
+  .arctic-game-host .city-controls-panel .timeline-point {
+    min-height: 38px;
+    gap: 5px;
+    padding: 0;
+  }
+
+  .arctic-game-host .city-controls-panel .timeline-point span {
+    width: 16px;
+    height: 16px;
+  }
+
+  .arctic-game-host .city-controls-panel .timeline-point strong {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .arctic-game-host .city-controls-panel .mode-switch {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .arctic-game-host .city-controls-panel .mode-switch__button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+
+  .city-route-controls {
+    position: absolute;
+    z-index: 20;
+    left: 10px;
+    bottom: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, 44px);
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .city-route-controls button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    padding: 0;
+    border: 2px solid var(--arctic-outline, #173b57);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .94);
+    color: var(--arctic-outline, #173b57);
+    font-size: 24px;
+    line-height: 1;
+    pointer-events: auto;
+    touch-action: manipulation;
+  }
+
+  .city-route-controls button:active {
+    background: var(--arctic-turquoise, #CBF7ED);
+  }
+
+  .arctic-game-host .nature-chapter {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    height: 100%;
+    min-height: 0;
+    padding: 18px 14px 16px;
+  }
+
+  .arctic-game-host .nature-copy h2 {
+    font-size: 29px;
+  }
+
+  .arctic-game-host .nature-copy p {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .arctic-game-host .nature-carousel,
+  .arctic-game-host .nature-carousel__viewport,
+  .arctic-game-host .nature-slide img,
+  .arctic-game-host .nature-slide__placeholder {
+    min-height: 0;
+  }
+
+  .arctic-game-host .nature-carousel__viewport {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .arctic-game-host .nature-slide figcaption {
+    padding: 24px 14px 12px;
+  }
+
+  .arctic-game-host .nature-slide figcaption strong {
+    font-size: 15px;
+  }
+
+  .arctic-game-host .nature-slide figcaption span {
+    font-size: 11px;
+  }
+
+  .arctic-game-host .nature-carousel__button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .arctic-game-host .nature-carousel__button--prev { left: 8px; }
+  .arctic-game-host .nature-carousel__button--next { right: 8px; }
+
+  .arctic-game-host .nature-highlights {
+    gap: 6px;
+  }
+
+  .arctic-game-host .nature-highlights li {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .arctic-game-host .benefits-chapter {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    height: 100%;
+    min-height: 0;
+    padding: 18px 14px 14px;
+  }
+
+  .arctic-game-host .benefits-intro h2 {
+    font-size: 29px;
+  }
+
+  .arctic-game-host .benefits-intro p {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .arctic-game-host .benefits-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: center;
+    gap: 8px;
+  }
+
+  .arctic-game-host .benefit-card {
+    min-height: 0;
+    gap: 6px;
+    padding: 10px;
+    border-width: 1.5px;
+    border-radius: 10px;
+  }
+
+  .arctic-game-host .benefit-card__number {
+    width: 25px;
+    height: 25px;
+    border-width: 1.5px;
+    font-size: 10px;
+  }
+
+  .arctic-game-host .benefit-card h3 {
+    font-size: 12px;
+  }
+
+  .arctic-game-host .benefit-card p {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .arctic-game-host .benefits-note {
+    padding-top: 8px;
+    font-size: 10px;
+  }
+
+  .arctic-game-host .reviews-chapter {
+    min-height: 0;
+    overflow: hidden;
+    padding: 18px 14px 16px;
+  }
+
+  .arctic-game-host .reviews-intro h2 {
+    margin: 7px 0 8px;
+    font-size: 27px;
+  }
+
+  .arctic-game-host .reviews-intro p {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .arctic-game-host .review-filters {
+    gap: 6px;
+    margin: 12px 0 10px;
+    overflow: auto;
+  }
+
+  .arctic-game-host .review-filter {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 11px;
+  }
+
+  .arctic-game-host .reviews-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .arctic-game-host .review-card,
+  .arctic-game-host .review-card--featured {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .arctic-game-host .review-card--featured {
+    grid-row: auto;
+  }
+
+  .arctic-game-host .review-card__quote {
+    top: 8px;
+    right: 10px;
+    font-size: 48px;
+  }
+
+  .arctic-game-host .review-card__author strong {
+    font-size: 13px;
+  }
+
+  .arctic-game-host .review-card__author span,
+  .arctic-game-host .review-card p {
+    font-size: 11px;
+  }
+
+  .arctic-game-host .review-card p {
+    margin: 10px 0 12px;
+    line-height: 1.35;
+  }
+
+  .arctic-game-host .review-card__topics span {
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+
+  .arctic-game-host .reviews-themes {
+    display: none;
+  }
+
+  .arctic-game-host .reviews-intro,
+  .arctic-game-host .reviews-intro h2,
+  .arctic-game-host .reviews-intro p,
+  .arctic-game-host .review-card,
+  .arctic-game-host .review-card__author,
+  .arctic-game-host .review-card p {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .arctic-game-host .review-card {
+    overflow: hidden;
+  }
+}
+/* /ARCTIC_GAME_MOBILE_LAYOUT_V1 */

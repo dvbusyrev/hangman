@@ -75,15 +75,8 @@ export async function setupRegionMap2D(container, scenarios, {
     );
     setViewBox(svg, centeredRussiaViewBox);
 
-    let currentViewBox = { ...centeredRussiaViewBox };
-    let currentRegionId = selectedRegionId ?? null;
-    let currentCityId = selectedCityId ?? null;
-    let currentOfferMode = selectedMode === "estate" ? "estate" : "profession";
-    let cityMode = false;
-    let cityModeViewBox = { ...centeredRussiaViewBox };
-    let transitionToken = 0;
-    const cityNodes = new Set();
     const isCompactViewport = window.matchMedia?.("(max-width: 760px)")?.matches ?? false;
+    const cityNodes = new Set();
 
     const pathById = new Map();
     const labelById = new Map();
@@ -151,13 +144,32 @@ export async function setupRegionMap2D(container, scenarios, {
 
     resolveSvgLabelCollisions(regionLabels);
 
+    // The full Russia context is useful on desktop, but leaves the project regions too small
+    // on a phone. The mobile overview fits only the regions used by this experience.
+    const overviewViewBox = isCompactViewport
+      ? calculateCenteredContentViewBox(
+        [...pathById.values()],
+        svg,
+        { padding: 0.08, fallback: centeredRussiaViewBox }
+      )
+      : centeredRussiaViewBox;
+    setViewBox(svg, overviewViewBox);
+
+    let currentViewBox = { ...overviewViewBox };
+    let currentRegionId = selectedRegionId ?? null;
+    let currentCityId = selectedCityId ?? null;
+    let currentOfferMode = selectedMode === "estate" ? "estate" : "profession";
+    let cityMode = false;
+    let cityModeViewBox = { ...overviewViewBox };
+    let transitionToken = 0;
+
     // The map is intentionally a touch surface on mobile. One finger pans
     // the current geographic view, while two fingers zoom around their
     // midpoint. Tap/click selection remains available when there is no drag.
     const mapGestures = setupMapGestures(stage, svg, {
       isEnabled: () => true,
       getViewBox: () => currentViewBox,
-      getBaseViewBox: () => cityMode ? cityModeViewBox : centeredRussiaViewBox,
+      getBaseViewBox: () => cityMode ? cityModeViewBox : overviewViewBox,
       onViewBoxChange: (nextViewBox) => {
         currentViewBox = nextViewBox;
         setViewBox(svg, nextViewBox);
@@ -229,7 +241,7 @@ export async function setupRegionMap2D(container, scenarios, {
 
       const feature = featureById.get(regionId);
       const markerScale = clamp(
-        targetViewBox.width / Math.max(1, centeredRussiaViewBox.width),
+        targetViewBox.width / Math.max(1, overviewViewBox.width),
         0.015,
         0.80
       );
@@ -311,7 +323,7 @@ export async function setupRegionMap2D(container, scenarios, {
 
         const targetViewBox = calculateCenteredRegionViewBox(
           path,
-          centeredRussiaViewBox,
+          overviewViewBox,
           svg,
           isCompactViewport ? MOBILE_CITY_MAP_ZOOM : CITY_MAP_ZOOM
         );
@@ -346,13 +358,13 @@ export async function setupRegionMap2D(container, scenarios, {
         await animateSvgViewportTransform(
           svg,
           currentViewBox,
-          centeredRussiaViewBox,
+          overviewViewBox,
           720
         );
 
         if (token !== transitionToken) return;
-        currentViewBox = { ...centeredRussiaViewBox };
-        cityModeViewBox = { ...centeredRussiaViewBox };
+        currentViewBox = { ...overviewViewBox };
+        cityModeViewBox = { ...overviewViewBox };
       },
 
       async selectCity(cityId) {

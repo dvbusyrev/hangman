@@ -1136,6 +1136,7 @@ export function createRouteController(viewer, walk, focusBuildings, { initialInd
 
   return {
     getIndex: () => cursor,
+    moveBy,
     refresh: applyCursor,
     destroy() {
       canvas.removeEventListener("wheel", onWheel);
